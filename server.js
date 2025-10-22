@@ -4,6 +4,21 @@ import cors from 'cors';
 const app = express();
 app.use(cors());
 app.use(express.json());
+// === Cloudinary setup ===
+import { v2 as cloudinary } from 'cloudinary';
+import fileUpload from 'express-fileupload';
+
+// Enable file uploads
+app.use(fileUpload({
+  useTempFiles: true,
+}));
+
+// Cloudinary config (replace with your values)
+cloudinary.config({
+  cloud_name: 'dblconpx8', // your Cloud name
+  api_key: 'YOUR_API_KEY_HERE', 
+  api_secret: 'YOUR_API_SECRET_HERE',
+});
 
 // Root route
 app.get('/', (req, res) => {
@@ -23,6 +38,9 @@ app.get('/api/health', (req, res) => {
 const PORT = process.env.PORT || 8080;
 // Simple in-memory player list
 let players = [];
+// === In-memory Clip Store ===================================
+// shape: { "Syd": [ { url, public_id, created_at } ] }
+const clipsByPlayer = {};
 
 // Add a new player
 app.post('/api/player', (req, res) => {
@@ -30,6 +48,31 @@ app.post('/api/player', (req, res) => {
   if (!name) return res.status(400).json({ ok: false, error: 'Name is required' });
   players.push(name);
   res.json({ ok: true, message: `${name} added!`, players });
+});
+// === Upload Player Clip ===
+app.post('/api/upload', async (req, res) => {
+  try {
+    if (!req.files || !req.files.video) {
+      return res.status(400).json({ ok: false, error: 'No video file uploaded.' });
+    }
+
+    const videoFile = req.files.video;
+    const uploadResponse = await cloudinary.uploader.upload(videoFile.tempFilePath, {
+      folder: 'ball_knowledge_uploads',
+      resource_type: 'video',
+      upload_preset: 'ballknowledge_unsigned', // name of your unsigned preset
+    });
+
+    res.json({
+      ok: true,
+      url: uploadResponse.secure_url,
+      public_id: uploadResponse.public_id,
+      created_at: uploadResponse.created_at
+    });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ ok: false, error: 'Upload failed.' });
+  }
 });
 
 // Get all players
@@ -83,3 +126,4 @@ app.put('/api/player/:name/attributes', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+
