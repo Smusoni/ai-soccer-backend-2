@@ -4,6 +4,11 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
 /* -------------------- Setup -------------------- */
 const __filename = fileURLToPath(import.meta.url);
@@ -33,9 +38,16 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DATA_PATH = path.join(DATA_DIR, 'data.json');
 
 let db = {
+  // legacy “players” (keep for now so your current UI still works)
   players: [],
   attrsByPlayer: {},
-  clipsByPlayer: {}
+  clipsByPlayer: {},
+
+  // NEW: accounts + profiles
+  users: [],                // [{ id, username, passHash, createdAt }]
+  profiles: {},             // { userId: { height, weight, foot, position, updatedAt } }
+  clipsByUser: {},          // { userId: [ { url, public_id, created_at, ... } ] }
+  analysesByUser: {}        // { userId: { summary, topSkill, needsWork, drills[], comps[] , createdAt } }
 };
 
 function ensureDataDir() {
@@ -114,6 +126,92 @@ function clamp01to100(v, fallback = 0) {
   if (Number.isNaN(num)) return fallback;
   return Math.max(0, Math.min(100, Math.round(num)));
 }
+/* -------------------- Auth helpers -------------------- */
+function findUser(username) {
+  return db.users.find(u => u.username.toLowerCase() === String(username).toLowerCase());
+}
+
+function auth(req, res, next) {
+  try {
+    const h = req.headers.authorization || '';
+    const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+    if (!token) return res.status(401).json({ ok: false, error: 'Missing token' });
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.userId = payload.sub;
+    next();
+  } catch (e) {
+    return res.status(401).json({ ok: false, error: 'Invalid token' });
+  }
+}
+// Save / update profile
+app.post('/api/profile', auth, (req, res) => {
+  const { height, weight, foot, position } = req.body || {};
+  db.profiles[req.userId] = {
+    height: Number(height) || null,
+    weight: Number(weight) || null,
+    foot: foot || null,           // "Left" | "Right" | "Both"
+    position: position || null,   // e.g., "ST", "CAM", "LB", ...
+    updatedAt: Date.now()
+  };
+  saveDB();
+  res.json({ ok: true, profile: db.profiles[req.userId] });
+});
+
+// Add a clip (metadata only; Cloudinary upload is front-end)
+app.post('/api/clip', auth, (req, res) => {
+  const {
+    url, public_id, created_at, bytes, duration, width, height, format
+  } = req.body || {};
+  if (!url && !public_id) return res.status(400).json({ ok:false, error:'url or public_id required' });
+
+  if (!Array.isArray(db.clipsByUser[req.userId])) db.clipsByUser[req.userId] = [];
+  const clip = {
+    url: url || null, public_id: public_id || null,
+    created_at: created_at || new Date().toISOString(),
+    bytes: Number(bytes) || null, duration: Number(duration) || null,
+    width: Number(width) || null, height: Number(height) || null,
+    format: format || null
+  };
+  db.clipsByUser[req.userId].unshift(clip);
+  saveDB();
+  res.json({ ok: true, clip, total: db.clipsByUser[req.userId].length });
+});
+
+// Get my full profile (profile + clips + last analysis)
+app.get('/api/profile', auth, (req, res) => {
+  res.json({
+    ok: true,
+    profile: db.profiles[req.userId] || {},
+    clips: db.clipsByUser[req.userId] || [],
+    analysis: db.analysesByUser[req.userId] || null
+  });
+});
+
+// Analyze (MVP mock returning structured report)
+app.post('/api/analyze', auth, (req, res) => {
+  // In future: use last clip + profile to run real model
+  const prof = db.profiles[req.userId] || {};
+  const clip = (db.clipsByUser[req.userId] || [])[0] || null;
+
+  const report = {
+    summary: 'Solid base. Good pace; work on decision speed.',
+    topSkill: 'Pace & Scanning',
+    needsWork: 'Composure under pressure',
+    drills: [
+      'Small-space reaction training (3× per week)',
+      'Wall passing (weak foot) 100 reps',
+      '1v1 transition drill 10 reps'
+    ],
+    comps: ['Bukayo Saka (style)', 'Leroy Sané (tendencies)'],
+    usedClip: clip?.public_id || clip?.url || null,
+    usedProfile: { foot: prof.foot, position: prof.position },
+    createdAt: Date.now()
+  };
+
+  db.analysesByUser[req.userId] = report;
+  saveDB();
+  res.json({ ok: true, report });
+});
 
 /* -------------------- Routes -------------------- */
 
@@ -214,6 +312,39 @@ app.post('/api/player/:name/clip', (req, res) => {
   saveDB();
 
   res.json({ ok: true, saved: clip, totalClips: db.clipsByPlayer[n].length });
+});
+// --- Signup ---
+app.post('/api/signup', async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ ok: false, error: 'username and password required' });
+  if (findUser(username)) return res.status(409).json({ ok: false, error: 'username taken' });
+
+  const id = uuidv4();
+  const passHash = await bcrypt.hash(String(password), 10);
+  db.users.push({ id, username, passHash, createdAt: Date.now() });
+  saveDB();
+
+  const token = jwt.sign({ sub: id, username }, JWT_SECRET, { expiresIn: '30d' });
+  res.json({ ok: true, token, user: { id, username } });
+});
+
+// --- Login ---
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body || {};
+  const user = findUser(username);
+  if (!user) return res.status(401).json({ ok: false, error: 'invalid credentials' });
+  const ok = await bcrypt.compare(String(password), user.passHash);
+  if (!ok) return res.status(401).json({ ok: false, error: 'invalid credentials' });
+
+  const token = jwt.sign({ sub: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+  res.json({ ok: true, token, user: { id: user.id, username: user.username } });
+});
+
+// --- Me ---
+app.get('/api/me', auth, (req, res) => {
+  const user = db.users.find(u => u.id === req.userId);
+  if (!user) return res.status(404).json({ ok: false, error: 'not found' });
+  res.json({ ok: true, user: { id: user.id, username: user.username } });
 });
 
 /* -------------------- Start -------------------- */
