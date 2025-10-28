@@ -346,6 +346,40 @@ app.get('/api/me', auth, (req, res) => {
   if (!user) return res.status(404).json({ ok: false, error: 'not found' });
   res.json({ ok: true, user: { id: user.id, username: user.username } });
 });
+// Get my profile
+app.get('/api/profile', auth, (req, res) => {
+  const p = db.profiles[req.userId] || null;
+  res.json({ ok: true, profile: p });
+});
+
+// Create/Update my profile
+app.post('/api/profile', auth, (req, res) => {
+  const { height, weight, foot, position, dob } = req.body || {};
+  if (!dob) {
+    // expect 'YYYY-MM-DD' from the client
+    return res.status(400).json({ ok:false, error:'dob is required (YYYY-MM-DD)' });
+  }
+  db.profiles[req.userId] = {
+    ...(db.profiles[req.userId] || {}),
+    height, weight, foot, position, dob,
+    updatedAt: Date.now(),
+  };
+  saveDB();
+  res.json({ ok:true, profile: db.profiles[req.userId] });
+});
+
+// Optional helper to compute age on the fly
+app.get('/api/profile/age', auth, (req, res) => {
+  const p = db.profiles[req.userId];
+  if (!p || !p.dob) return res.status(404).json({ ok:false, error:'no dob' });
+  const today = new Date();
+  const [y, m, d] = p.dob.split('-').map(Number);
+  let age = today.getFullYear() - y;
+  const md = (today.getMonth()+1) * 100 + today.getDate();
+  const mdDob = m*100 + d;
+  if (md < mdDob) age--;
+  res.json({ ok:true, age });
+});
 
 /* -------------------- Start -------------------- */
 app.listen(PORT, '0.0.0.0', () => {
