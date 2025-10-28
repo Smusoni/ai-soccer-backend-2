@@ -368,8 +368,16 @@ app.post('/api/profile', auth, (req, res) => {
     const userId = req.userId || (req.user && req.user.id);
     if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
-    const profile = normalizeProfile(req.body || {});
-    db.profiles[userId] = { ...(db.profiles[userId] || {}), ...profile, updatedAt: Date.now() };
+    const profile = {
+      height: req.body.height,
+      weight: req.body.weight,
+      foot: req.body.foot,
+      position: req.body.position,
+      dob: req.body.dob,
+      updatedAt: Date.now(),
+    };
+
+    db.profiles[userId] = { ...(db.profiles[userId] || {}), ...profile };
     saveDB();
 
     return res.json({ ok: true, profile: db.profiles[userId] });
@@ -378,7 +386,6 @@ app.post('/api/profile', auth, (req, res) => {
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
-
 // --- Profile: fetch ---
 app.get('/api/profile', auth, (req, res) => {
   try {
@@ -386,10 +393,10 @@ app.get('/api/profile', auth, (req, res) => {
     if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
     const profile = db.profiles[userId] || null;
-    return res.json({ ok: true, profile });
+    res.json({ ok: true, profile });
   } catch (e) {
     console.error('[BK] profile get error:', e);
-    return res.status(500).json({ ok: false, error: 'server_error' });
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 // Get my profile
