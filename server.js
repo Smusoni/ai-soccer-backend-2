@@ -126,6 +126,22 @@ function clamp01to100(v, fallback = 0) {
   if (Number.isNaN(num)) return fallback;
   return Math.max(0, Math.min(100, Math.round(num)));
 }
+// --- helpers: coerce profile values ---
+function normalizeProfile(body = {}) {
+  const toInt = (v) => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : null;
+  };
+  const cleanStr = (v) => (typeof v === 'string' ? v.trim() : '');
+
+  const height = toInt(body.height);     // centimeters or inches — you choose
+  const weight = toInt(body.weight);     // lbs or kg — you choose
+  const foot    = cleanStr(body.foot);   // 'left' | 'right' | 'both'
+  const position= cleanStr(body.position);
+  const dob     = cleanStr(body.dob);    // 'YYYY-MM-DD' (optional)
+
+  return { height, weight, foot, position, dob };
+}
 /* -------------------- Auth helpers -------------------- */
 function findUser(username) {
   return db.users.find(u => u.username.toLowerCase() === String(username).toLowerCase());
@@ -345,6 +361,36 @@ app.get('/api/me', auth, (req, res) => {
   const user = db.users.find(u => u.id === req.userId);
   if (!user) return res.status(404).json({ ok: false, error: 'not found' });
   res.json({ ok: true, user: { id: user.id, username: user.username } });
+});
+// --- Profile: save ---
+app.post('/api/profile', auth, (req, res) => {
+  try {
+    const userId = req.userId || (req.user && req.user.id);
+    if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
+
+    const profile = normalizeProfile(req.body || {});
+    db.profiles[userId] = { ...(db.profiles[userId] || {}), ...profile, updatedAt: Date.now() };
+    saveDB();
+
+    return res.json({ ok: true, profile: db.profiles[userId] });
+  } catch (e) {
+    console.error('[BK] profile save error:', e);
+    return res.status(500).json({ ok: false, error: 'server_error' });
+  }
+});
+
+// --- Profile: fetch ---
+app.get('/api/profile', auth, (req, res) => {
+  try {
+    const userId = req.userId || (req.user && req.user.id);
+    if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
+
+    const profile = db.profiles[userId] || null;
+    return res.json({ ok: true, profile });
+  } catch (e) {
+    console.error('[BK] profile get error:', e);
+    return res.status(500).json({ ok: false, error: 'server_error' });
+  }
 });
 // Get my profile
 app.get('/api/profile', auth, (req, res) => {
