@@ -289,11 +289,11 @@ app.post('/api/clip', auth, (req, res) => {
   res.json({ ok: true, clip, total: list.length });
 });
 
-// Analyze (mock AI) — returns a single analysis object (kept as-is)
+// Analyze (mock AI) — returns an improved dynamic analysis
 app.post('/api/analyze', auth, (req, res) => {
   try {
     const { height, weight, foot, position, videoUrl } = req.body || {};
-    
+
     if (!videoUrl) {
       return res.status(400).json({ ok: false, error: 'Video URL required' });
     }
@@ -310,31 +310,17 @@ app.post('/api/analyze', auth, (req, res) => {
       };
     }
 
-    // Mock analysis result matching frontend expectations
+    // Generate more personalized analysis output
     const analysis = {
-      summary: `Strong technical foundation observed. Your ${position || 'play'} shows good spatial awareness and decision-making speed. Focus areas identified for optimal development.`,
-      focus: [
-        'First touch consistency under pressure',
-        'Off-ball movement timing',
-        'Weak foot development',
-        'Defensive transition speed'
-      ],
-      drills: [
-        { title: 'Rondo 4v2 (High Intensity)', url: 'https://www.youtube.com/watch?v=example1' },
-        { title: 'Weak Foot Finishing (100 reps)', url: 'https://www.youtube.com/watch?v=example2' },
-        { title: '1v1 Pressing Transitions', url: 'https://www.youtube.com/watch?v=example3' },
-        { title: 'Shadow Play Pattern Recognition', url: 'https://www.youtube.com/watch?v=example4' }
-      ],
-      comps: ['Bukayo Saka (playstyle)', 'Leroy Sané (movement)', 'Phil Foden (decision-making)'],
+      summary: generateDynamicSummary({ height, weight, foot, position }),
+      focus: generateFocusAreas({ foot, position }),
+      drills: generateDrills({ position }),
+      comps: generateComps({ position }),
       videoUrl,
       createdAt: Date.now()
     };
 
-    // Keep legacy single-analysis storage for compatibility with your profile screen
-    db.analysesByUser[req.userId] = Array.isArray(db.analysesByUser[req.userId])
-      ? db.analysesByUser[req.userId]  // don't modify here; Library saves separately
-      : analysis;
-
+    db.analysesByUser[req.userId] = analysis;
     saveDB();
 
     res.json({ ok: true, ...analysis });
@@ -344,6 +330,60 @@ app.post('/api/analyze', auth, (req, res) => {
   }
 });
 
+// === Helper functions for dynamic analysis === //
+function generateDynamicSummary({ height, weight, foot, position }) {
+  const pos = position || 'player';
+  const footDesc = foot ? `${foot.toLowerCase()}-footed` : '';
+  return `As a ${footDesc} ${pos}, you show strong technical balance. Your physical profile (${height || '?'} in / ${weight || '?'} lbs) supports your positional demands. Key strengths observed with room for refinement.`;
+}
+
+function generateFocusAreas({ foot, position }) {
+  const base = [
+    'First touch consistency under pressure',
+    'Off-ball movement timing',
+    'Defensive transition awareness'
+  ];
+  if (foot && foot.toLowerCase() !== 'both') {
+    base.push('Improve weak-foot control and passing range');
+  }
+  if (position?.toLowerCase().includes('mid')) {
+    base.push('Increase scanning frequency before receiving');
+  }
+  if (position?.toLowerCase().includes('wing')) {
+    base.push('Work on final-third decision-making and crossing');
+  }
+  if (position?.toLowerCase().includes('def')) {
+    base.push('Improve line coordination and tackle timing');
+  }
+  return base;
+}
+
+function generateDrills({ position }) {
+  const drills = [
+    { title: 'Rondo 4v2 (High Intensity)', url: 'https://www.youtube.com/watch?v=example1' },
+    { title: 'Weak Foot Finishing (100 reps)', url: 'https://www.youtube.com/watch?v=example2' },
+    { title: '1v1 Pressing Transitions', url: 'https://www.youtube.com/watch?v=example3' },
+    { title: 'Shadow Play Pattern Recognition', url: 'https://www.youtube.com/watch?v=example4' }
+  ];
+  if (position?.toLowerCase().includes('wing')) {
+    drills.unshift({ title: 'Crossing Accuracy + Speed Drill', url: 'https://www.youtube.com/watch?v=example5' });
+  }
+  if (position?.toLowerCase().includes('mid')) {
+    drills.unshift({ title: 'Vision & Passing Triangle Drill', url: 'https://www.youtube.com/watch?v=example6' });
+  }
+  if (position?.toLowerCase().includes('def')) {
+    drills.unshift({ title: '1v1 Defending Under Pressure', url: 'https://www.youtube.com/watch?v=example7' });
+  }
+  return drills.slice(0, 4);
+}
+
+function generateComps({ position }) {
+  if (position?.toLowerCase().includes('wing')) return ['Bukayo Saka', 'Leroy Sané', 'Marcus Rashford'];
+  if (position?.toLowerCase().includes('mid')) return ['Kevin De Bruyne', 'Phil Foden', 'Pedri'];
+  if (position?.toLowerCase().includes('def')) return ['Virgil van Dijk', 'Ruben Dias', 'John Stones'];
+  if (position?.toLowerCase().includes('striker')) return ['Erling Haaland', 'Kylian Mbappé', 'Harry Kane'];
+  return ['Luka Modrić', 'Jude Bellingham', 'Rodri'];
+}
 /* -------------------- NEW: Library save/list routes -------------------- */
 
 // Save an analysis item (called by frontend after Analyze completes)
