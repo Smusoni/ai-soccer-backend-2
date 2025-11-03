@@ -26,13 +26,10 @@ const PORT = process.env.PORT || 8080;
  * We keep everything in memory for speed and autosave to ./data/data.json
  * Shape:
  * {
- *   players: ["Syd", "Carson"],
- *   attrsByPlayer: {
- *     "Syd": { pace: 80, tech: 75, aware: 90, comp: 82, savedAt: 1730... }
- *   },
- *   clipsByPlayer: {
- *     "Syd": [ { url, public_id, created_at, bytes, duration, width, height, format } ]
- *   }
+ *   users: [{ id, email, name, passHash, age, dob, createdAt }],
+ *   profiles: { userId: { height, weight, foot, position, dob, updatedAt } },
+ *   clipsByUser: { userId: [ { url, public_id, created_at, bytes, duration, width, height, format } ] },
+ *   analysesByUser: { userId: [ { id, summary, focus[], drills[], comps[], video_url, created_at } ] }  // (array after migration)
  * }
  */
 const DATA_DIR = path.join(__dirname, 'data');
@@ -40,9 +37,9 @@ const DATA_PATH = path.join(DATA_DIR, 'data.json');
 
 let db = {
   users: [],                // [{ id, email, name, passHash, age, dob, createdAt }]
-  profiles: {},             // { userId: { height (inches), weight (lbs), foot, position, updatedAt } }
+  profiles: {},             // { userId: { height (inches), weight (lbs), foot, position, dob, updatedAt } }
   clipsByUser: {},          // { userId: [ { url, public_id, created_at, ... } ] }
-  analysesByUser: {}        // { userId: { summary, focus[], drills[], comps[], createdAt } }
+  analysesByUser: {}        // { userId: [ { ...analysisItem } ] }  (array after migration)
 };
 
 function ensureDataDir() {
@@ -113,6 +110,22 @@ function findUser(email) {
 function findUserById(id) {
   return db.users.find(u => u.id === id);
 }
+
+// NEW: ensure an array store exists for a given key on an object
+function ensureArrayStore(obj, key) {
+  if (!Array.isArray(obj[key])) obj[key] = [];
+  return obj[key];
+}
+
+/* -------- Migration: convert any single analysis object to array -------- */
+for (const uid of Object.keys(db.analysesByUser || {})) {
+  const v = db.analysesByUser[uid];
+  if (v && !Array.isArray(v)) {
+    db.analysesByUser[uid] = [{ id: uuidv4(), ...v }];
+  }
+}
+saveDB();
+
 /* -------------------- Auth Middleware -------------------- */
 function auth(req, res, next) {
   try {
@@ -209,32 +222,44 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } });
 });
 
-// Get profile
+// Get profile (+ clips + latest analysis)
 app.get('/api/profile', auth, (req, res) => {
   res.json({
     ok: true,
     profile: db.profiles[req.userId] || {},
     clips: db.clipsByUser[req.userId] || [],
-    analysis: db.analysesByUser[req.userId] || null
+    analysis: Array.isArray(db.analysesByUser[req.userId])
+      ? db.analysesByUser[req.userId][0] || null
+      : db.analysesByUser[req.userId] || null
   });
 });
 
-// Save/Update profile
-app.post('/api/profile', auth, (req, res) => {
-  const { height, weight, foot, position, dob } = req.body || {};
-  
-  db.profiles[req.userId] = {
-    ...(db.profiles[req.userId] || {}),
-    height: height ? Number(height) : null,
-    weight: weight ? Number(weight) : null,
-    foot: foot || null,
-    position: position || null,
-    dob: dob || null,
+/* -------- shared profile upsert (used by POST + PUT) -------- */
+function upsertProfile(userId, body) {
+  const { height, weight, foot, position, dob } = body || {};
+  db.profiles[userId] = {
+    ...(db.profiles[userId] || {}),
+    height: height ? Number(height) : db.profiles[userId]?.height ?? null,
+    weight: weight ? Number(weight) : db.profiles[userId]?.weight ?? null,
+    foot: (foot ?? db.profiles[userId]?.foot) ?? null,
+    position: (position ?? db.profiles[userId]?.position) ?? null,
+    dob: (dob ?? db.profiles[userId]?.dob) ?? null,
     updatedAt: Date.now()
   };
-  
   saveDB();
-  res.json({ ok: true, profile: db.profiles[req.userId] });
+  return db.profiles[userId];
+}
+
+// PUT profile (new)
+app.put('/api/profile', auth, (req, res) => {
+  const profile = upsertProfile(req.userId, req.body);
+  res.json({ ok: true, profile });
+});
+
+// POST profile (kept for compatibility)
+app.post('/api/profile', auth, (req, res) => {
+  const profile = upsertProfile(req.userId, req.body);
+  res.json({ ok: true, profile });
 });
 
 // Add clip metadata
@@ -245,9 +270,7 @@ app.post('/api/clip', auth, (req, res) => {
     return res.status(400).json({ ok: false, error: 'url or public_id required' });
   }
 
-  if (!Array.isArray(db.clipsByUser[req.userId])) {
-    db.clipsByUser[req.userId] = [];
-  }
+  const list = ensureArrayStore(db.clipsByUser, req.userId);
   
   const clip = {
     url: url || null,
@@ -260,13 +283,13 @@ app.post('/api/clip', auth, (req, res) => {
     format: format || null
   };
   
-  db.clipsByUser[req.userId].unshift(clip);
+  list.unshift(clip);
   saveDB();
   
-  res.json({ ok: true, clip, total: db.clipsByUser[req.userId].length });
+  res.json({ ok: true, clip, total: list.length });
 });
 
-// Analyze
+// Analyze (mock AI) — returns a single analysis object (kept as-is)
 app.post('/api/analyze', auth, (req, res) => {
   try {
     const { height, weight, foot, position, videoUrl } = req.body || {};
@@ -307,7 +330,11 @@ app.post('/api/analyze', auth, (req, res) => {
       createdAt: Date.now()
     };
 
-    db.analysesByUser[req.userId] = analysis;
+    // Keep legacy single-analysis storage for compatibility with your profile screen
+    db.analysesByUser[req.userId] = Array.isArray(db.analysesByUser[req.userId])
+      ? db.analysesByUser[req.userId]  // don't modify here; Library saves separately
+      : analysis;
+
     saveDB();
 
     res.json({ ok: true, ...analysis });
@@ -317,7 +344,59 @@ app.post('/api/analyze', auth, (req, res) => {
   }
 });
 
+/* -------------------- NEW: Library save/list routes -------------------- */
+
+// Save an analysis item (called by frontend after Analyze completes)
+app.post('/api/analyses', auth, (req, res) => {
+  try {
+    const {
+      height, weight, foot, position, videoUrl,
+      summary, focus, drills, comps, raw
+    } = req.body || {};
+
+    if (!videoUrl) {
+      return res.status(400).json({ ok: false, error: 'Missing videoUrl' });
+    }
+
+    // Ensure the user has an array store
+    const arr = ensureArrayStore(db.analysesByUser, req.userId);
+
+    const item = {
+      id: uuidv4(),
+      height: height ? Number(height) : null,
+      weight: weight ? Number(weight) : null,
+      foot: foot || null,
+      position: position || null,
+      video_url: videoUrl,               // snake_case for consistency with UI
+      summary: summary || null,
+      focus: Array.isArray(focus) ? focus : (focus ? [focus] : []),
+      drills: Array.isArray(drills) ? drills : [],
+      comps: Array.isArray(comps) ? comps : [],
+      raw: raw || null,
+      created_at: new Date().toISOString()
+    };
+
+    // newest first
+    arr.unshift(item);
+    saveDB();
+
+    res.json({ ok: true, id: item.id });
+  } catch (e) {
+    console.error('[BK] Save analysis error:', e);
+    res.status(500).json({ ok: false, error: 'Save failed' });
+  }
+});
+
+// List analyses (Library)
+app.get('/api/analyses', auth, (req, res) => {
+  const items = Array.isArray(db.analysesByUser[req.userId])
+    ? db.analysesByUser[req.userId]
+    : [];
+  res.json({ ok: true, items });
+});
+
 /* -------------------- Start -------------------- */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`AI Soccer backend running on port ${PORT}`);
 });
+
