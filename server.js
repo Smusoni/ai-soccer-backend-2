@@ -110,6 +110,15 @@ function findUser(email) {
 function findUserById(id) {
   return db.users.find(u => u.id === id);
 }
+// ---- analyses helpers ----
+function ensureUserAnalyses(userId) {
+  if (!Array.isArray(db.analysesByUser[userId])) db.analysesByUser[userId] = [];
+  return db.analysesByUser[userId];
+}
+function getAnalysis(userId, id) {
+  const arr = ensureUserAnalyses(userId);
+  return arr.find(a => a.id === id) || null;
+}
 
 // NEW: ensure an array store exists for a given key on an object
 function ensureArrayStore(obj, key) {
@@ -309,6 +318,61 @@ app.post('/api/analyze', auth, (req, res) => {
         updatedAt: Date.now()
       };
     }
+    // === Library: list all analyses (latest first)
+app.get('/api/analyses', auth, (req, res) => {
+  const arr = ensureUserAnalyses(req.userId).slice().sort((a,b) => b.created_at - a.created_at);
+  res.json({ ok: true, items: arr });
+});
+
+// === Library: fetch one analysis by id
+app.get('/api/analyses/:id', auth, (req, res) => {
+  const a = getAnalysis(req.userId, req.params.id);
+  if (!a) return res.status(404).json({ ok:false, error:'Not found' });
+  res.json({ ok:true, item:a });
+});
+
+// === Library: create/save an analysis item
+app.post('/api/analyses', auth, (req, res) => {
+  const {
+    summary, focus, drills, comps,
+    videoUrl, publicId,
+    height, weight, foot, position,
+    raw
+  } = req.body || {};
+
+  const id = uuidv4();
+  const item = {
+    id,
+    summary: summary || '',
+    focus: Array.isArray(focus) ? focus : [],
+    drills: Array.isArray(drills) ? drills : [],
+    comps: Array.isArray(comps) ? comps : [],
+    video_url: videoUrl || null,
+    public_id: publicId || null,
+    height: Number(height) || null,
+    weight: Number(weight) || null,
+    foot: foot || null,
+    position: position || null,
+    raw: raw || null,
+    created_at: Date.now()
+  };
+
+  const arr = ensureUserAnalyses(req.userId);
+  arr.unshift(item);
+  saveDB();
+
+  res.json({ ok:true, item });
+});
+
+// === Library: delete an analysis by id
+app.delete('/api/analyses/:id', auth, (req, res) => {
+  const arr = ensureUserAnalyses(req.userId);
+  const idx = arr.findIndex(a => a.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok:false, error:'Not found' });
+  const [removed] = arr.splice(idx, 1);
+  saveDB();
+  res.json({ ok:true, removedId: removed.id });
+});
 
     // Generate more personalized analysis output
     const analysis = {
