@@ -296,7 +296,7 @@ Keep it specific and constructive.`;
       `Context: ${JSON.stringify(context)}.
 Frames below are ordered in time; describe patterns you see (movement, decisions, technique).
 Return STRICT JSON only.` },
-    ...frames.map(url => ({ type:'input_image', image_url: { url } }))
+    ...frames.map(url => ({ type:'image_url', image_url: { url } }))
   ];
 
   const resp = await openai.chat.completions.create({
