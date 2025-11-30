@@ -11,9 +11,11 @@ import OpenAI from 'openai';
 
 const JWT_SECRET  = process.env.JWT_SECRET  || 'dev_secret_change_me';
 const OPENAI_KEY  = process.env.OPENAI_API_KEY || '';
-const CLOUD_NAME  = process.env.CLOUD_NAME || ''; // kept for future use
+const CLOUD_NAME  = process.env.CLOUD_NAME || '';
 const APP_ORIGINS = (process.env.APP_ORIGINS || 'https://smusoni.github.io,http://localhost:8080')
-  .split(',').map(s => s.trim()).filter(Boolean);
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
 /* -------------------- Setup -------------------- */
 const __filename = fileURLToPath(import.meta.url);
@@ -35,49 +37,51 @@ let db = {
   profiles: {},        // userId -> profile
   clipsByUser: {},     // userId -> [clips]
   analysesByUser: {},  // userId -> [analyses]
-  ownerByPublicId: {}  // public_id -> userId (for future webhooks)
+  ownerByPublicId: {}  // public_id -> userId
 };
 
-function ensureDataDir(){ 
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); 
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
-function loadDB(){
-  try{
+
+function loadDB() {
+  try {
     ensureDataDir();
     if (fs.existsSync(DATA_PATH)) {
       db = { ...db, ...JSON.parse(fs.readFileSync(DATA_PATH, 'utf8')) };
     }
-  }catch(e){ 
-    console.error('[BK] loadDB', e); 
+  } catch (e) {
+    console.error('[BK] loadDB', e);
   }
 }
+
 let saveTimer = null;
-function saveDB(immediate=false){
-  const write = ()=> fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
+function saveDB(immediate = false) {
+  const write = () => fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
   ensureDataDir();
   if (immediate) return write();
   if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>{ 
-    try{ write(); }catch(e){ console.error('[BK] save', e);} 
-    saveTimer=null; 
+  saveTimer = setTimeout(() => {
+    try { write(); } catch (e) { console.error('[BK] save', e); }
+    saveTimer = null;
   }, 250);
 }
 loadDB();
 
 /* -------------------- Helpers -------------------- */
-const findUser      = (email) => db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-const findUserById  = (id)    => db.users.find(u => u.id === id);
+const findUser     = (email) => db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
+const findUserById = (id)    => db.users.find(u => u.id === id);
 
-function auth(req,res,next){
-  try{
+function auth(req, res, next) {
+  try {
     const h = req.headers.authorization || '';
     const token = h.startsWith('Bearer ') ? h.slice(7) : null;
     if (!token) return res.status(401).json({ ok:false, error:'Missing token' });
     const p = jwt.verify(token, JWT_SECRET);
     req.userId = p.sub;
     next();
-  }catch{ 
-    res.status(401).json({ ok:false, error:'Invalid token' }); 
+  } catch {
+    res.status(401).json({ ok:false, error:'Invalid token' });
   }
 }
 
@@ -85,12 +89,12 @@ function auth(req,res,next){
 const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null;
 
 /* -------------------- Misc -------------------- */
-app.get('/', (_req,res)=> res.send('ai-soccer-backend (training clip analysis, Part 1) ✅'));
-app.get('/api/health', (_req,res)=> res.json({ ok:true, uptime:process.uptime() }));
+app.get('/', (_req, res) => res.send('ai-soccer-backend (training clip analysis) ✅'));
+app.get('/api/health', (_req, res) => res.json({ ok:true, uptime:process.uptime() }));
 
 /* -------------------- Auth -------------------- */
-app.post('/api/signup', async (req,res)=>{
-  try{
+app.post('/api/signup', async (req, res) => {
+  try {
     const { name, email, password, age, dob } = req.body || {};
     if (!name || !email || !password || !age || !dob) {
       return res.status(400).json({ ok:false, error:'All fields required' });
@@ -101,33 +105,33 @@ app.post('/api/signup', async (req,res)=>{
 
     const id = uuidv4();
     const passHash = await bcrypt.hash(String(password), 10);
-    const user = { 
-      id, 
-      name:String(name).trim(), 
-      email:String(email).trim().toLowerCase(), 
-      passHash, 
-      age:Number(age), 
-      dob:String(dob).trim(), 
-      createdAt:Date.now() 
+    const user = {
+      id,
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      passHash,
+      age: Number(age),
+      dob: String(dob).trim(),
+      createdAt: Date.now()
     };
 
     db.users.push(user);
     saveDB();
 
     const token = jwt.sign(
-      { sub:id, email:user.email, name:user.name }, 
-      JWT_SECRET, 
+      { sub:id, email:user.email, name:user.name },
+      JWT_SECRET,
       { expiresIn:'30d' }
     );
     res.json({ ok:true, token, user:{ id, name:user.name, email:user.email } });
-  }catch(e){ 
-    console.error('[BK] signup', e); 
-    res.status(500).json({ ok:false, error:'Server error' }); 
+  } catch (e) {
+    console.error('[BK] signup', e);
+    res.status(500).json({ ok:false, error:'Server error' });
   }
 });
 
-app.post('/api/login', async (req,res)=>{
-  try{
+app.post('/api/login', async (req, res) => {
+  try {
     const { email, password } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ ok:false, error:'Email and password required' });
@@ -139,18 +143,18 @@ app.post('/api/login', async (req,res)=>{
     if (!ok) return res.status(401).json({ ok:false, error:'Invalid credentials' });
 
     const token = jwt.sign(
-      { sub:user.id, email:user.email, name:user.name }, 
-      JWT_SECRET, 
+      { sub:user.id, email:user.email, name:user.name },
+      JWT_SECRET,
       { expiresIn:'30d' }
     );
     res.json({ ok:true, token, user:{ id:user.id, name:user.name, email:user.email } });
-  }catch(e){ 
-    console.error('[BK] login', e); 
-    res.status(500).json({ ok:false, error:'Server error' }); 
+  } catch (e) {
+    console.error('[BK] login', e);
+    res.status(500).json({ ok:false, error:'Server error' });
   }
 });
 
-app.get('/api/me', auth, (req,res)=>{
+app.get('/api/me', auth, (req, res) => {
   const u = findUserById(req.userId);
   if (!u) return res.status(404).json({ ok:false, error:'User not found' });
   res.json({ ok:true, user:{ id:u.id, name:u.name, email:u.email } });
@@ -158,20 +162,15 @@ app.get('/api/me', auth, (req,res)=>{
 
 /* -------------------- Profile -------------------- */
 /**
- * Profile data:
- * - height (stored in total inches; frontend sends feet + inches)
- * - weight (lbs)
- * - foot
- * - position
- * - dob, age
- * - name
- * - skill (what they’re currently working on)
+ * Height is stored as TOTAL INCHES in db.profiles[userId].height
+ * but frontend sends heightFeet + heightInches.
+ * We also store: weight, foot, position, age, dob, name, skill.
  */
-function upsertProfile(userId, body){
+function upsertProfile(userId, body) {
   const existing = db.profiles[userId] || {};
   let heightInches = existing.height ?? null;
 
-  // Accept either combined "height" OR { heightFeet, heightInches }
+  // Accept either {heightFeet, heightInches} or raw height in inches
   if (body.heightFeet != null || body.heightInches != null) {
     const ft   = Number(body.heightFeet || 0);
     const inch = Number(body.heightInches || 0);
@@ -184,41 +183,41 @@ function upsertProfile(userId, body){
 
   db.profiles[userId] = {
     ...existing,
-    height:  heightInches,
-    weight:  body.weight   ?? existing.weight ?? null,
-    foot:    body.foot     ?? existing.foot ?? null,
-    position:body.position ?? existing.position ?? null,
-    dob:     body.dob      ?? existing.dob ?? null,
-    age:     body.age      ?? existing.age ?? findUserById(userId)?.age ?? null,
-    name:    body.name     ?? existing.name ?? null,
-    skill:   body.skill    ?? existing.skill ?? null,
+    height:   heightInches,
+    weight:   body.weight   ?? existing.weight ?? null,
+    foot:     body.foot     ?? existing.foot ?? null,
+    position: body.position ?? existing.position ?? null,
+    dob:      body.dob      ?? existing.dob ?? null,
+    age:      body.age      ?? existing.age ?? findUserById(userId)?.age ?? null,
+    name:     body.name     ?? existing.name ?? null,
+    skill:    body.skill    ?? existing.skill ?? null,
     updatedAt: Date.now()
   };
 }
 
-app.get('/api/profile', auth, (req,res)=>{
+app.get('/api/profile', auth, (req, res) => {
   res.json({
     ok:true,
     profile: db.profiles[req.userId] || {},
-    clips:   db.clipsByUser[req.userId] || [],
-    analysis:(db.analysesByUser[req.userId] || [])[0] || null
+    clips: db.clipsByUser[req.userId] || [],
+    latestAnalysis: (db.analysesByUser[req.userId] || [])[0] || null
   });
 });
 
-app.put('/api/profile', auth, (req,res)=>{
+app.put('/api/profile', auth, (req, res) => {
   upsertProfile(req.userId, req.body || {});
   saveDB();
   res.json({ ok:true, profile: db.profiles[req.userId] });
 });
 
-app.post('/api/profile', auth, (req,res)=>{
+app.post('/api/profile', auth, (req, res) => {
   upsertProfile(req.userId, req.body || {});
   saveDB();
   res.json({ ok:true, profile: db.profiles[req.userId] });
 });
 
 /* -------------------- Clips -------------------- */
-app.post('/api/clip', auth, (req,res)=>{
+app.post('/api/clip', auth, (req, res) => {
   const { url, public_id, created_at, bytes, duration, width, height, format } = req.body || {};
   if (!url && !public_id) {
     return res.status(400).json({ ok:false, error:'url or public_id required' });
@@ -243,69 +242,51 @@ app.post('/api/clip', auth, (req,res)=>{
 });
 
 /* -------------------- Library -------------------- */
-app.get('/api/analyses', auth, (req,res)=>{
+app.get('/api/analyses', auth, (req, res) => {
   res.json({ ok:true, items: db.analysesByUser[req.userId] || [] });
 });
 
-app.post('/api/analyses', auth, (req,res)=>{
-  const { summary, focus, drills, comps, videoUrl, publicId, raw, skill } = req.body || {};
-  if (!Array.isArray(db.analysesByUser[req.userId])) db.analysesByUser[req.userId] = [];
-  const item = {
-    id: uuidv4(),
-    summary: summary || '',
-    focus: Array.isArray(focus)?focus:[],
-    drills:Array.isArray(drills)?drills:[],
-    comps: Array.isArray(comps)?comps:[],
-    video_url: videoUrl || null,
-    public_id: publicId || null,
-    skill: skill || null,
-    raw: raw || null,
-    created_at: Date.now()
-  };
-  db.analysesByUser[req.userId].unshift(item);
-  saveDB();
-  res.json({ ok:true, item });
-});
-
-app.get('/api/analyses/:id', auth, (req,res)=>{
+app.get('/api/analyses/:id', auth, (req, res) => {
   const list = db.analysesByUser[req.userId] || [];
-  const item = list.find(x=>x.id===req.params.id);
+  const item = list.find(x => x.id === req.params.id);
   if (!item) return res.status(404).json({ ok:false, error:'Not found' });
   res.json({ ok:true, item });
 });
 
-app.delete('/api/analyses/:id', auth, (req,res)=>{
+app.delete('/api/analyses/:id', auth, (req, res) => {
   const list = db.analysesByUser[req.userId] || [];
-  const idx = list.findIndex(x=>x.id===req.params.id);
-  if (idx===-1) return res.status(404).json({ ok:false, error:'Not found' });
-  list.splice(idx,1); 
-  db.analysesByUser[req.userId]=list; 
+  const idx  = list.findIndex(x => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok:false, error:'Not found' });
+  list.splice(idx, 1);
+  db.analysesByUser[req.userId] = list;
   saveDB();
   res.json({ ok:true });
 });
 
-/* -------------------- Part 1: Real-time Training Clip Analyze -------------------- */
+/* -------------------- Part 1: Training Clip Analyze (button) -------------------- */
+
 async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
-  // Fallback if API key missing
+  // Fallback when OPENAI_API_KEY missing – simple canned response
   if (!openai) {
     const genericSummary = `Quick training analysis for ${profile.position || 'your role'}. Continue focusing on your technique and decision making.`;
     return {
       summary: genericSummary,
       focus: [
-        'Technical repetition',
-        'Decision making under light pressure',
-        'Consistent body shape on the ball'
+        'Technical repetition under low pressure',
+        'Body shape and balance during touches',
+        'Decision making when changing direction'
       ],
       drills: [
         { title:'Wall passes with tight touch', url:'https://youtu.be/ZNk6NIxPkb0' },
         { title:'1v1 change-of-direction drill', url:'https://youtu.be/0W2bXg2NaqE' },
         { title:'First-touch receiving patterns', url:'https://youtu.be/x7Jr8OZnS7U' }
       ],
-      comps: []
+      comps: ['Example Player A', 'Example Player B'],
+      raw: {}
     };
   }
 
-  const age = profile.age ?? user?.age ?? null;
+  const age     = profile.age ?? user?.age ?? null;
   const isYouth = age != null ? Number(age) < 18 : false;
   const heightIn = profile.height || null;
   const weightLb = profile.weight || null;
@@ -314,20 +295,20 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
 Return STRICT JSON ONLY with fields:
 
 {
-  "summary": string,           // 3–6 sentences, direct and encouraging
-  "focus": string[3..6],       // bullet-level phrases describing what to focus on
-  "drills": [                  // 3–6 drills, each with title + url
+  "summary": string,        // 3–6 sentences, direct and encouraging
+  "focus": string[3..6],    // bullet phrases describing what to focus on
+  "drills": [               // 3–6 drills, each with title + url
     { "title": string, "url": string }
   ],
-  "comps": string[0..0]        // IGNORE, kept for compatibility but not used in UI
+  "comps": string[2..4]     // similar well-known players (for future use)
 }
 
 Guidelines:
-- Tailor everything to THIS specific player (age, position, foot, skill).
-- Assume the attached clip shows them working on that skill in a realistic training setting.
-- If they’re youth, keep language simple and supportive.
-- Be specific about HOW to execute and fix technique, not just "work harder".
-- Do NOT mention JSON, keys, or that you are an AI. Just output valid JSON.`;
+- Tailor everything to THIS specific player (age, position, dominant foot, and skill they are working on).
+- Assume the clip shows them training that skill in a realistic session.
+- If youth, keep language simple and supportive.
+- Be specific about HOW to fix technique, not just "work harder".
+- Do NOT mention JSON or that you are an AI. Just output valid JSON.`;
 
   const context = {
     name: user?.name || null,
@@ -342,10 +323,11 @@ Guidelines:
   };
 
   const userText = `
-Player context: ${JSON.stringify(context, null, 2)}
+Player context:
+${JSON.stringify(context, null, 2)}
 
-Assume the clip is them working on that specific skill in training.
-Give coaching feedback as if you watched the clip and want them to get better for their next session.`;
+Assume the clip is them working on that skill in training.
+Give coaching feedback as if you watched the clip and want them to improve for their next session.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -369,19 +351,31 @@ Give coaching feedback as if you watched the clip and want them to get better fo
 
   return {
     summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0,6) : [],
-    drills: Array.isArray(data.drills) ? data.drills.slice(0,6) : [],
-    comps: [],
+    focus: Array.isArray(data.focus) ? data.focus.slice(0, 6) : [],
+    drills: Array.isArray(data.drills) ? data.drills.slice(0, 6) : [],
+    comps: Array.isArray(data.comps) ? data.comps.slice(0, 4) : [],
     raw: data
   };
 }
 
-app.post('/api/analyze', auth, async (req,res)=>{
-  try{
-    const { 
-      height, heightFeet, heightInches,
-      weight, foot, position,
-      videoUrl, publicId,
+/**
+ * MAIN endpoint for Part 1.
+ * - Updates profile (height/weight/foot/position/skill).
+ * - Calls OpenAI to get analysis.
+ * - Saves a single analysis object in the user library.
+ * - Returns that analysis object so frontend can show it immediately.
+ */
+app.post('/api/analyze', auth, async (req, res) => {
+  try {
+    const {
+      height,
+      heightFeet,
+      heightInches,
+      weight,
+      foot,
+      position,
+      videoUrl,
+      publicId,
       skill
     } = req.body || {};
 
@@ -389,7 +383,7 @@ app.post('/api/analyze', auth, async (req,res)=>{
       return res.status(400).json({ ok:false, error:'Video URL required' });
     }
 
-    // Update + enrich profile before analysis
+    // Update profile first
     const profilePatch = {
       height,
       heightFeet,
@@ -429,27 +423,20 @@ app.post('/api/analyze', auth, async (req,res)=>{
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
-    res.json({ 
-      ok:true, 
-      id: item.id,
-      summary: result.summary,
-      focus: result.focus,
-      drills: result.drills,
-      videoUrl,
-      publicId,
-      skill: item.skill
-    });
-  }catch(e){
+    res.json({ ok:true, analysis: item });
+  } catch (e) {
     console.error('[BK] analyze', e);
     res.status(500).json({ ok:false, error:'Analysis failed' });
   }
 });
 
-/* -------------------- Webhook placeholder (Part 2 only) -------------------- */
-app.post('/webhooks/cloudinary', express.json({ limit:'1mb' }), async (req,res)=>{
+/* -------------------- Webhook + worker (disabled for Part 1) -------------------- */
+
+app.post('/webhooks/cloudinary', express.json({ limit:'1mb' }), async (req, res) => {
+  // For Part 1 we are not running the async Vision worker,
+  // but we keep the endpoint so Cloudinary doesn't error.
   console.log('[WH] Cloudinary webhook received (vision worker disabled for Part 1).');
-  // No background jobs for Part 1 – everything is handled in /api/analyze.
-  res.status(200).json({ ok:true });
+  return res.status(200).json({ ok:true });
 });
 
 /* -------------------- Start -------------------- */
