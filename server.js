@@ -13,7 +13,9 @@ const JWT_SECRET  = process.env.JWT_SECRET  || 'dev_secret_change_me';
 const OPENAI_KEY  = process.env.OPENAI_API_KEY || '';
 const CLOUD_NAME  = process.env.CLOUD_NAME || ''; // for frame URLs
 const APP_ORIGINS = (process.env.APP_ORIGINS || 'https://smusoni.github.io,http://localhost:8080')
-  .split(',').map(s => s.trim()).filter(Boolean);
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
 /* -------------------- Setup -------------------- */
 const __filename = fileURLToPath(import.meta.url);
@@ -31,53 +33,56 @@ const DATA_DIR  = path.join(__dirname, 'data');
 const DATA_PATH = path.join(DATA_DIR, 'data.json');
 
 let db = {
-  users: [],
-  profiles: {},        // userId -> profile
-  clipsByUser: {},     // userId -> [clips]
-  analysesByUser: {},  // userId -> [analyses]
-  ownerByPublicId: {}  // public_id -> userId
+  users: [],          // [{ id, name, email, passHash, age, dob, createdAt }]
+  profiles: {},       // userId -> profile
+  clipsByUser: {},    // userId -> [clips]
+  analysesByUser: {}, // userId -> [analyses]
+  ownerByPublicId: {} // public_id -> userId (for webhook jobs)
 };
 
-function ensureDataDir(){ 
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); 
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
-function loadDB(){
-  try{
+
+function loadDB() {
+  try {
     ensureDataDir();
     if (fs.existsSync(DATA_PATH)) {
       db = { ...db, ...JSON.parse(fs.readFileSync(DATA_PATH, 'utf8')) };
     }
-  }catch(e){ 
-    console.error('[BK] loadDB', e); 
+  } catch (e) {
+    console.error('[BK] loadDB', e);
   }
 }
+
 let saveTimer = null;
-function saveDB(immediate=false){
-  const write = ()=> fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
+function saveDB(immediate = false) {
+  const write = () => fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
   ensureDataDir();
   if (immediate) return write();
   if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>{ 
-    try{ write(); }catch(e){ console.error('[BK] save', e);} 
-    saveTimer=null; 
+  saveTimer = setTimeout(() => {
+    try { write(); } catch (e) { console.error('[BK] save', e); }
+    saveTimer = null;
   }, 250);
 }
+
 loadDB();
 
 /* -------------------- Helpers -------------------- */
-const findUser      = (email) => db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-const findUserById  = (id)    => db.users.find(u => u.id === id);
+const findUser     = (email) => db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
+const findUserById = (id)    => db.users.find(u => u.id === id);
 
-function auth(req,res,next){
-  try{
+function auth(req, res, next) {
+  try {
     const h = req.headers.authorization || '';
     const token = h.startsWith('Bearer ') ? h.slice(7) : null;
-    if (!token) return res.status(401).json({ ok:false, error:'Missing token' });
+    if (!token) return res.status(401).json({ ok: false, error: 'Missing token' });
     const p = jwt.verify(token, JWT_SECRET);
     req.userId = p.sub;
     next();
-  }catch{ 
-    res.status(401).json({ ok:false, error:'Invalid token' }); 
+  } catch {
+    res.status(401).json({ ok: false, error: 'Invalid token' });
   }
 }
 
@@ -85,95 +90,99 @@ function auth(req,res,next){
 const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null;
 
 /* -------------------- Misc -------------------- */
-app.get('/', (_req,res)=> res.send('ai-soccer-backend (training clip analysis) ✅'));
-app.get('/api/health', (_req,res)=> res.json({ ok:true, uptime:process.uptime() }));
+app.get('/', (_req, res) =>
+  res.send('Ball Knowledge backend (Part 1: training clip analysis) ✅')
+);
+app.get('/api/health', (_req, res) =>
+  res.json({ ok: true, uptime: process.uptime() })
+);
 
 /* -------------------- Auth -------------------- */
-app.post('/api/signup', async (req,res)=>{
-  try{
+app.post('/api/signup', async (req, res) => {
+  try {
     const { name, email, password, age, dob } = req.body || {};
     if (!name || !email || !password || !age || !dob) {
-      return res.status(400).json({ ok:false, error:'All fields required' });
+      return res.status(400).json({ ok: false, error: 'All fields required' });
     }
     if (findUser(email)) {
-      return res.status(409).json({ ok:false, error:'Email already registered' });
+      return res.status(409).json({ ok: false, error: 'Email already registered' });
     }
 
     const id = uuidv4();
     const passHash = await bcrypt.hash(String(password), 10);
-    const user = { 
-      id, 
-      name:String(name).trim(), 
-      email:String(email).trim().toLowerCase(), 
-      passHash, 
-      age:Number(age), 
-      dob:String(dob).trim(), 
-      createdAt:Date.now() 
+    const user = {
+      id,
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      passHash,
+      age: Number(age),
+      dob: String(dob).trim(),
+      createdAt: Date.now()
     };
 
     db.users.push(user);
     saveDB();
 
     const token = jwt.sign(
-      { sub:id, email:user.email, name:user.name }, 
-      JWT_SECRET, 
-      { expiresIn:'30d' }
+      { sub: id, email: user.email, name: user.name },
+      JWT_SECRET,
+      { expiresIn: '30d' }
     );
-    res.json({ ok:true, token, user:{ id, name:user.name, email:user.email } });
-  }catch(e){ 
-    console.error('[BK] signup', e); 
-    res.status(500).json({ ok:false, error:'Server error' }); 
+    res.json({ ok: true, token, user: { id, name: user.name, email: user.email } });
+  } catch (e) {
+    console.error('[BK] signup', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
 
-app.post('/api/login', async (req,res)=>{
-  try{
+app.post('/api/login', async (req, res) => {
+  try {
     const { email, password } = req.body || {};
     if (!email || !password) {
-      return res.status(400).json({ ok:false, error:'Email and password required' });
+      return res.status(400).json({ ok: false, error: 'Email and password required' });
     }
     const user = findUser(email);
-    if (!user) return res.status(401).json({ ok:false, error:'Invalid credentials' });
+    if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
     const ok = await bcrypt.compare(String(password), user.passHash);
-    if (!ok) return res.status(401).json({ ok:false, error:'Invalid credentials' });
+    if (!ok) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
     const token = jwt.sign(
-      { sub:user.id, email:user.email, name:user.name }, 
-      JWT_SECRET, 
-      { expiresIn:'30d' }
+      { sub: user.id, email: user.email, name: user.name },
+      JWT_SECRET,
+      { expiresIn: '30d' }
     );
-    res.json({ ok:true, token, user:{ id:user.id, name:user.name, email:user.email } });
-  }catch(e){ 
-    console.error('[BK] login', e); 
-    res.status(500).json({ ok:false, error:'Server error' }); 
+    res.json({ ok: true, token, user: { id: user.id, name: user.name, email: user.email } });
+  } catch (e) {
+    console.error('[BK] login', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
 
-app.get('/api/me', auth, (req,res)=>{
+app.get('/api/me', auth, (req, res) => {
   const u = findUserById(req.userId);
-  if (!u) return res.status(404).json({ ok:false, error:'User not found' });
-  res.json({ ok:true, user:{ id:u.id, name:u.name, email:u.email } });
+  if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
+  res.json({ ok: true, user: { id: u.id, name: u.name, email: u.email } });
 });
 
 /* -------------------- Profile -------------------- */
 /**
- * We now keep more info:
- * - height (stored in TOTAL INCHES, but FE+IN comes from frontend)
- * - weight
+ * Profile fields:
+ * - height (stored in TOTAL INCHES)
+ * - weight (lbs)
  * - foot
  * - position
  * - dob, age
  * - name
- * - skill (what they’re currently working on)
+ * - skill: what they’re currently working on (shooting, dribbling, etc.)
  */
-function upsertProfile(userId, body){
+function upsertProfile(userId, body) {
   const existing = db.profiles[userId] || {};
   let heightInches = existing.height ?? null;
 
   // Accept either "height" in inches OR { heightFeet, heightInches }
   if (body.heightFeet != null || body.heightInches != null) {
-    const ft = Number(body.heightFeet || 0);
+    const ft   = Number(body.heightFeet || 0);
     const inch = Number(body.heightInches || 0);
     const total = ft * 12 + inch;
     if (total > 0) heightInches = total;
@@ -191,37 +200,37 @@ function upsertProfile(userId, body){
     dob:     body.dob      ?? existing.dob ?? null,
     age:     body.age      ?? existing.age ?? findUserById(userId)?.age ?? null,
     name:    body.name     ?? existing.name ?? null,
-    skill:   body.skill    ?? existing.skill ?? null, // NEW: what they’re working on
+    skill:   body.skill    ?? existing.skill ?? null,
     updatedAt: Date.now()
   };
 }
 
-app.get('/api/profile', auth, (req,res)=>{
+app.get('/api/profile', auth, (req, res) => {
   res.json({
-    ok:true,
+    ok: true,
     profile: db.profiles[req.userId] || {},
     clips:   db.clipsByUser[req.userId] || [],
     analysis:(db.analysesByUser[req.userId] || [])[0] || null
   });
 });
 
-app.put('/api/profile', auth, (req,res)=>{
+app.put('/api/profile', auth, (req, res) => {
   upsertProfile(req.userId, req.body || {});
   saveDB();
-  res.json({ ok:true, profile: db.profiles[req.userId] });
+  res.json({ ok: true, profile: db.profiles[req.userId] });
 });
 
-app.post('/api/profile',auth,(req,res)=>{
+app.post('/api/profile', auth, (req, res) => {
   upsertProfile(req.userId, req.body || {});
   saveDB();
-  res.json({ ok:true, profile: db.profiles[req.userId] });
+  res.json({ ok: true, profile: db.profiles[req.userId] });
 });
 
 /* -------------------- Clips -------------------- */
-app.post('/api/clip', auth, (req,res)=>{
+app.post('/api/clip', auth, (req, res) => {
   const { url, public_id, created_at, bytes, duration, width, height, format } = req.body || {};
   if (!url && !public_id) {
-    return res.status(400).json({ ok:false, error:'url or public_id required' });
+    return res.status(400).json({ ok: false, error: 'url or public_id required' });
   }
   if (!Array.isArray(db.clipsByUser[req.userId])) db.clipsByUser[req.userId] = [];
 
@@ -237,59 +246,60 @@ app.post('/api/clip', auth, (req,res)=>{
   };
 
   db.clipsByUser[req.userId].unshift(clip);
-  if (public_id) db.ownerByPublicId[public_id] = req.userId; // map owner
+  if (public_id) db.ownerByPublicId[public_id] = req.userId; // map owner for webhook
   saveDB();
-  res.json({ ok:true, clip, total: db.clipsByUser[req.userId].length });
+  res.json({ ok: true, clip, total: db.clipsByUser[req.userId].length });
 });
 
 /* -------------------- Library -------------------- */
-app.get('/api/analyses', auth, (req,res)=>{
-  res.json({ ok:true, items: db.analysesByUser[req.userId] || [] });
+app.get('/api/analyses', auth, (req, res) => {
+  res.json({ ok: true, items: db.analysesByUser[req.userId] || [] });
 });
 
-app.post('/api/analyses', auth, (req,res)=>{
-  const { summary, focus, drills, comps, videoUrl, publicId, raw, skill } = req.body || {};
+app.post('/api/analyses', auth, (req, res) => {
+  // This is mostly used by the button flow as a backup; the main /api/analyze also stores.
+  const { summary, focus, drills, videoUrl, publicId, raw, skill } = req.body || {};
   if (!Array.isArray(db.analysesByUser[req.userId])) db.analysesByUser[req.userId] = [];
   const item = {
     id: uuidv4(),
     summary: summary || '',
-    focus: Array.isArray(focus)?focus:[],
-    drills:Array.isArray(drills)?drills:[],
-    comps: Array.isArray(comps)?comps:[],
+    focus: Array.isArray(focus) ? focus : [],
+    drills:Array.isArray(drills)? drills: [],
     video_url: videoUrl || null,
     public_id: publicId || null,
-    skill: skill || null, // NEW: stored so library knows what they were working on
+    skill: skill || null, // what they were working on
     raw: raw || null,
     created_at: Date.now()
   };
   db.analysesByUser[req.userId].unshift(item);
   saveDB();
-  res.json({ ok:true, item });
+  res.json({ ok: true, item });
 });
 
-app.get('/api/analyses/:id', auth, (req,res)=>{
+app.get('/api/analyses/:id', auth, (req, res) => {
   const list = db.analysesByUser[req.userId] || [];
-  const item = list.find(x=>x.id===req.params.id);
-  if (!item) return res.status(404).json({ ok:false, error:'Not found' });
-  res.json({ ok:true, item });
+  const item = list.find(x => x.id === req.params.id);
+  if (!item) return res.status(404).json({ ok: false, error: 'Not found' });
+  res.json({ ok: true, item });
 });
 
-app.delete('/api/analyses/:id', auth, (req,res)=>{
+app.delete('/api/analyses/:id', auth, (req, res) => {
   const list = db.analysesByUser[req.userId] || [];
-  const idx = list.findIndex(x=>x.id===req.params.id);
-  if (idx===-1) return res.status(404).json({ ok:false, error:'Not found' });
-  list.splice(idx,1); 
-  db.analysesByUser[req.userId]=list; 
+  const idx = list.findIndex(x => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, error: 'Not found' });
+  list.splice(idx, 1);
+  db.analysesByUser[req.userId] = list;
   saveDB();
-  res.json({ ok:true });
+  res.json({ ok: true });
 });
 
-/* -------------------- Part 1: Training Clip Analyze (button) -------------------- */
+/* -------------------- Part 1: Training Clip Analyze (button flow) -------------------- */
 /**
- * This is the core of Part 1:
- * - Takes profile + what skill they’re working on + a training clip URL
- * - Calls OpenAI to generate a JSON report
- * - Saves a copy into the Library
+ * Core of Part 1:
+ * - Takes profile + skill + training clip URL
+ * - Calls OpenAI (text-only) for a report
+ * - Saves into Library
+ * NOTE: No "plays like" / comps returned here. That’s reserved for Part 2.
  */
 async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
   if (!openai) {
@@ -303,11 +313,11 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
         'Consistent body shape on the ball'
       ],
       drills: [
-        { title:'Wall passes with tight touch', url:'https://youtu.be/ZNk6NIxPkb0' },
-        { title:'1v1 change-of-direction drill', url:'https://youtu.be/0W2bXg2NaqE' },
-        { title:'First-touch receiving patterns', url:'https://youtu.be/x7Jr8OZnS7U' }
+        { title: 'Wall passes with tight touch', url: 'https://youtu.be/ZNk6NIxPkb0' },
+        { title: '1v1 change-of-direction drill', url: 'https://youtu.be/0W2bXg2NaqE' },
+        { title: 'First-touch receiving patterns', url: 'https://youtu.be/x7Jr8OZnS7U' }
       ],
-      comps: ['Generic Player A','Generic Player B']
+      raw: { fallback: true }
     };
   }
 
@@ -324,12 +334,11 @@ Return STRICT JSON ONLY with fields:
   "focus": string[3..6],       // bullet-level phrases describing what to focus on
   "drills": [                  // 3–6 drills, each with title + url
     { "title": string, "url": string }
-  ],
-  "comps": string[2..4]        // similar pro players or well-known examples
+  ]
 }
 
 Guidelines:
-- Tailor everything to THIS specific player (age, position, foot, skill).
+- Tailor everything to THIS specific player (age, position, dominant foot, and the specific skill they are working on).
 - Assume the attached clip shows them working on that skill in a realistic training setting.
 - If they’re youth, keep language simple and supportive.
 - Be specific about HOW to execute and fix technique, not just "work harder".
@@ -348,17 +357,19 @@ Guidelines:
   };
 
   const userText = `
-Player context: ${JSON.stringify(context, null, 2)}
+Player context:
+${JSON.stringify(context, null, 2)}
 
-Assume the clip is them working on that specific skill in training.
-Give coaching feedback as if you watched the clip and want them to get better for their next session.`;
+Assume the training clip is them actively working on that specific skill.
+Give coaching feedback as if you watched the clip and you want them to get better for their next session.
+Focus on technique, body shape, repetition structure, and how to progress the drill.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.4,
     messages: [
-      { role:'system', content: sys },
-      { role:'user',   content: userText }
+      { role: 'system', content: sys },
+      { role: 'user',   content: userText }
     ]
   });
 
@@ -376,16 +387,15 @@ Give coaching feedback as if you watched the clip and want them to get better fo
 
   return {
     summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0,6) : [],
-    drills: Array.isArray(data.drills) ? data.drills.slice(0,6) : [],
-    comps: Array.isArray(data.comps) ? data.comps.slice(0,4) : [],
+    focus: Array.isArray(data.focus) ? data.focus.slice(0, 6) : [],
+    drills: Array.isArray(data.drills) ? data.drills.slice(0, 6) : [],
     raw: data
   };
 }
 
-app.post('/api/analyze', auth, async (req,res)=>{
-  try{
-    const { 
+app.post('/api/analyze', auth, async (req, res) => {
+  try {
+    const {
       height, heightFeet, heightInches,
       weight, foot, position,
       videoUrl, publicId,
@@ -393,10 +403,10 @@ app.post('/api/analyze', auth, async (req,res)=>{
     } = req.body || {};
 
     if (!videoUrl) {
-      return res.status(400).json({ ok:false, error:'Video URL required' });
+      return res.status(400).json({ ok: false, error: 'Video URL required' });
     }
 
-    // Update + enrich profile before analysis
+    // Update + enrich profile before analysis (so it persists per user)
     const profilePatch = {
       height,
       heightFeet,
@@ -412,6 +422,7 @@ app.post('/api/analyze', auth, async (req,res)=>{
     const profile = db.profiles[req.userId] || {};
     const user    = findUserById(req.userId) || {};
 
+    // Run main training analysis (text-based, Part 1)
     const result = await runTextAnalysisForTraining({
       profile,
       user,
@@ -426,7 +437,6 @@ app.post('/api/analyze', auth, async (req,res)=>{
       summary: result.summary,
       focus: result.focus,
       drills: result.drills,
-      comps: result.comps,
       video_url: videoUrl,
       public_id: publicId || null,
       skill: skill || profile.skill || null,
@@ -436,81 +446,91 @@ app.post('/api/analyze', auth, async (req,res)=>{
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
-    res.json({ 
-      ok:true, 
+    // Response back to frontend (no "plays like" / comps field here)
+    res.json({
+      ok: true,
       summary: result.summary,
       focus: result.focus,
       drills: result.drills,
-      comps: result.comps,
       videoUrl,
       publicId,
       skill: item.skill
     });
-  }catch(e){
+  } catch (e) {
     console.error('[BK] analyze', e);
-    res.status(500).json({ ok:false, error:'Analysis failed' });
+    res.status(500).json({ ok: false, error: 'Analysis failed' });
   }
 });
 
-/* -------------------- Webhook + Worker (Vision, for later Part 2) -------------------- */
+/* -------------------- Webhook + Worker (Vision for Part 2 – future) -------------------- */
 /** Very small in-memory queue */
 const jobQueue = [];
 let workerBusy = false;
 
-/** Cloudinary webhook: set your Upload Preset → Notification URL to this endpoint.
- *  We expect a JSON payload that includes at least public_id and duration (if available).
+/**
+ * Cloudinary webhook: set your Upload Preset → Notification URL to this endpoint.
+ * We expect a JSON payload that includes at least public_id and duration (if available).
+ * This is for future Part 2 (game analysis with frames).
  */
-app.post('/webhooks/cloudinary', express.json({ limit:'1mb' }), async (req,res)=>{
-  try{
+app.post('/webhooks/cloudinary', express.json({ limit: '1mb' }), async (req, res) => {
+  try {
     const body = req.body || {};
     const public_id = body.public_id || body.asset_id || body?.info?.public_id;
     const duration  = Number(body.duration || body.video?.duration || 0);
-    if (!public_id){ 
-      console.log('[WH] missing public_id'); 
-      return res.status(200).json({ ok:true }); 
+    if (!public_id) {
+      console.log('[WH] missing public_id');
+      return res.status(200).json({ ok: true });
     }
 
     const userId = db.ownerByPublicId[public_id];
-    if (!userId){ 
-      console.log('[WH] unknown owner for', public_id); 
-      return res.status(200).json({ ok:true }); 
+    if (!userId) {
+      console.log('[WH] unknown owner for', public_id);
+      return res.status(200).json({ ok: true });
     }
 
-    const clip = (db.clipsByUser[userId]||[]).find(c => c.public_id === public_id) || null;
-    const videoUrl = clip?.url || (CLOUD_NAME ? `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/${public_id}.mp4` : null);
+    const clip = (db.clipsByUser[userId] || []).find(c => c.public_id === public_id) || null;
+    const videoUrl =
+      clip?.url ||
+      (CLOUD_NAME ? `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/${public_id}.mp4` : null);
 
     jobQueue.push({ userId, public_id, videoUrl, duration });
-    processJobs().catch(()=>{});
+    processJobs().catch(() => {});
 
-    res.status(200).json({ ok:true });
-  }catch(e){
+    res.status(200).json({ ok: true });
+  } catch (e) {
     console.error('[WH] error', e);
-    res.status(200).json({ ok:true }); // reply 200 so Cloudinary won’t retry forever during dev
+    // Always return 200 in dev so Cloudinary doesn’t spam retries
+    res.status(200).json({ ok: true });
   }
 });
 
-async function processJobs(){
+async function processJobs() {
   if (workerBusy) return;
   workerBusy = true;
-  while (jobQueue.length){
+  while (jobQueue.length) {
     const job = jobQueue.shift();
-    try{ await runAnalysisJob(job); }
-    catch(e){ console.error('[JOB] failed', e); }
+    try {
+      await runAnalysisJob(job);
+    } catch (e) {
+      console.error('[JOB] failed', e);
+    }
   }
   workerBusy = false;
 }
 
-/** Build N frame URLs from the video at evenly-spaced seconds */
-function sampleFrameUrls({ public_id, duration, n=10 }){
+/** Build N frame URLs from the video at evenly-spaced seconds (for future vision flow) */
+function sampleFrameUrls({ public_id, duration, n = 10 }) {
   const secs = [];
   const total = Math.max(8, Math.min(n, 16));
-  const span = Math.max(1, Math.floor((duration || 60) / (total+1)));
-  for (let i=1;i<=total;i++) secs.push(i*span);
-  return secs.map(s => `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_${s}/${public_id}.jpg`);
+  const span = Math.max(1, Math.floor((duration || 60) / (total + 1)));
+  for (let i = 1; i <= total; i++) secs.push(i * span);
+  return secs.map(
+    s => `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_${s}/${public_id}.jpg`
+  );
 }
 
-/** Vision-based analysis (for future Part 2) */
-async function analyzeWithOpenAI({ frames, context }){
+/** Vision-based analysis (for future Part 2 – may still return comps) */
+async function analyzeWithOpenAI({ frames, context }) {
   if (!openai) throw new Error('OPENAI_API_KEY missing');
 
   const sys = `You are a soccer performance analyst. Return strict JSON with:
@@ -523,19 +543,21 @@ async function analyzeWithOpenAI({ frames, context }){
 Keep it specific and constructive.`;
 
   const userMsg = [
-    { type:'text', text:
-      `Context: ${JSON.stringify(context)}.
+    {
+      type: 'text',
+      text: `Context: ${JSON.stringify(context)}.
 Frames below are ordered in time; describe patterns you see (movement, decisions, technique).
-Return STRICT JSON only.` },
-    ...frames.map(url => ({ type:'input_image', image_url: { url } }))
+Return STRICT JSON only.`
+    },
+    ...frames.map(url => ({ type: 'input_image', image_url: { url } }))
   ];
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.3,
     messages: [
-      { role:'system', content: sys },
-      { role:'user',   content: userMsg }
+      { role: 'system', content: sys },
+      { role: 'user',   content: userMsg }
     ]
   });
 
@@ -543,23 +565,23 @@ Return STRICT JSON only.` },
   const jsonText = typeof raw === 'string' ? raw : JSON.stringify(raw);
 
   let data = {};
-  try{ 
-    data = JSON.parse(jsonText); 
-  }catch{ 
+  try {
+    data = JSON.parse(jsonText);
+  } catch {
     const m = jsonText.match(/\{[\s\S]*\}/);
     if (m) data = JSON.parse(m[0]);
   }
 
   return {
     summary: data.summary || 'Video analysis complete.',
-    focus: Array.isArray(data.focus)?data.focus.slice(0,6):[],
-    drills: Array.isArray(data.drills)?data.drills.slice(0,6):[],
-    comps: Array.isArray(data.comps)?data.comps.slice(0,4):[]
+    focus: Array.isArray(data.focus)  ? data.focus.slice(0, 6)  : [],
+    drills: Array.isArray(data.drills) ? data.drills.slice(0, 6) : [],
+    comps: Array.isArray(data.comps)  ? data.comps.slice(0, 4)  : []
   };
 }
 
-/** The worker job (not wired into button flow yet) */
-async function runAnalysisJob({ userId, public_id, videoUrl, duration }){
+/** Worker job (future: game analysis) */
+async function runAnalysisJob({ userId, public_id, videoUrl, duration }) {
   const profile = db.profiles[userId] || {};
   const user    = findUserById(userId) || {};
   const age     = profile.age ?? user.age ?? null;
@@ -571,16 +593,20 @@ async function runAnalysisJob({ userId, public_id, videoUrl, duration }){
   const context = {
     role: profile.position || 'Unknown',
     foot: profile.foot || 'Unknown',
-    age, isYouth,
+    age,
+    isYouth,
     height: profile.height || null,
     weight: profile.weight || null
   };
+
   const { summary, focus, drills, comps } = await analyzeWithOpenAI({ frames, context });
 
   if (!Array.isArray(db.analysesByUser[userId])) db.analysesByUser[userId] = [];
   const item = {
     id: uuidv4(),
-    summary, focus, drills,
+    summary,
+    focus,
+    drills,
     comps,
     video_url: videoUrl || null,
     public_id,
