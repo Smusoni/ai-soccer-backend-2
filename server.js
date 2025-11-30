@@ -9,14 +9,15 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
 
-/* ========= ENV & BASIC CONFIG ========= */
-const JWT_SECRET  = process.env.JWT_SECRET       || 'dev_secret_change_me';
-const OPENAI_KEY  = process.env.OPENAI_API_KEY   || '';
-const APP_ORIGINS = (process.env.APP_ORIGINS     || 'https://smusoni.github.io,http://localhost:8080')
+const JWT_SECRET  = process.env.JWT_SECRET  || 'dev_secret_change_me';
+const OPENAI_KEY  = process.env.OPENAI_API_KEY || '';
+const CLOUD_NAME  = process.env.CLOUD_NAME || ''; // for frame URLs (future Part 2)
+const APP_ORIGINS = (process.env.APP_ORIGINS || 'https://smusoni.github.io,http://localhost:8080')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
 
+/* -------------------- Setup -------------------- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -27,7 +28,7 @@ app.use(express.static('.'));
 
 const PORT = process.env.PORT || 8080;
 
-/* ========= JSON "DB" ========= */
+/* -------------------- JSON "DB" -------------------- */
 const DATA_DIR  = path.join(__dirname, 'data');
 const DATA_PATH = path.join(DATA_DIR, 'data.json');
 
@@ -36,7 +37,7 @@ let db = {
   profiles: {},        // userId -> profile
   clipsByUser: {},     // userId -> [clips]
   analysesByUser: {},  // userId -> [analyses]
-  ownerByPublicId: {}  // public_id -> userId
+  ownerByPublicId: {}  // public_id -> userId (for future vision stuff)
 };
 
 function ensureDataDir() {
@@ -47,30 +48,31 @@ function loadDB() {
   try {
     ensureDataDir();
     if (fs.existsSync(DATA_PATH)) {
-      const onDisk = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
-      db = { ...db, ...onDisk };
+      db = { ...db, ...JSON.parse(fs.readFileSync(DATA_PATH, 'utf8')) };
     }
   } catch (e) {
-    console.error('[BK] loadDB error', e);
+    console.error('[BK] loadDB', e);
   }
 }
-loadDB();
 
 let saveTimer = null;
 function saveDB(immediate = false) {
-  const write = () => {
-    ensureDataDir();
-    fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
-  };
+  const write = () => fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
+  ensureDataDir();
   if (immediate) return write();
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try { write(); } catch (e) { console.error('[BK] saveDB error', e); }
+    try {
+      write();
+    } catch (e) {
+      console.error('[BK] save', e);
+    }
     saveTimer = null;
   }, 250);
 }
+loadDB();
 
-/* ========= HELPERS ========= */
+/* -------------------- Helpers -------------------- */
 const findUser     = email => db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
 const findUserById = id    => db.users.find(u => u.id === id);
 
@@ -79,27 +81,22 @@ function auth(req, res, next) {
     const h = req.headers.authorization || '';
     const token = h.startsWith('Bearer ') ? h.slice(7) : null;
     if (!token) return res.status(401).json({ ok: false, error: 'Missing token' });
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.userId = payload.sub;
+    const p = jwt.verify(token, JWT_SECRET);
+    req.userId = p.sub;
     next();
   } catch {
-    return res.status(401).json({ ok: false, error: 'Invalid token' });
+    res.status(401).json({ ok: false, error: 'Invalid token' });
   }
 }
 
-/* ========= OpenAI client ========= */
+/* -------------------- OpenAI client -------------------- */
 const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null;
 
-/* ========= Misc endpoints ========= */
-app.get('/', (_req, res) =>
-  res.send('ai-soccer-backend (BallKnowledge Part 1 – training clip analysis) ✅')
-);
+/* -------------------- Misc -------------------- */
+app.get('/', (_req, res) => res.send('ai-soccer-backend (training clip analysis) ✅'));
+app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, uptime: process.uptime() })
-);
-
-/* ========= Auth ========= */
+/* -------------------- Auth -------------------- */
 app.post('/api/signup', async (req, res) => {
   try {
     const { name, email, password, age, dob } = req.body || {};
@@ -112,7 +109,6 @@ app.post('/api/signup', async (req, res) => {
 
     const id = uuidv4();
     const passHash = await bcrypt.hash(String(password), 10);
-
     const user = {
       id,
       name: String(name).trim(),
@@ -131,14 +127,9 @@ app.post('/api/signup', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '30d' }
     );
-
-    res.json({
-      ok: true,
-      token,
-      user: { id, name: user.name, email: user.email }
-    });
+    res.json({ ok: true, token, user: { id, name: user.name, email: user.email } });
   } catch (e) {
-    console.error('[BK] signup error', e);
+    console.error('[BK] signup', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -149,7 +140,6 @@ app.post('/api/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ ok: false, error: 'Email and password required' });
     }
-
     const user = findUser(email);
     if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
@@ -161,14 +151,9 @@ app.post('/api/login', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '30d' }
     );
-
-    res.json({
-      ok: true,
-      token,
-      user: { id: user.id, name: user.name, email: user.email }
-    });
+    res.json({ ok: true, token, user: { id: user.id, name: user.name, email: user.email } });
   } catch (e) {
-    console.error('[BK] login error', e);
+    console.error('[BK] login', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -176,27 +161,27 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/me', auth, (req, res) => {
   const u = findUserById(req.userId);
   if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
-  res.json({
-    ok: true,
-    user: { id: u.id, name: u.name, email: u.email }
-  });
+  res.json({ ok: true, user: { id: u.id, name: u.name, email: u.email } });
 });
 
-/* ========= Profile ========= */
+/* -------------------- Profile -------------------- */
 /**
- * We store:
- * - height in TOTAL inches (but UI uses feet + inches)
- * - weight, foot, position
- * - dob, age, name
- * - current skill / focus area
+ * We now keep more info:
+ * - height (total inches; we can convert from ft/in later)
+ * - weight
+ * - foot
+ * - position
+ * - dob, age
+ * - name
+ * - skill (what they’re currently working on)
  */
 function upsertProfile(userId, body) {
   const existing = db.profiles[userId] || {};
   let heightInches = existing.height ?? null;
 
-  // Prefer feet + inches if provided
+  // Accept either "height" in inches OR { heightFeet, heightInches }
   if (body.heightFeet != null || body.heightInches != null) {
-    const ft   = Number(body.heightFeet || 0);
+    const ft = Number(body.heightFeet || 0);
     const inch = Number(body.heightInches || 0);
     const total = ft * 12 + inch;
     if (total > 0) heightInches = total;
@@ -207,14 +192,14 @@ function upsertProfile(userId, body) {
 
   db.profiles[userId] = {
     ...existing,
-    height:   heightInches,
-    weight:   body.weight   ?? existing.weight   ?? null,
-    foot:     body.foot     ?? existing.foot     ?? null,
-    position: body.position ?? existing.position ?? null,
-    dob:      body.dob      ?? existing.dob      ?? null,
-    age:      body.age      ?? existing.age      ?? findUserById(userId)?.age ?? null,
-    name:     body.name     ?? existing.name     ?? null,
-    skill:    body.skill    ?? existing.skill    ?? null,
+    height:  heightInches,
+    weight:  body.weight   ?? existing.weight ?? null,
+    foot:    body.foot     ?? existing.foot ?? null,
+    position:body.position ?? existing.position ?? null,
+    dob:     body.dob      ?? existing.dob ?? null,
+    age:     body.age      ?? existing.age ?? findUserById(userId)?.age ?? null,
+    name:    body.name     ?? existing.name ?? null,
+    skill:   body.skill    ?? existing.skill ?? null,
     updatedAt: Date.now()
   };
 }
@@ -223,8 +208,8 @@ app.get('/api/profile', auth, (req, res) => {
   res.json({
     ok: true,
     profile: db.profiles[req.userId] || {},
-    clips: db.clipsByUser[req.userId] || [],
-    analysis: (db.analysesByUser[req.userId] || [])[0] || null
+    clips:   db.clipsByUser[req.userId] || [],
+    analysis:(db.analysesByUser[req.userId] || [])[0] || null
   });
 });
 
@@ -240,13 +225,12 @@ app.post('/api/profile', auth, (req, res) => {
   res.json({ ok: true, profile: db.profiles[req.userId] });
 });
 
-/* ========= Clips (Cloudinary metadata from frontend) ========= */
+/* -------------------- Clips -------------------- */
 app.post('/api/clip', auth, (req, res) => {
   const { url, public_id, created_at, bytes, duration, width, height, format } = req.body || {};
   if (!url && !public_id) {
     return res.status(400).json({ ok: false, error: 'url or public_id required' });
   }
-
   if (!Array.isArray(db.clipsByUser[req.userId])) db.clipsByUser[req.userId] = [];
 
   const clip = {
@@ -261,13 +245,12 @@ app.post('/api/clip', auth, (req, res) => {
   };
 
   db.clipsByUser[req.userId].unshift(clip);
-  if (public_id) db.ownerByPublicId[public_id] = req.userId;
+  if (public_id) db.ownerByPublicId[public_id] = req.userId; // map owner (future)
   saveDB();
-
   res.json({ ok: true, clip, total: db.clipsByUser[req.userId].length });
 });
 
-/* ========= Library ========= */
+/* -------------------- Library CRUD -------------------- */
 app.get('/api/analyses', auth, (req, res) => {
   res.json({ ok: true, items: db.analysesByUser[req.userId] || [] });
 });
@@ -275,7 +258,6 @@ app.get('/api/analyses', auth, (req, res) => {
 app.post('/api/analyses', auth, (req, res) => {
   const { summary, focus, drills, videoUrl, publicId, raw, skill } = req.body || {};
   if (!Array.isArray(db.analysesByUser[req.userId])) db.analysesByUser[req.userId] = [];
-
   const item = {
     id: uuidv4(),
     summary: summary || '',
@@ -287,7 +269,6 @@ app.post('/api/analyses', auth, (req, res) => {
     raw: raw || null,
     created_at: Date.now()
   };
-
   db.analysesByUser[req.userId].unshift(item);
   saveDB();
   res.json({ ok: true, item });
@@ -310,30 +291,58 @@ app.delete('/api/analyses/:id', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ========= Core Part 1: Training clip analysis ========= */
-
+/* -------------------- Part 1: Training Clip Analyze -------------------- */
+/**
+ * Core of Part 1:
+ * - Takes profile + training clip URL (+ skill)
+ * - Calls OpenAI for a JSON report
+ * - Saves report in analysesByUser
+ * - Returns the saved item so the frontend can immediately display it
+ */
 async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
-  // If OpenAI key missing, fallback generic
   if (!openai) {
-    const genericSummary = `Quick training analysis for ${profile.position || 'your role'}. Keep focusing on clean technique, good body shape, and scanning before the ball arrives.`;
+    // Fallback if API key missing
+    const genericSummary =
+      `Quick training analysis for ${profile.position || 'your role'}. ` +
+      `Continue focusing on your technique and decision making.`;
     return {
       summary: genericSummary,
       focus: [
-        'Maintain balanced body shape when receiving and striking the ball.',
-        'Scan the field before the ball arrives to improve decisions.',
-        'Control first touch away from pressure and into space.'
+        'Technical repetition',
+        'Decision making under light pressure',
+        'Consistent body shape on the ball'
       ],
       drills: [
-        { title: 'Wall passing with directional first touch', url: 'https://youtu.be/ZNk6NIxPkb0' },
-        { title: '1v1 change-of-direction cone drill',        url: 'https://youtu.be/0W2bXg2NaqE' },
-        { title: 'First-touch receiving patterns',            url: 'https://youtu.be/x7Jr8OZnS7U' }
+        { title: 'Wall passes with tight touch', url: 'https://youtu.be/ZNk6NIxPkb0' },
+        { title: '1v1 change-of-direction drill', url: 'https://youtu.be/0W2bXg2NaqE' },
+        { title: 'First-touch receiving patterns', url: 'https://youtu.be/x7Jr8OZnS7U' }
       ],
-      raw: null
+      raw: {}
     };
   }
 
-  const age     = profile.age ?? user?.age ?? null;
+  const age = profile.age ?? user?.age ?? null;
   const isYouth = age != null ? Number(age) < 18 : false;
+  const heightIn = profile.height || null;
+  const weightLb = profile.weight || null;
+
+  const sys = `You are a soccer performance trainer working 1:1 with players.
+Return STRICT JSON ONLY with fields:
+
+{
+  "summary": string,           // 3–6 sentences, direct and encouraging
+  "focus": string[3..6],       // bullet-level phrases describing what to focus on
+  "drills": [                  // 3–6 drills, each with title + url
+    { "title": string, "url": string }
+  ]
+}
+
+Guidelines:
+- Tailor everything to THIS specific player (age, position, dominant foot, skill).
+- Assume the attached clip shows them working on that skill in a realistic training setting.
+- If they’re youth, keep language simple and supportive.
+- Be specific about HOW to execute and fix technique, not just "work harder".
+- Do NOT mention JSON, keys, or that you are an AI. Just output valid JSON.`;
 
   const context = {
     name: user?.name || null,
@@ -341,67 +350,42 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
     isYouth,
     position: profile.position || 'Unknown',
     dominantFoot: profile.foot || 'Unknown',
-    heightInches: profile.height || null,
-    weightLbs: profile.weight || null,
+    heightIn,
+    weightLb,
     skillWorkingOn: skill || profile.skill || null,
     videoUrl
   };
 
-  const systemPrompt = `
-You are a soccer performance trainer working 1:1 with players.
+  const userText = `
+Player context: ${JSON.stringify(context, null, 2)}
 
-Return STRICT JSON ONLY with this shape:
-
-{
-  "summary": string,        // 3–6 sentences, specific & encouraging
-  "focus":   string[3..6],  // bullet-style phrases describing key focus areas
-  "drills":  [              // 3–6 drills with title + link to a resource
-    { "title": string, "url": string }
-  ]
-}
-
-Guidelines:
-- Tailor everything to THIS player: age, position, dominant foot, and the skill they're working on.
-- Assume the attached clip shows them training that skill (not a full match).
-- If they are youth, keep language simple and supportive.
-- Be very specific about HOW to fix technique (body shape, timing, contact point, etc).
-- Do NOT mention JSON, keys, or that you are an AI. Just output valid JSON.
-`.trim();
-
-  const userPrompt = `
-Player context:
-
-${JSON.stringify(context, null, 2)}
-
-Assume the clip is them working on that specific skill in a realistic training setup.
-Give clear coaching feedback that will help them improve in their next session.
-`.trim();
+Assume the clip is them working on that specific skill in training.
+Give coaching feedback as if you watched the clip and want them to get better for their next session.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.4,
     messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user',   content: userPrompt }
+      { role: 'system', content: sys },
+      { role: 'user',   content: userText }
     ]
   });
 
   const rawContent = resp.choices?.[0]?.message?.content || '{}';
-  const jsonText   = typeof rawContent === 'string'
-    ? rawContent
-    : JSON.stringify(rawContent);
+  const jsonText   = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
 
   let data = {};
   try {
     data = JSON.parse(jsonText);
   } catch {
+    // Handle ```json blocks
     const m = jsonText.match(/\{[\s\S]*\}/);
     if (m) data = JSON.parse(m[0]);
   }
 
   return {
     summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0, 6) : [],
+    focus: Array.isArray(data.focus)  ? data.focus.slice(0, 6)  : [],
     drills: Array.isArray(data.drills) ? data.drills.slice(0, 6) : [],
     raw: data
   };
@@ -410,14 +394,9 @@ Give clear coaching feedback that will help them improve in their next session.
 app.post('/api/analyze', auth, async (req, res) => {
   try {
     const {
-      height,
-      heightFeet,
-      heightInches,
-      weight,
-      foot,
-      position,
-      videoUrl,
-      publicId,
+      height, heightFeet, heightInches,
+      weight, foot, position,
+      videoUrl, publicId,
       skill
     } = req.body || {};
 
@@ -425,7 +404,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Video URL required' });
     }
 
-    // Update / enrich profile with latest form values
+    // Update + enrich profile before analysis
     const profilePatch = {
       height,
       heightFeet,
@@ -441,7 +420,6 @@ app.post('/api/analyze', auth, async (req, res) => {
     const profile = db.profiles[req.userId] || {};
     const user    = findUserById(req.userId) || {};
 
-    // Run OpenAI analysis (synchronous – real-time)
     const result = await runTextAnalysisForTraining({
       profile,
       user,
@@ -449,7 +427,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       skill: skill || profile.skill || null
     });
 
-    // Save into Library immediately
+    // Save into Library
     if (!Array.isArray(db.analysesByUser[req.userId])) db.analysesByUser[req.userId] = [];
     const item = {
       id: uuidv4(),
@@ -465,34 +443,24 @@ app.post('/api/analyze', auth, async (req, res) => {
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
-    // Return full report to the frontend in real time
-    res.json({
-      ok: true,
-      summary: result.summary,
-      focus: result.focus,
-      drills: result.drills,
-      videoUrl,
-      publicId,
-      skill: item.skill
-    });
+    res.json({ ok: true, item });
   } catch (e) {
-    console.error('[BK] /api/analyze error', e);
+    console.error('[BK] analyze', e);
     res.status(500).json({ ok: false, error: 'Analysis failed' });
   }
 });
 
-/* ========= Webhook stub (Vision disabled for Part 1) ========= */
-app.post('/webhooks/cloudinary', express.json({ limit: '1mb' }), (req, res) => {
-  console.log(
-    '[WH] Cloudinary webhook received (vision worker disabled for Part 1).',
-    'public_id =',
-    req.body?.public_id || req.body?.asset_id || 'n/a'
-  );
-  // For Part 1 we just acknowledge so Cloudinary stops retrying.
+/* -------------------- Webhook (Cloudinary) -------------------- */
+/**
+ * For Part 1 we don't run any vision worker. Just acknowledge so Cloudinary
+ * stops retrying. Part 2 (game analysis) can plug into this later.
+ */
+app.post('/webhooks/cloudinary', express.json({ limit: '1mb' }), async (req, res) => {
+  console.log('[WH] Cloudinary webhook received (vision worker disabled for Part 1).');
   res.status(200).json({ ok: true });
 });
 
-/* ========= Start server ========= */
+/* -------------------- Start -------------------- */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`AI Soccer backend running on ${PORT}`);
 });
