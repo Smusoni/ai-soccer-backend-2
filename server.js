@@ -1,4 +1,4 @@
-// server.js  — BallKnowledge Part 1 (training-clip, real-time analysis only)
+// server.js  — BallKnowledge Part 1 (training-clip, real-time analysis with video frames)
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
@@ -16,9 +16,12 @@ const APP_ORIGINS  = (process.env.APP_ORIGINS ||
   'https://smusoni.github.io,http://localhost:8080')
   .split(',').map(s => s.trim()).filter(Boolean);
 
+// NEW: needed to build Cloudinary frame URLs
+const CLOUD_NAME   = process.env.CLOUD_NAME || '';
+
 const PORT = process.env.PORT || 8080;
 
-/* ---------- Express setup (IMPORTANT: app is defined here) ---------- */
+/* ---------- Express setup ---------- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -286,26 +289,60 @@ app.delete('/api/analyses/:id', auth, (req, res) => {
 });
 
 /* ==================================================================== */
+/*                    VIDEO FRAME SAMPLING (Cloudinary)                  */
+/* ==================================================================== */
+
+function sampleFrameUrls({ publicId, duration, n = 8 }) {
+  if (!CLOUD_NAME || !publicId) return [];
+
+  const totalFrames = Math.max(4, Math.min(n, 16));
+  const clipDuration = Number(duration) > 0 ? Number(duration) : 40; // default 40s
+  const span = Math.max(1, Math.floor(clipDuration / (totalFrames + 1)));
+
+  const seconds = [];
+  for (let i = 1; i <= totalFrames; i++) {
+    seconds.push(i * span);
+  }
+
+  return seconds.map(s =>
+    `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_${s}/${publicId}.jpg`
+  );
+}
+
+/* ==================================================================== */
 /*                     PART 1: TRAINING CLIP ANALYSIS                    */
 /* ==================================================================== */
-async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
+
+async function runTrainingAnalysis({ profile, user, videoUrl, skill, frames }) {
   if (!openai) {
     // Fallback if API key missing
     const genericSummary = `Quick training analysis for ${profile.position || 'your role'}. Continue focusing on your technique and decision making.`;
     const fallbackDrills = [
-      { title:'Wall passes with tight touch', url:'https://www.youtube.com/results?search_query=' + encodeURIComponent('Wall passes with tight touch soccer drill') },
-      { title:'1v1 change-of-direction drill', url:'https://www.youtube.com/results?search_query=' + encodeURIComponent('1v1 change of direction soccer drill') },
-      { title:'First-touch receiving patterns', url:'https://www.youtube.com/results?search_query=' + encodeURIComponent('first touch receiving patterns soccer drill') }
+      {
+        title: 'Wall passes with tight touch',
+        url: 'https://www.youtube.com/results?search_query=' +
+          encodeURIComponent('Wall passes with tight touch soccer drill'),
+      },
+      {
+        title: '1v1 change-of-direction drill',
+        url: 'https://www.youtube.com/results?search_query=' +
+          encodeURIComponent('1v1 change of direction soccer drill'),
+      },
+      {
+        title: 'First-touch receiving patterns',
+        url: 'https://www.youtube.com/results?search_query=' +
+          encodeURIComponent('first touch receiving patterns soccer drill'),
+      },
     ];
     return {
       summary: genericSummary,
       focus: [
         'Technical repetition',
         'Decision making under light pressure',
-        'Consistent body shape on the ball'
+        'Consistent body shape on the ball',
       ],
       drills: fallbackDrills,
-      comps: [] // we’re not using comps on the frontend anymore
+      comps: [], // not used on frontend
     };
   }
 
@@ -315,23 +352,30 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
   const weightLb = profile.weight || null;
 
   const sys = `You are a soccer performance trainer working 1:1 with players.
+You receive:
+- Player context (age, position, dominant foot, height, weight, and a text hint of the skill they're working on)
+- A SMALL SET OF FRAMES taken from the actual training clip.
+
+You must analyze WHAT YOU SEE IN THE FRAMES FIRST.
+The "skillWorkingOn" hint is just a hint; if it does NOT match the clip, TRUST THE CLIP.
+
 Return STRICT JSON ONLY with fields:
 
 {
   "summary": string,           // 3–6 sentences, direct and encouraging
   "focus": string[3..6],       // bullet-level phrases describing what to focus on
-  "drills": [                  // 3–6 drills, each with title + (optional) url
+  "drills": [                  // 3–6 drills, each with title + url
     { "title": string, "url": string }
   ],
-  "comps": string[2..4]        // similar pro players or well-known examples
+  "comps": string[0..4]        // similar pro players or examples (may be empty)
 }
 
 Guidelines:
-- Tailor everything to THIS specific player (age, position, foot, skill).
-- Assume the attached clip shows them working on that skill in a realistic training setting.
+- Base your coaching on the MOVEMENTS in the frames: touches, turns, ball striking, scanning, body shape, timing, etc.
+- If the typed "skill" says something different (e.g. "free kicks") but frames show turns or dribbling, WRITE ABOUT TURNS/DRIBBLING.
 - If they’re youth, keep language simple and supportive.
-- Be specific about HOW to execute and fix technique, not just "work harder".
-- For drills, you MAY leave "url" empty or generic. The backend will turn each title into a YouTube search URL, so do NOT invent specific video IDs.
+- Be specific about HOW to execute and fix technique, not generic effort advice.
+- For drills, choose short descriptive titles. You MAY leave "url" empty or generic; the backend will convert titles into YouTube searches.
 - Do NOT mention JSON, keys, or that you are an AI. Just output valid JSON.`;
 
   const context = {
@@ -343,56 +387,82 @@ Guidelines:
     heightIn,
     weightLb,
     skillWorkingOn: skill || profile.skill || null,
-    videoUrl
+    videoUrl,
   };
 
-  const userText = `
-Player context: ${JSON.stringify(context, null, 2)}
+  const userParts = [
+    {
+      type: 'text',
+      text:
+        `Player context:\n` +
+        `${JSON.stringify(context, null, 2)}\n\n` +
+        `Use the FRAMES below to understand what the player is actually doing. ` +
+        `If the frames do not match the skill hint, prioritize what you SEE.`,
+    },
+  ];
 
-Assume the clip is them working on that specific skill in training.
-Give coaching feedback as if you watched the clip and want them to get better for their next session.`;
+  if (Array.isArray(frames) && frames.length) {
+    for (const url of frames) {
+      userParts.push({
+        type: 'input_image',
+        image_url: { url },
+      });
+    }
+  }
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.4,
     messages: [
-      { role:'system', content: sys },
-      { role:'user',   content: userText }
-    ]
+      { role: 'system', content: sys },
+      { role: 'user', content: userParts },
+    ],
   });
 
-  const rawContent = resp.choices?.[0]?.message?.content || '{}';
-  const jsonText   = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+  let rawContent = resp.choices?.[0]?.message?.content ?? '{}';
+
+  // content can be a string or an array of parts; normalize to string
+  if (Array.isArray(rawContent)) {
+    rawContent = rawContent.map(part => (
+      typeof part === 'string' ? part : (part.text || '')
+    )).join('\n');
+  }
+
+  const jsonText = typeof rawContent === 'string'
+    ? rawContent
+    : JSON.stringify(rawContent);
 
   let data = {};
   try {
     data = JSON.parse(jsonText);
   } catch {
-    // Handle ```json blocks
     const m = jsonText.match(/\{[\s\S]*\}/);
-    if (m) data = JSON.parse(m[0]);
+    if (m) {
+      data = JSON.parse(m[0]);
+    }
   }
 
-  // 🔧 Normalize drills → always valid YouTube search URLs
-  const normalizedDrills = Array.isArray(data.drills) ? data.drills.slice(0,6).map(d => {
-    const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
-    let url = d.url;
+  // Normalize drills → always valid YouTube search URLs
+  const normalizedDrills = Array.isArray(data.drills)
+    ? data.drills.slice(0, 6).map(d => {
+        const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
+        let url = d.url;
 
-    // If URL missing or looks sus → turn into a search link
-    if (!url || !/^https?:\/\//.test(url)) {
-      url = 'https://www.youtube.com/results?search_query=' +
-        encodeURIComponent(`${title} soccer drill`);
-    }
+        if (!url || !/^https?:\/\//.test(url)) {
+          url = 'https://www.youtube.com/results?search_query=' +
+            encodeURIComponent(`${title} soccer drill`);
+        }
 
-    return { title, url };
-  }) : [];
+        return { title, url };
+      })
+    : [];
 
   return {
     summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0,6) : [],
+    focus: Array.isArray(data.focus) ? data.focus.slice(0, 6) : [],
     drills: normalizedDrills,
-    comps: Array.isArray(data.comps) ? data.comps.slice(0,4) : [],
-    raw: data
+    comps: Array.isArray(data.comps) ? data.comps.slice(0, 4) : [],
+    raw: data,
   };
 }
 
@@ -402,7 +472,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       height, heightFeet, heightInches,
       weight, foot, position,
       videoUrl, publicId,
-      skill
+      skill,
     } = req.body || {};
 
     if (!videoUrl) {
@@ -417,20 +487,36 @@ app.post('/api/analyze', auth, async (req, res) => {
       weight,
       foot,
       position,
-      skill
+      skill,
     };
     upsertProfile(req.userId, profilePatch);
     saveDB();
 
     const profile = db.profiles[req.userId] || {};
-    const user = findUserById(req.userId) || {};
+    const user    = findUserById(req.userId) || {};
 
-    // Run OpenAI
-    const result = await runTextAnalysisForTraining({
+    // Look up clip to get duration (for better frame spacing)
+    const clips = db.clipsByUser[req.userId] || [];
+    const clip  = clips.find(c =>
+      (publicId && c.public_id === publicId) ||
+      (!publicId && c.url === videoUrl)
+    );
+    const duration = clip?.duration || null;
+
+    // Build video frames from Cloudinary if possible
+    let frames = [];
+    if (CLOUD_NAME && (publicId || clip?.public_id)) {
+      const pid = publicId || clip.public_id;
+      frames = sampleFrameUrls({ publicId: pid, duration });
+    }
+
+    // Run OpenAI (with frames if we have them)
+    const result = await runTrainingAnalysis({
       profile,
       user,
       videoUrl,
-      skill: skill || profile.skill || null
+      skill: skill || profile.skill || null,
+      frames,
     });
 
     // Save into Library
@@ -448,13 +534,13 @@ app.post('/api/analyze', auth, async (req, res) => {
       public_id: publicId || null,
       skill: skill || profile.skill || null,
       raw: result.raw,
-      created_at: Date.now()
+      created_at: Date.now(),
     };
 
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
-    // IMPORTANT: send full report + id back to frontend
+    // Send full report + id back to frontend
     res.json({
       ok: true,
       id: item.id,
@@ -464,7 +550,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       comps: item.comps,
       videoUrl: item.video_url,
       publicId: item.public_id,
-      skill: item.skill
+      skill: item.skill,
     });
   } catch (e) {
     console.error('[BK] analyze', e);
