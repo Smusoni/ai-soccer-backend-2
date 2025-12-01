@@ -288,56 +288,51 @@ app.delete('/api/analyses/:id', auth, (req, res) => {
 /* ==================================================================== */
 /*                     PART 1: TRAINING CLIP ANALYSIS                    */
 /* ==================================================================== */
-
 async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
-  // fallback if OpenAI key is missing
   if (!openai) {
+    // Fallback if API key missing
+    const genericSummary = `Quick training analysis for ${profile.position || 'your role'}. Continue focusing on your technique and decision making.`;
+    const fallbackDrills = [
+      { title:'Wall passes with tight touch', url:'https://www.youtube.com/results?search_query=' + encodeURIComponent('Wall passes with tight touch soccer drill') },
+      { title:'1v1 change-of-direction drill', url:'https://www.youtube.com/results?search_query=' + encodeURIComponent('1v1 change of direction soccer drill') },
+      { title:'First-touch receiving patterns', url:'https://www.youtube.com/results?search_query=' + encodeURIComponent('first touch receiving patterns soccer drill') }
+    ];
     return {
-      summary: `Quick training analysis for your ${profile.position || 'role'}. Keep focusing on consistent technique and decision making in your ${skill || 'training'} sessions.`,
+      summary: genericSummary,
       focus: [
-        'Repeat the core technique slowly, then add speed',
-        'Balance and body shape before striking/passing',
-        'Scanning and checking shoulders before receiving',
+        'Technical repetition',
+        'Decision making under light pressure',
+        'Consistent body shape on the ball'
       ],
-      drills: [
-        {
-          title: 'Wall passing & first-touch pattern',
-          url: 'https://youtu.be/ZNk6NIxPkb0',
-        },
-        {
-          title: '1v1 change-of-direction cone drill',
-          url: 'https://youtu.be/0W2bXg2NaqE',
-        },
-        {
-          title: 'Receiving & turning under light pressure',
-          url: 'https://youtu.be/x7Jr8OZnS7U',
-        },
-      ],
-      raw: null,
+      drills: fallbackDrills,
+      comps: [] // we’re not using comps on the frontend anymore
     };
   }
 
   const age = profile.age ?? user?.age ?? null;
   const isYouth = age != null ? Number(age) < 18 : false;
+  const heightIn = profile.height || null;
+  const weightLb = profile.weight || null;
 
   const sys = `You are a soccer performance trainer working 1:1 with players.
-
-Return STRICT JSON ONLY with this shape:
+Return STRICT JSON ONLY with fields:
 
 {
-  "summary": string,         // 3–6 sentences, positive but direct
-  "focus": string[3..6],     // bullet points to focus on
-  "drills": [                // 3–6 items
+  "summary": string,           // 3–6 sentences, direct and encouraging
+  "focus": string[3..6],       // bullet-level phrases describing what to focus on
+  "drills": [                  // 3–6 drills, each with title + (optional) url
     { "title": string, "url": string }
-  ]
+  ],
+  "comps": string[2..4]        // similar pro players or well-known examples
 }
 
 Guidelines:
-- Tailor everything to THIS specific player (age, position, dominant foot, and skill they’re working on).
-- Assume the video is a realistic training clip for that skill (shooting, dribbling, passing, etc.).
-- Explain concrete technical fixes and cues, not generic motivational talk.
-- If they are youth, keep language simple and encouraging.
-- Do NOT mention JSON or keys – just output valid JSON.`;
+- Tailor everything to THIS specific player (age, position, foot, skill).
+- Assume the attached clip shows them working on that skill in a realistic training setting.
+- If they’re youth, keep language simple and supportive.
+- Be specific about HOW to execute and fix technique, not just "work harder".
+- For drills, you MAY leave "url" empty or generic. The backend will turn each title into a YouTube search URL, so do NOT invent specific video IDs.
+- Do NOT mention JSON, keys, or that you are an AI. Just output valid JSON.`;
 
   const context = {
     name: user?.name || null,
@@ -345,46 +340,59 @@ Guidelines:
     isYouth,
     position: profile.position || 'Unknown',
     dominantFoot: profile.foot || 'Unknown',
-    heightInches: profile.height || null,
-    weightLbs: profile.weight || null,
+    heightIn,
+    weightLb,
     skillWorkingOn: skill || profile.skill || null,
-    videoUrl,
+    videoUrl
   };
 
   const userText = `
-Player context:
-${JSON.stringify(context, null, 2)}
+Player context: ${JSON.stringify(context, null, 2)}
 
-Pretend you watched the clip. Give feedback so they know what to work on in the next few sessions.`;
+Assume the clip is them working on that specific skill in training.
+Give coaching feedback as if you watched the clip and want them to get better for their next session.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.4,
     messages: [
-      { role: 'system', content: sys },
-      { role: 'user', content: userText },
-    ],
+      { role:'system', content: sys },
+      { role:'user',   content: userText }
+    ]
   });
 
   const rawContent = resp.choices?.[0]?.message?.content || '{}';
-  const jsonText   = typeof rawContent === 'string'
-    ? rawContent
-    : JSON.stringify(rawContent);
+  const jsonText   = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
 
   let data = {};
   try {
     data = JSON.parse(jsonText);
   } catch {
-    // handle ```json ... ``` cases
+    // Handle ```json blocks
     const m = jsonText.match(/\{[\s\S]*\}/);
     if (m) data = JSON.parse(m[0]);
   }
 
+  // 🔧 Normalize drills → always valid YouTube search URLs
+  const normalizedDrills = Array.isArray(data.drills) ? data.drills.slice(0,6).map(d => {
+    const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
+    let url = d.url;
+
+    // If URL missing or looks sus → turn into a search link
+    if (!url || !/^https?:\/\//.test(url)) {
+      url = 'https://www.youtube.com/results?search_query=' +
+        encodeURIComponent(`${title} soccer drill`);
+    }
+
+    return { title, url };
+  }) : [];
+
   return {
     summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0, 6) : [],
-    drills: Array.isArray(data.drills) ? data.drills.slice(0, 6) : [],
-    raw: data,
+    focus: Array.isArray(data.focus) ? data.focus.slice(0,6) : [],
+    drills: normalizedDrills,
+    comps: Array.isArray(data.comps) ? data.comps.slice(0,4) : [],
+    raw: data
   };
 }
 
