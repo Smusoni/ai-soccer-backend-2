@@ -393,37 +393,39 @@ app.post('/api/analyze', auth, async (req, res) => {
     const {
       height, heightFeet, heightInches,
       weight, foot, position,
-      skill,
-      videoUrl,
-      publicId,
+      videoUrl, publicId,
+      skill
     } = req.body || {};
 
     if (!videoUrl) {
       return res.status(400).json({ ok: false, error: 'Video URL required' });
     }
 
-    // Update profile with the latest info from this form
-    upsertProfile(req.userId, {
+    // Update + enrich profile before analysis
+    const profilePatch = {
       height,
       heightFeet,
       heightInches,
       weight,
       foot,
       position,
-      skill,
-    });
+      skill
+    };
+    upsertProfile(req.userId, profilePatch);
     saveDB();
 
     const profile = db.profiles[req.userId] || {};
-    const user    = findUserById(req.userId) || {};
+    const user = findUserById(req.userId) || {};
 
+    // Run OpenAI
     const result = await runTextAnalysisForTraining({
       profile,
       user,
       videoUrl,
-      skill: skill || profile.skill || null,
+      skill: skill || profile.skill || null
     });
 
+    // Save into Library
     if (!Array.isArray(db.analysesByUser[req.userId])) {
       db.analysesByUser[req.userId] = [];
     }
@@ -433,23 +435,31 @@ app.post('/api/analyze', auth, async (req, res) => {
       summary: result.summary,
       focus: result.focus,
       drills: result.drills,
+      comps: result.comps,
       video_url: videoUrl,
       public_id: publicId || null,
       skill: skill || profile.skill || null,
       raw: result.raw,
-      created_at: Date.now(),
+      created_at: Date.now()
     };
 
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
-    // Return the newly created item so frontend can show it immediately
+    // IMPORTANT: send full report + id back to frontend
     res.json({
       ok: true,
-      item,
+      id: item.id,
+      summary: item.summary,
+      focus: item.focus,
+      drills: item.drills,
+      comps: item.comps,
+      videoUrl: item.video_url,
+      publicId: item.public_id,
+      skill: item.skill
     });
   } catch (e) {
-    console.error('[BK] /api/analyze', e);
+    console.error('[BK] analyze', e);
     res.status(500).json({ ok: false, error: 'Analysis failed' });
   }
 });
