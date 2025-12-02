@@ -429,7 +429,6 @@ Focus on:
     raw: data,
   };
 }
-
 app.post('/api/analyze', auth, async (req, res) => {
   try {
     const {
@@ -439,11 +438,27 @@ app.post('/api/analyze', auth, async (req, res) => {
       skill
     } = req.body || {};
 
+    // 1) Missing video
     if (!videoUrl) {
       return res.status(400).json({
         ok: false,
-        error: 'Video URL required. Please upload a clip before analyzing.',
-        code: 'NO_VIDEO'
+        error: 'Please upload a training clip before pressing Analyze.'
+      });
+    }
+
+    // 2) Basic validation to catch super-empty requests
+    if (!position || !foot) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Please fill in position and dominant foot before analyzing.'
+      });
+    }
+
+    // 3) Check OpenAI config early so we don’t just say "Analysis failed"
+    if (!openai) {
+      return res.status(500).json({
+        ok: false,
+        error: 'AI engine is not configured on the server. Please contact the coach or try again later.'
       });
     }
 
@@ -461,53 +476,8 @@ app.post('/api/analyze', auth, async (req, res) => {
     saveDB();
 
     const profile = db.profiles[req.userId] || {};
-    const user = findUserById(req.userId) || {};
+    const user    = findUserById(req.userId) || {};
 
-    if (!OPENAI_KEY) {
-      // No key → still return a fallback analysis so UX doesn't totally break.
-      const fallback = await runTextAnalysisForTraining({
-        profile,
-        user,
-        videoUrl,
-        skill: skill || profile.skill || null
-      });
-
-      // Save into library
-      if (!Array.isArray(db.analysesByUser[req.userId])) {
-        db.analysesByUser[req.userId] = [];
-      }
-
-      const item = {
-        id: uuidv4(),
-        summary: fallback.summary,
-        focus: fallback.focus,
-        drills: fallback.drills,
-        comps: fallback.comps,
-        video_url: videoUrl,
-        public_id: publicId || null,
-        skill: skill || profile.skill || null,
-        raw: fallback.raw,
-        created_at: Date.now(),
-      };
-
-      db.analysesByUser[req.userId].unshift(item);
-      saveDB();
-
-      return res.json({
-        ok: true,
-        id: item.id,
-        summary: item.summary,
-        focus: item.focus,
-        drills: item.drills,
-        comps: item.comps,
-        videoUrl: item.video_url,
-        publicId: item.public_id,
-        skill: item.skill,
-        warning: 'OPENAI_API_KEY is missing. This is a generic sample analysis.'
-      });
-    }
-
-    // Normal OpenAI run
     let result;
     try {
       result = await runTextAnalysisForTraining({
@@ -516,14 +486,63 @@ app.post('/api/analyze', auth, async (req, res) => {
         videoUrl,
         skill: skill || profile.skill || null
       });
-    } catch (err) {
-      console.error('[BK] OpenAI error', err);
-      return res.status(500).json({
+    } catch (e) {
+      console.error('[BK] OpenAI error in analyze', e);
+
+      // Try to surface something human-readable
+      const apiMsg =
+        e?.response?.data?.error?.message ||
+        e?.message ||
+        'Unknown error talking to the AI engine.';
+
+      return res.status(502).json({
         ok: false,
-        error: 'Analysis failed: OpenAI API error. Please try again, or contact support if it continues.',
-        code: 'OPENAI_ERROR'
+        error: 'Our AI had trouble reading this clip. Try a shorter clip (10–30 seconds) and try again. Details: ' + apiMsg
       });
     }
+
+    // Save into Library
+    if (!Array.isArray(db.analysesByUser[req.userId])) {
+      db.analysesByUser[req.userId] = [];
+    }
+
+    const item = {
+      id: uuidv4(),
+      summary: result.summary,
+      focus: result.focus,
+      drills: result.drills,
+      comps: result.comps,
+      video_url: videoUrl,
+      public_id: publicId || null,
+      skill: skill || profile.skill || null,
+      raw: result.raw,
+      created_at: Date.now()
+    };
+
+    db.analysesByUser[req.userId].unshift(item);
+    saveDB();
+
+    // Send full report back
+    res.json({
+      ok: true,
+      id: item.id,
+      summary: item.summary,
+      focus: item.focus,
+      drills: item.drills,
+      comps: item.comps,
+      videoUrl: item.video_url,
+      publicId: item.public_id,
+      skill: item.skill
+    });
+  } catch (e) {
+    console.error('[BK] analyze route crashed', e);
+    res.status(500).json({
+      ok: false,
+      error: 'Unexpected server error while analyzing. Please try again with a shorter clip or refresh the page.'
+    });
+  }
+});
+
 
     // Save into Library
     if (!Array.isArray(db.analysesByUser[req.userId])) {
