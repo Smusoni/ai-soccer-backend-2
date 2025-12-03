@@ -5,7 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "engines": {
     "node": "18.x"
@@ -20,3 +21,4 @@
     "uuid": "^9.0.1"
   }
 }
+
