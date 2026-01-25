@@ -560,54 +560,59 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
   }
 
   console.log(`[BK] Message content count: ${messageContent.length} items`);
-  const resp = await openai.chat.completions.create({
-    model: 'gpt-5.1',
-    temperature: 0.4,
-    max_tokens: 1500,
-    messages: [
-      { role: 'system', content: sys },
-      { role: 'user',   content: messageContent },
-    ],
-  }).catch(error => {
-    console.error('[BK] OpenAI error:', error.message);
-    throw error;
-  });
-
-  const rawContent = resp.choices?.[0]?.message?.content || '{}';
-  const jsonText   =
-    typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
-
-  console.log(`[BK] Raw OpenAI response:`, rawContent);
-
-  let data = {};
+  
   try {
-    data = JSON.parse(jsonText);
-  } catch {
-    // Handle ```json blocks
-    const m = jsonText.match(/\{[\s\S]*\}/);
-    if (m) data = JSON.parse(m[0]);
+    const resp = await openai.chat.completions.create({
+      model: 'gpt-5.1',
+      temperature: 0.4,
+      max_tokens: 1500,
+      messages: [
+        { role: 'system', content: sys },
+        { role: 'user',   content: messageContent },
+      ],
+    });
+
+    const rawContent = resp.choices?.[0]?.message?.content || '{}';
+    const jsonText   =
+      typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+
+    console.log(`[BK] Raw OpenAI response:`, rawContent);
+
+    let data = {};
+    try {
+      data = JSON.parse(jsonText);
+    } catch {
+      // Handle ```json blocks
+      const m = jsonText.match(/\{[\s\S]*\}/);
+      if (m) data = JSON.parse(m[0]);
+    }
+
+    console.log(`[BK] Parsed analysis data:`, data);
+
+    // Normalize drills - create YouTube search URLs from descriptions
+    const normalizedDrills = Array.isArray(data.drills)
+      ? data.drills.slice(0, 5).map(d => {
+          const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
+          const description = d.description || '';
+          const url = 'https://www.youtube.com/results?search_query=' +
+            encodeURIComponent(`${title} soccer drill training`);
+          return { title, description, url };
+        })
+      : [];
+
+    return {
+      summary: data.summary || 'Training analysis complete.',
+      focus: Array.isArray(data.focus) ? data.focus.slice(0, 5) : [],
+      drills: normalizedDrills,
+      improvements: Array.isArray(data.improvements) ? data.improvements.slice(0, 4) : [],
+      raw: data,
+    };
+  } catch (error) {
+    console.error('[BK] OpenAI API error:', error.message);
+    console.error('[BK] OpenAI error status:', error.status);
+    console.error('[BK] OpenAI error code:', error.code);
+    throw new Error(`OpenAI API error: ${error.message}`);
   }
-
-  console.log(`[BK] Parsed analysis data:`, data);
-
-  // Normalize drills - create YouTube search URLs from descriptions
-  const normalizedDrills = Array.isArray(data.drills)
-    ? data.drills.slice(0, 5).map(d => {
-        const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
-        const description = d.description || '';
-        const url = 'https://www.youtube.com/results?search_query=' +
-          encodeURIComponent(`${title} soccer drill training`);
-        return { title, description, url };
-      })
-    : [];
-
-  return {
-    summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0, 5) : [],
-    drills: normalizedDrills,
-    improvements: Array.isArray(data.improvements) ? data.improvements.slice(0, 4) : [],
-    raw: data,
-  };
 }
 
 app.post('/api/analyze', auth, async (req, res) => {
@@ -643,12 +648,16 @@ app.post('/api/analyze', auth, async (req, res) => {
     const profile = db.profiles[req.userId] || {};
     const user    = findUserById(req.userId) || {};
 
+    console.log(`[BK] Starting analysis with profile:`, { position: profile.position, foot: profile.foot, age: profile.age });
+
     const result = await runTextAnalysisForTraining({
       profile,
       user,
       videoUrl,
       skill: skill || profile.skill || null,
     });
+
+    console.log(`[BK] Analysis completed successfully`);
 
     if (!Array.isArray(db.analysesByUser[req.userId])) {
       db.analysesByUser[req.userId] = [];
@@ -682,7 +691,8 @@ app.post('/api/analyze', auth, async (req, res) => {
       skill: item.skill,
     });
   } catch (e) {
-    console.error('[BK] analyze', e);
+    console.error('[BK] analyze error:', e.message);
+    console.error('[BK] analyze error stack:', e.stack);
     // More specific error text for the frontend
     res.status(500).json({
       ok: false,
