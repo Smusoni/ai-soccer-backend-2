@@ -563,7 +563,7 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
   
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-5.1',
+      model: 'gpt-4o',
       temperature: 0.4,
       max_tokens: 1500,
       messages: [
