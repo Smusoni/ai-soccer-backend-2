@@ -1078,7 +1078,7 @@
   }
 
   async function getFeedback(playerContext, clipsNotes) {
-    const res = await fetch("http://localhost:3001/api/feedback", {
+    const res = await fetch("https://ai-soccer-backend-2-production.up.railway.app/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ playerContext, clipsNotes }),
