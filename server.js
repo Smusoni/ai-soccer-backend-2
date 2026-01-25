@@ -431,7 +431,10 @@ app.delete('/api/analyses/:id', auth, (req, res) => {
 /* ==================================================================== */
 
 async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
+  console.log(`[BK] runTextAnalysisForTraining called with videoUrl: ${videoUrl}`);
+  
   if (!openai) {
+    console.log(`[BK] OpenAI not configured, returning fallback`);
     // Fallback if API key missing
     const genericSummary =
       `Quick training analysis for ${profile.position || 'your role'}. ` +
@@ -508,18 +511,6 @@ Make the summary vivid and specific. Reference actual movements and the activity
 NEVER make assumptions - analyze ONLY what is visible in the frames.
 Base feedback ONLY on what you see in the video frames.`;
 
-  const context = {
-    name:          user?.name || null,
-    age,
-    isYouth,
-    position:      profile.position || 'Unknown',
-    dominantFoot:  profile.foot || 'Unknown',
-    heightIn,
-    weightLb,
-    skillWorkingOn: skill || profile.skill || null,
-    videoUrl,
-  };
-
   const userText = `Player Profile:
 - Name: ${user?.name || 'Unknown'}
 - Age: ${age || 'Unknown'}  
@@ -560,8 +551,10 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
   }
 
   console.log(`[BK] Message content count: ${messageContent.length} items`);
+  console.log(`[BK] Message content:`, JSON.stringify(messageContent));
   
   try {
+    console.log(`[BK] Calling OpenAI with model gpt-4o`);
     const resp = await openai.chat.completions.create({
       model: 'gpt-4o',
       temperature: 0.4,
@@ -572,22 +565,24 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
       ],
     });
 
+    console.log(`[BK] OpenAI response received`);
     const rawContent = resp.choices?.[0]?.message?.content || '{}';
     const jsonText   =
       typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
 
-    console.log(`[BK] Raw OpenAI response:`, rawContent);
+    console.log(`[BK] Raw OpenAI response:`, rawContent.substring(0, 200));
 
     let data = {};
     try {
       data = JSON.parse(jsonText);
-    } catch {
+    } catch (parseError) {
+      console.log(`[BK] JSON parse error, trying regex extraction`);
       // Handle ```json blocks
       const m = jsonText.match(/\{[\s\S]*\}/);
       if (m) data = JSON.parse(m[0]);
     }
 
-    console.log(`[BK] Parsed analysis data:`, data);
+    console.log(`[BK] Parsed analysis data:`, JSON.stringify(data).substring(0, 200));
 
     // Normalize drills - create YouTube search URLs from descriptions
     const normalizedDrills = Array.isArray(data.drills)
@@ -611,6 +606,7 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
     console.error('[BK] OpenAI API error:', error.message);
     console.error('[BK] OpenAI error status:', error.status);
     console.error('[BK] OpenAI error code:', error.code);
+    console.error('[BK] Full error:', JSON.stringify(error));
     throw new Error(`OpenAI API error: ${error.message}`);
   }
 }
