@@ -202,7 +202,7 @@ app.post('/api/signup', async (req, res) => {
       email: String(email).trim().toLowerCase(),
       passHash,
       age: Number(age),
-      dob: String(dob).trim(),
+      dob: String(dob).trim(), // Store as plain string, no timezone conversion
       createdAt: Date.now(),
     };
 
@@ -299,6 +299,10 @@ app.get('/api/profile', auth, (req, res) => {
   const user = findUserById(req.userId);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
   
+  const profile = db.profiles[req.userId] || {};
+  // Use dob from signup (user object) as the source of truth, unless explicitly updated in profile
+  const dob = profile.dob || user.dob;
+  
   res.json({ 
     ok: true, 
     user: { 
@@ -306,9 +310,9 @@ app.get('/api/profile', auth, (req, res) => {
       name: user.name, 
       email: user.email, 
       age: user.age,
-      dob: user.dob 
+      dob: dob
     },
-    profile: db.profiles[req.userId] || {} 
+    profile: profile
   });
 });
 
@@ -321,7 +325,7 @@ app.post('/api/profile', auth, (req, res) => {
   // Update user data
   if (name) user.name = name;
   if (age) user.age = Number(age);
-  if (dob) user.dob = dob;
+  if (dob) user.dob = String(dob).trim(); // Store dob as plain string, no conversion
   
   // Update profile data
   upsertProfile(req.userId, {
@@ -333,6 +337,7 @@ app.post('/api/profile', auth, (req, res) => {
   
   saveDB();
   
+  const finalDob = dob || user.dob;
   res.json({ 
     ok: true,
     user: { 
@@ -340,7 +345,7 @@ app.post('/api/profile', auth, (req, res) => {
       name: user.name, 
       email: user.email, 
       age: user.age,
-      dob: user.dob 
+      dob: finalDob
     },
     profile: db.profiles[req.userId] 
   });
