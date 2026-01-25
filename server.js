@@ -8,6 +8,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
+import https from 'https';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 /* ---------- ENV + constants ---------- */
 const JWT_SECRET  = process.env.JWT_SECRET || 'dev_secret_change_me';
@@ -18,7 +22,7 @@ const APP_ORIGINS = (process.env.APP_ORIGINS ||
   .map(s => s.trim())
   .filter(Boolean);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3001;
 
 /* ---------- Express setup ---------- */
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +31,7 @@ const __dirname  = path.dirname(__filename);
 const app = express();
 
 app.use(cors({ origin: APP_ORIGINS }));
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: "2mb" }));
 app.use(express.static('.'));
 
 /* ---------- Tiny JSON "DB" ---------- */
@@ -94,14 +98,86 @@ function auth(req, res, next) {
 
 /* ---------- OpenAI client ---------- */
 const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null;
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+/* ---------- Video Frame Extraction ---------- */
+async function downloadVideoFrames(videoUrl) {
+  try {
+    // For Cloudinary, we can directly get preview frames using transformations
+    // Extract multiple frames at different timestamps to get comprehensive view
+    const frames = [];
+    
+    if (videoUrl && videoUrl.includes('cloudinary')) {
+      // Get frames at 25%, 50%, and 75% of video using Cloudinary transformations
+      const timestamps = ['0.25', '0.50', '0.75'];
+      
+      for (const time of timestamps) {
+        try {
+          // Cloudinary format: add so_(start_time) to get frame at specific time
+          const frameUrl = videoUrl.replace(/\/upload\//, `/upload/so_${time},w_800,c_scale,q_80,f_jpg/`);
+          frames.push(frameUrl);
+        } catch (e) {
+          console.log(`[BK] Could not create frame URL for time ${time}`);
+        }
+      }
+    }
+    
+    return frames.length > 0 ? frames : null;
+  } catch (err) {
+    console.error('[BK] Error extracting video frames:', err.message);
+    return null;
+  }
+}
 
 /* ---------- Misc ---------- */
-app.get('/', (_req, res) =>
-  res.send('BallKnowledge backend (Part 1 – training clip analysis) ✅'),
-);
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/api/health', (_req, res) =>
   res.json({ ok: true, uptime: process.uptime() }),
 );
+app.get('/api/test', (_req, res) =>
+  res.json({ ok: true, message: 'Test route working!', timestamp: new Date().toISOString() }),
+);
+
+app.post('/api/test-openai', async (req, res) => {
+  try {
+    if (!openai) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'OpenAI API key not configured' 
+      });
+    }
+
+    const resp = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.7,
+      max_tokens: 200,
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a helpful soccer coach.' 
+        },
+        { 
+          role: 'user', 
+          content: 'Give me one quick soccer training tip in 2 sentences.' 
+        },
+      ],
+    });
+
+    const message = resp.choices?.[0]?.message?.content || 'No response';
+    res.json({ 
+      ok: true, 
+      message: message,
+      model: resp.model,
+      usage: resp.usage 
+    });
+  } catch (error) {
+    console.error('[BK] test-openai error:', error.message);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message 
+    });
+  }
+});
 
 /* ==================================================================== */
 /*                               AUTH                                   */
@@ -220,13 +296,71 @@ function upsertProfile(userId, body) {
 }
 
 app.get('/api/profile', auth, (req, res) => {
-  res.json({ ok: true, profile: db.profiles[req.userId] || {} });
+  const user = findUserById(req.userId);
+  if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+  
+  res.json({ 
+    ok: true, 
+    user: { 
+      id: user.id,
+      name: user.name, 
+      email: user.email, 
+      age: user.age,
+      dob: user.dob 
+    },
+    profile: db.profiles[req.userId] || {} 
+  });
+});
+
+app.post('/api/profile', auth, (req, res) => {
+  const { name, age, dob, position, foot, height, weight } = req.body || {};
+  const user = findUserById(req.userId);
+  
+  if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+  
+  // Update user data
+  if (name) user.name = name;
+  if (age) user.age = Number(age);
+  if (dob) user.dob = dob;
+  
+  // Update profile data
+  upsertProfile(req.userId, {
+    position: position || null,
+    foot: foot || null,
+    height: Number(height) || null,
+    weight: Number(weight) || null,
+  });
+  
+  saveDB();
+  
+  res.json({ 
+    ok: true,
+    user: { 
+      id: user.id,
+      name: user.name, 
+      email: user.email, 
+      age: user.age,
+      dob: user.dob 
+    },
+    profile: db.profiles[req.userId] 
+  });
 });
 
 app.put('/api/profile', auth, (req, res) => {
   upsertProfile(req.userId, req.body || {});
   saveDB();
-  res.json({ ok: true, profile: db.profiles[req.userId] });
+  const user = findUserById(req.userId);
+  res.json({ 
+    ok: true,
+    user: { 
+      id: user.id,
+      name: user.name, 
+      email: user.email, 
+      age: user.age,
+      dob: user.dob 
+    },
+    profile: db.profiles[req.userId] 
+  });
 });
 
 /* ==================================================================== */
@@ -333,25 +467,41 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
   const heightIn = profile.height || null;
   const weightLb = profile.weight || null;
 
-  const sys = `You are a soccer performance trainer working 1:1 with players.
-Return STRICT JSON ONLY with fields:
+  const sys = `You are an expert soccer coach analyzing a player's training video.
 
+CRITICAL INSTRUCTIONS:
+1. Your ONLY job is to analyze what you see in the video frames provided
+2. COMPLETELY IGNORE any text suggestions about what skill they're working on
+3. Identify the ACTUAL activity visible in the frames (juggling, passing, dribbling, shooting, etc.)
+4. Do NOT guess or assume - describe ONLY what you see
+
+IMPORTANT: If you see juggling, say "juggling". If you see passing drills, say "passing". Be specific and accurate about the activity.
+
+Provide DETAILED, ACTIONABLE coaching feedback that helps the player improve.
+
+Return analysis in STRICT JSON format:
 {
-  "summary": string,
-  "focus": string[3..6],
-  "drills": [
-    { "title": string, "url": string }
+  "activity": "The specific activity you observe (e.g., 'juggling', 'passing drills', 'dribbling practice')",
+  "summary": "Detailed assessment of what the player is doing, their form/technique, strengths observed, and immediate improvements needed. Reference the activity by name. 2-3 sentences minimum.",
+  "focus": [
+    "Specific technical point to improve based on what you see",
+    "Physical/fitness focus area",
+    "Decision-making or game sense point",
+    "Complementary skill to develop"
   ],
-  "comps": string[2..4]
+  "drills": [
+    {"title": "Specific drill name for this activity", "description": "How to perform this drill and why it helps"},
+    {"title": "Another related drill", "description": "What this develops"}
+  ],
+  "improvements": [
+    "Actionable improvement 1: What to focus on and how to fix it",
+    "Actionable improvement 2: Specific technique adjustment"
+  ]
 }
 
-Guidelines:
-- Tailor everything to THIS specific player (age, position, foot, skill).
-- Assume the attached clip shows them working on that skill in a realistic training setting.
-- If they’re youth, keep language simple and supportive.
-- Be specific about HOW to execute and fix technique.
-- For drills, you MAY leave "url" empty or generic. The backend will turn each title into a YouTube search URL, so do NOT invent specific video IDs.
-- Do NOT mention JSON, keys, or that you are an AI. Just output valid JSON.`;
+Make the summary vivid and specific. Reference actual movements and the activity you see in the video.
+NEVER make assumptions - analyze ONLY what is visible in the frames.
+Base feedback ONLY on what you see in the video frames.`;
 
   const context = {
     name:          user?.name || null,
@@ -365,24 +515,64 @@ Guidelines:
     videoUrl,
   };
 
-  const userText = `
-Player context: ${JSON.stringify(context, null, 2)}
+  const userText = `Player Profile:
+- Name: ${user?.name || 'Unknown'}
+- Age: ${age || 'Unknown'}  
+- Position: ${profile.position || 'Unknown'}
+- Dominant Foot: ${profile.foot || 'Unknown'}
 
-Assume the clip is them working on that specific skill in training.
-Give coaching feedback as if you watched the clip and want them to get better for their next session.`;
+You are seeing video frames from a soccer training session. Analyze what the player is actually doing.
+Provide coaching feedback based ONLY on what you observe in the frames, not on any text suggestions.`;
 
+  const messageContent = [
+    {
+      type: 'text',
+      text: userText,
+    },
+  ];
+
+  // Extract video frames from Cloudinary
+  const frameUrls = await downloadVideoFrames(videoUrl);
+  console.log(`[BK] Video URL: ${videoUrl}`);
+  console.log(`[BK] Frame extraction result:`, frameUrls);
+  
+  if (frameUrls && frameUrls.length > 0) {
+    console.log(`[BK] Adding ${frameUrls.length} video frames for analysis`);
+    for (const frameUrl of frameUrls) {
+      console.log(`[BK] Frame URL: ${frameUrl}`);
+      messageContent.push({
+        type: 'image_url',
+        image_url: {
+          url: frameUrl,
+        },
+      });
+    }
+  } else {
+    console.log('[BK] No video frames extracted - falling back to text only');
+    if (skill && skill.trim()) {
+      messageContent[0].text += `\n\nAdditional context: ${skill}`;
+    }
+  }
+
+  console.log(`[BK] Message content count: ${messageContent.length} items`);
   const resp = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.1',
     temperature: 0.4,
+    max_tokens: 1500,
     messages: [
       { role: 'system', content: sys },
-      { role: 'user',   content: userText },
+      { role: 'user',   content: messageContent },
     ],
+  }).catch(error => {
+    console.error('[BK] OpenAI error:', error.message);
+    throw error;
   });
 
   const rawContent = resp.choices?.[0]?.message?.content || '{}';
   const jsonText   =
     typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+
+  console.log(`[BK] Raw OpenAI response:`, rawContent);
 
   let data = {};
   try {
@@ -393,25 +583,24 @@ Give coaching feedback as if you watched the clip and want them to get better fo
     if (m) data = JSON.parse(m[0]);
   }
 
-  // Normalize drills → always valid YouTube search URLs
-  const normalizedDrills = Array.isArray(data.drills)
-    ? data.drills.slice(0, 6).map(d => {
-        const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
-        let url = d.url;
+  console.log(`[BK] Parsed analysis data:`, data);
 
-        if (!url || !/^https?:\/\//.test(url)) {
-          url = 'https://www.youtube.com/results?search_query=' +
-            encodeURIComponent(`${title} soccer drill`);
-        }
-        return { title, url };
+  // Normalize drills - create YouTube search URLs from descriptions
+  const normalizedDrills = Array.isArray(data.drills)
+    ? data.drills.slice(0, 5).map(d => {
+        const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
+        const description = d.description || '';
+        const url = 'https://www.youtube.com/results?search_query=' +
+          encodeURIComponent(`${title} soccer drill training`);
+        return { title, description, url };
       })
     : [];
 
   return {
     summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0, 6) : [],
+    focus: Array.isArray(data.focus) ? data.focus.slice(0, 5) : [],
     drills: normalizedDrills,
-    comps: Array.isArray(data.comps) ? data.comps.slice(0, 4) : [],
+    improvements: Array.isArray(data.improvements) ? data.improvements.slice(0, 4) : [],
     raw: data,
   };
 }
@@ -424,6 +613,8 @@ app.post('/api/analyze', auth, async (req, res) => {
       videoUrl, publicId,
       skill,
     } = req.body || {};
+
+    console.log(`[BK] Analyze request - videoUrl: ${videoUrl}, skill: ${skill}`);
 
     if (!videoUrl) {
       return res
@@ -493,6 +684,76 @@ app.post('/api/analyze', auth, async (req, res) => {
       error:
         'Analysis failed on the server. Try again with a shorter clip or try re-uploading.',
       detail: e.message || String(e),
+    });
+  }
+});
+
+app.post("/api/feedback", async (req, res) => {
+  try {
+    const { playerContext, clipsNotes } = req.body;
+
+    if (!playerContext || !clipsNotes) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing playerContext or clipsNotes"
+      });
+    }
+
+    const prompt = `
+You are a professional soccer coach and performance analyst.
+
+PLAYER CONTEXT:
+${JSON.stringify(playerContext, null, 2)}
+
+CLIP NOTES (timestamps + observations):
+${JSON.stringify(clipsNotes, null, 2)}
+
+Return VALID JSON ONLY with this structure:
+{
+  "strengths": [],
+  "improvements": [],
+  "coachingCues": [],
+  "drills": [
+    {
+      "name": "",
+      "setup": "",
+      "reps": "",
+      "coachingPoints": []
+    }
+  ],
+  "twoWeekPlan": [
+    {
+      "day": "",
+      "focus": "",
+      "drills": []
+    }
+  ]
+}
+`;
+
+    const out = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "Output only valid JSON. No markdown. No extra text." },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.4
+    });
+
+    const raw = out.choices?.[0]?.message?.content || "{}";
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return res.json({ ok: true, report: { raw } }); // fallback so it never crashes
+    }
+    return res.json({ ok: true, report: parsed });
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      ok: false,
+      error: e.message
     });
   }
 });

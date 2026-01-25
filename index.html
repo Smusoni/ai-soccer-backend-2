@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Ball Knowledge</title>
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+  <style>
+    :root{--bg:#0a0a0a;--card:#1a1a1a;--muted:#6a7077;--text:#e8eaed;--line:#2a2a2a;--accent:#00ff95;--accent2:#19d3ff;--accent-dark:#00cc77}
+    
+    *{box-sizing:border-box;font-family:'Segoe UI',Inter,system-ui,-apple-system,sans-serif}
+    
+    html{
+      margin:0;
+      padding:0;
+      height:100%;
+      background-color: var(--bg);
+      color:var(--text);
+    }
+    
+    body{
+      margin:0;
+      padding:0;
+      min-height:100vh;
+      color:var(--text);
+      position:relative;
+      z-index:2;
+    }
+    
+    .container{max-width:920px;margin:0 auto;padding:0 20px}
+    
+    .card{
+      background:linear-gradient(135deg, #1a1a1a 0%, #161616 100%);
+      border-radius:16px;
+      padding:24px;
+      margin:20px 0;
+      border:1px solid var(--line);
+      backdrop-filter:blur(10px);
+      transition:all 0.3s ease;
+    }
+    
+    .card:hover{
+      border-color:#333;
+      box-shadow:0 8px 32px rgba(0,255,149,0.05);
+    }
+    
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    
+    input,select{
+      padding:12px 14px;
+      border-radius:12px;
+      border:1.5px solid var(--line);
+      background:#0f0f0f;
+      color:var(--text);
+      font-size:14px;
+      transition:all 0.2s;
+      flex:1;
+      min-width:140px;
+    }
+    
+    input:focus,select:focus{
+      outline:none;
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(0,255,149,0.1);
+      background:#111;
+    }
+    
+    input::placeholder{color:#666}
+    
+    button{
+      padding:12px 24px;
+      border-radius:12px;
+      border:none;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#000;
+      font-weight:600;
+      cursor:pointer;
+      font-size:14px;
+      transition:all 0.3s;
+      box-shadow:0 4px 15px rgba(0,255,149,0.2);
+    }
+    
+    button:hover{
+      transform:translateY(-2px);
+      box-shadow:0 6px 20px rgba(0,255,149,0.3);
+    }
+    
+    button:active{
+      transform:translateY(0);
+    }
+    
+    h1{font-size:42px;margin:0;font-weight:800;letter-spacing:-1px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    
+    h3{margin:0 0 16px 0;font-size:24px;font-weight:700}
+    
+    h4{margin:0 0 12px 0;font-size:16px;font-weight:600;color:var(--accent)}
+    
+    p{line-height:1.6;margin:0 0 12px 0}
+    
+    .muted{color:var(--muted);font-size:14px}
+    
+    .hide{display:none!important}
+    
+    .ok{color:#00e676}
+    
+    .err{color:#ff6b6b}
+    
+    ul{margin:0;padding-left:20px;list-style-position:inside}
+    
+    li{margin:10px 0;line-height:1.5}
+    
+    .grid{display:grid;grid-template-columns:1fr;gap:20px}
+    
+    @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+    
+    .block-btn{width:100%;padding:14px 16px;font-size:16px}
+    
+    .pill{
+      display:inline-block;
+      padding:8px 16px;
+      border-radius:999px;
+      background:transparent;
+      border:1.5px solid var(--line);
+      margin-right:8px;
+      transition:all 0.2s;
+    }
+    
+    .pill:hover{
+      border-color:var(--accent);
+      box-shadow:0 0 12px rgba(0,255,149,0.2);
+    }
+    
+    a.link{color:var(--accent2);text-decoration:none;font-size:14px;font-weight:500;transition:all 0.2s}
+    
+    a.link:hover{color:var(--accent);text-decoration:underline}
+
+    /* Splash Loader */
+    #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:999}
+    #splash .pulse{width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 20px var(--accent);animation:pulse 1.2s infinite}
+    @keyframes pulse{0%{transform:scale(.8);opacity:.6}50%{transform:scale(1.3);opacity:1}100%{transform:scale(.8);opacity:.6}}
+
+    /* Hamburger menu */
+    .menu-container{position:fixed;top:24px;right:24px;z-index:1000;display:none}
+    .menu-icon{
+      font-size:24px;
+      cursor:pointer;
+      color:white;
+      user-select:none;
+      background:linear-gradient(135deg,#1a1a1a,#161616);
+      border:1.5px solid var(--line);
+      border-radius:12px;
+      padding:8px 10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      transition:all 0.2s;
+    }
+    .menu-icon:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(0,255,149,0.2)}
+    
+    .menu{
+      display:none;
+      flex-direction:column;
+      position:absolute;
+      right:0;
+      top:100%;
+      margin-top:8px;
+      background:linear-gradient(135deg,#1a1a1a,#161616);
+      border:1.5px solid var(--line);
+      border-radius:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      padding:8px 0;
+      min-width:180px;
+      z-index:10;
+      max-height:70vh;
+      overflow:auto;
+    }
+    .menu a{
+      color:var(--text);
+      text-decoration:none;
+      padding:12px 16px;
+      display:block;
+      font-weight:500;
+      transition:all 0.2s;
+    }
+    .menu a:hover{
+      background:rgba(0,255,149,0.1);
+      color:var(--accent);
+      padding-left:20px;
+    }
+
+    .app-header{
+      display:flex;
+      align-items:center;
+      gap:20px;
+      padding:32px 0 24px 0;
+    }
+    
+    .app-header .brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    
+    #logo{height:40px;width:auto;display:block;filter:drop-shadow(0 0 8px rgba(0,255,149,0.2))}
+    @media (min-width:720px){#logo{height:48px}}
+    
+    #logoutTop{display:none}
+
+    #accountCard,#analysisCard,#libraryPage,#profilePage,.menu-container,#landingSection,#privacySection,#feedbackSection{
+      position:relative;z-index:10
+    }
+
+    .field-group{
+      display:flex;
+      flex-direction:column;
+      flex:1;
+      min-width:140px;
+    }
+    
+    .field-label{
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 6px 0;
+      font-weight:500;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }
+
+    .input-error{
+      border-color:#ff6b6b !important;
+      box-shadow:0 0 0 3px rgba(255,107,107,0.15) !important;
+    }
+    
+    /* Section styling */
+    section.card{margin:24px 0}
+    
+    /* Status messages */
+    #authMsg,#uploadMsg,#analyzeStatus{
+      margin:12px 0;
+      padding:12px 14px;
+      border-radius:10px;
+      font-size:14px;
+      font-weight:500;
+    }
+    
+    #authMsg.ok,#uploadMsg.ok,#analyzeStatus.ok{
+      background:rgba(0,230,118,0.1);
+      color:#00e676;
+    }
+    
+    #authMsg.err,#uploadMsg.err,#analyzeStatus.err{
+      background:rgba(255,107,107,0.1);
+      color:#ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <!-- Hamburger Menu (only after login) -->
+  <div class="menu-container">
+    <div class="menu-icon" id="menuIcon" aria-label="Open menu" role="button">&#9776;</div>
+    <div class="menu" id="menu" role="menu">
+      <a href="#" id="profileLink" role="menuitem">Profile</a>
+      <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
+      <a href="#" id="library" role="menuitem">Library</a>
+      <a href="#" id="shareApp" role="menuitem">Share App</a>
+      <a href="#" id="logout" role="menuitem">Logout</a>
+    </div>
+  </div>
+
+  <!-- Splash -->
+  <div id="splash"><div class="pulse"></div></div>
+
+  <!-- Header -->
+  <header class="container app-header">
+    <div class="brand">
+      <img id="logo" alt="Ball Knowledge Logo">
+      <h1>Ball Knowledge</h1>
+    </div>
+
+    <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
+      <a id="pageTag" class="muted" style="text-decoration:none;font-size:14px">Account</a>
+    </nav>
+
+    <script>
+      // Make logo work on localhost + GitHub Pages
+      (function () {
+        const el = document.getElementById('logo');
+        if (!el) return;
+        const base = location.hostname.endsWith('github.io') ? '/ai-soccer-frontend' : '.';
+        el.src = `${base}/ball-knowledge-high-resolution-logo.png`;
+      })();
+    </script>
+  </header>
+
+  <!-- =========== ACCOUNT (only before login) =========== -->
+  <section class="card container" id="accountCard">
+    <h3>Account</h3>
+    <div class="grid">
+      <div>
+        <p class="muted">Create your account</p>
+        <div class="row">
+          <input id="su_name" type="text" placeholder="Full name">
+          <input id="su_email" type="email" placeholder="Email">
+        </div>
+        <div class="row">
+          <input id="su_password" type="password" placeholder="Create password">
+          <input id="su_age" type="number" placeholder="Age">
+          <!-- DOB with visible label (iOS-friendly) -->
+          <div class="field-group">
+            <span class="field-label">Date of Birth</span>
+            <input id="su_dob" type="date">
+          </div>
+        </div>
+        <button id="signupBtn" class="block-btn">Sign Up</button>
+      </div>
+
+      <div>
+        <p class="muted">Already have an account?</p>
+        <div class="row">
+          <input id="li_email" type="email" placeholder="Email">
+          <input id="li_password" type="password" placeholder="Password">
+        </div>
+        <button id="loginBtn" class="block-btn">Login</button>
+      </div>
+    </div>
+    <p id="authMsg" class="muted"></p>
+  </section>
+
+  <!-- =========== LANDING / INFO / PRIVACY / FEEDBACK (ACCOUNT ONLY) =========== -->
+  <section class="card container" id="landingSection">
+    <h3>What is Ball Knowledge?</h3>
+    <p class="muted">
+      Ball Knowledge is your personal soccer assistant. Upload a training clip,
+      tell us what skill you’re working on, and get a clear, coach-style report
+      with focus areas and suggested drills so you know exactly what to work on next.
+    </p>
+    <ul>
+      <li>Built for players who want to get better between training sessions</li>
+      <li>Simple: record on your phone, upload, and get feedback</li>
+      <li>No fancy camera or GPS required</li>
+    </ul>
+  </section>
+
+  <section class="card container" id="privacySection">
+    <h3>Privacy & Data</h3>
+    <p class="muted">
+      Your clips and reports stay tied to your account. We use them only to generate
+      your analysis and to help improve the quality of feedback over time.
+    </p>
+    <ul>
+      <li>We don’t sell your data</li>
+      <li>You can delete reports from your Library anytime</li>
+      <li>Use short clips that you’re comfortable sharing</li>
+    </ul>
+  </section>
+
+  <section class="card container" id="feedbackSection">
+    <h3>Feedback & Bug Reports</h3>
+    <p class="muted">
+      If something breaks or you have ideas for new features, I’d love to hear it.
+      During this early version, your feedback helps shape where Ball Knowledge goes next.
+    </p>
+    <p class="muted">
+      You can send feedback to: <br>
+      <strong>sydnyjr@gmail.com</strong>
+    </p>
+  </section>
+
+  <!-- =========== ANALYSIS (after login) =========== -->
+  <section class="card container hide" id="analysisCard">
+    <h3>New Analysis</h3>
+
+    <div class="grid">
+      <!-- Player + Session Info -->
+      <div class="card" style="margin:0">
+        <h4>Player + Session Info</h4>
+        <div class="row">
+          <input id="heightFeet"   type="number" placeholder="Height (ft)">
+          <input id="heightInches" type="number" placeholder="Height (in)">
+        </div>
+        <div class="row">
+          <input id="weight" type="number" placeholder="Weight (lbs) (optional)">
+          <select id="foot">
+            <option value="" disabled selected>Dominant Foot</option>
+            <option>Right</option><option>Left</option><option>Both</option>
+          </select>
+        </div>
+        <div class="row">
+          <select id="position">
+            <option value="" disabled selected>Position</option>
+            <option>Goalkeeper</option>
+            <option>Right Back</option><option>Center Back</option><option>Left Back</option>
+            <option>Defensive Mid</option><option>Central Mid</option><option>Attacking Mid</option>
+            <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
+          </select>
+        </div>
+        <div class="row">
+          <textarea id="skill" placeholder="(Optional) Add any notes about what you're working on or what the AI should focus on" style="min-height:60px;width:100%;font-family:inherit"></textarea>
+        </div>
+        <p class="muted">These details + your clip help tailor feedback and drills to you.</p>
+      </div>
+
+      <!-- Clip Upload -->
+      <div class="card" style="margin:0">
+        <h4>Attach a Training Clip</h4>
+        <div class="row">
+          <input id="clipFile" type="file" accept="video/*">
+          <button id="uploadBtn">Upload</button>
+        </div>
+        <p id="uploadMsg" class="muted"></p>
+        <div id="clipInfo" class="muted"></div>
+      </div>
+    </div>
+
+    <!-- Analyze actions -->
+    <div class="row" style="margin-top:12px;align-items:center">
+      <button id="analyzeBtn">Analyze</button>
+      <button id="feedbackBtn" class="hide">Get Feedback</button>
+      <span id="analyzeStatus" class="muted"></span>
+      <a href="#results" id="viewLatestLink" class="link hide">View report</a>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="hide" style="margin-top:24px">
+      <h3 style="margin-bottom:24px">Your Coaching Report</h3>
+      <div id="summary" style="margin:0 0 28px 0;line-height:1.8;color:var(--text);font-size:16px;background:linear-gradient(135deg,rgba(0,255,149,0.05),rgba(25,211,255,0.05));padding:20px;border-radius:12px;border-left:4px solid var(--accent)"></div>
+
+      <div class="row" style="gap:16px;margin-bottom:24px">
+        <div class="card" style="flex:1;min-width:280px">
+          <h4>Focus Areas</h4>
+          <ul id="focusList" style="padding-left:20px;color:var(--text);margin:0"></ul>
+        </div>
+        <div class="card" style="flex:1;min-width:280px">
+          <h4>Improvements to Work On</h4>
+          <ul id="improvementsList" style="padding-left:20px;color:var(--text);margin:0"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>Suggested Drills to Improve</h4>
+        <div id="drillList" style="display:flex;flex-direction:column;gap:14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========== LIBRARY PAGE =========== -->
+  <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
+    <h3 id="libraryTitle">Your Library</h3>
+    <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
+    <div id="libraryList"></div>
+  </section>
+
+  <!-- =========== PROFILE PAGE (after login) =========== -->
+  <section class="card container hide" id="profilePage" aria-labelledby="profileTitle">
+    <h3 id="profileTitle" style="margin:0 0 24px 0">Your Profile</h3>
+    
+    <div id="profileViewMode">
+      <div id="profileContent" style="display:grid;gap:24px">
+        <!-- Profile Picture Card -->
+        <div class="card" style="margin:0">
+          <h4 style="margin-top:0">Profile Picture</h4>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,rgba(0,255,149,0.2),rgba(25,211,255,0.2));border:2px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+              <img id="profilePicture" src="" alt="Profile" style="width:100%;height:100%;object-fit:cover;display:none">
+              <div id="profilePictureDefault" style="text-align:center;color:var(--muted)">
+                <div style="font-size:40px">📷</div>
+                <div style="font-size:12px;margin-top:4px">No photo yet</div>
+              </div>
+            </div>
+            <button id="uploadPictureBtn" style="flex:1;min-width:140px">Upload Photo</button>
+            <input id="profilePictureInput" type="file" accept="image/*" style="display:none">
+          </div>
+        </div>
+
+        <!-- Basic Info Card -->
+        <div class="card" style="margin:0">
+          <h4 style="margin-top:0">Personal Information</h4>
+          <div style="display:grid;gap:16px">
+            <div style="padding:12px;background:rgba(0,255,149,0.08);border-radius:10px;border-left:3px solid var(--accent)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Name</div>
+              <div id="profileName" style="font-size:18px;font-weight:600;color:var(--text)">—</div>
+            </div>
+            
+            <div style="padding:12px;background:rgba(25,211,255,0.08);border-radius:10px;border-left:3px solid var(--accent2)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Email</div>
+              <div id="profileEmail" style="font-size:16px;color:var(--text);word-break:break-all">—</div>
+            </div>
+
+            <div style="padding:12px;background:rgba(0,255,149,0.08);border-radius:10px;border-left:3px solid var(--accent)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Age</div>
+              <div id="profileAge" style="font-size:18px;font-weight:600;color:var(--text)">—</div>
+            </div>
+
+            <div style="padding:12px;background:rgba(25,211,255,0.08);border-radius:10px;border-left:3px solid var(--accent2)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Date of Birth</div>
+              <div id="profileDOB" style="font-size:16px;color:var(--text)">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Soccer Profile Card -->
+        <div class="card" style="margin:0">
+          <h4 style="margin-top:0">Soccer Profile</h4>
+          <div style="display:grid;gap:16px">
+            <div style="padding:12px;background:rgba(0,255,149,0.08);border-radius:10px;border-left:3px solid var(--accent)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Position</div>
+              <div id="profilePosition" style="font-size:18px;font-weight:600;color:var(--text)">—</div>
+            </div>
+
+            <div style="padding:12px;background:rgba(25,211,255,0.08);border-radius:10px;border-left:3px solid var(--accent2)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Dominant Foot</div>
+              <div id="profileFoot" style="font-size:18px;font-weight:600;color:var(--text)">—</div>
+            </div>
+
+            <div style="padding:12px;background:rgba(0,255,149,0.08);border-radius:10px;border-left:3px solid var(--accent)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Height</div>
+              <div id="profileHeight" style="font-size:18px;font-weight:600;color:var(--text)">—</div>
+            </div>
+
+            <div style="padding:12px;background:rgba(25,211,255,0.08);border-radius:10px;border-left:3px solid var(--accent2)">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Weight</div>
+              <div id="profileWeight" style="font-size:18px;font-weight:600;color:var(--text)">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button id="editProfileBtn" style="flex:1;min-width:160px">Edit Profile</button>
+          <button id="viewLibraryBtn" style="flex:1;min-width:160px">View Library</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Mode -->
+    <div id="profileEditMode" class="hide">
+      <div style="display:grid;gap:24px">
+        <!-- Edit Personal Info -->
+        <div class="card" style="margin:0">
+          <h4 style="margin-top:0">Edit Personal Information</h4>
+          <div style="display:grid;gap:12px">
+            <div>
+              <label class="field-label">Name</label>
+              <input id="editName" type="text" placeholder="Full name" style="width:100%">
+            </div>
+            <div>
+              <label class="field-label">Age</label>
+              <input id="editAge" type="number" placeholder="Age" style="width:100%">
+            </div>
+            <div>
+              <label class="field-label">Date of Birth</label>
+              <input id="editDOB" type="date" style="width:100%">
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Soccer Profile -->
+        <div class="card" style="margin:0">
+          <h4 style="margin-top:0">Edit Soccer Profile</h4>
+          <div style="display:grid;gap:12px">
+            <div>
+              <label class="field-label">Position</label>
+              <select id="editPosition" style="width:100%">
+                <option value="">Select Position</option>
+                <option value="Goalkeeper">Goalkeeper</option>
+                <option value="Defender">Defender</option>
+                <option value="Midfielder">Midfielder</option>
+                <option value="Forward">Forward</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Dominant Foot</label>
+              <select id="editFoot" style="width:100%">
+                <option value="">Select Dominant Foot</option>
+                <option value="L">Left</option>
+                <option value="R">Right</option>
+                <option value="B">Both</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="field-label">Height (inches)</label>
+                <input id="editHeight" type="number" placeholder="e.g., 70" style="width:100%">
+              </div>
+              <div>
+                <label class="field-label">Weight (lbs)</label>
+                <input id="editWeight" type="number" placeholder="e.g., 160" style="width:100%">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Buttons -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button id="saveProfileBtn" style="flex:1;min-width:160px">Save Changes</button>
+          <button id="cancelEditBtn" style="flex:1;min-width:160px;background:linear-gradient(135deg,#666,#555);box-shadow:0 4px 12px rgba(100,100,100,0.2)">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  /* =================== CONFIG =================== */
+  const BASE =
+    location.hostname.endsWith('github.io')
+      ? 'https://ai-soccer-backend-2-production.up.railway.app'
+      : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
+
+  const CLOUD_NAME    = 'dblconpx8';
+  const UPLOAD_PRESET = 'ballknowledge_unsigned';
+
+  /* =================== HELPERS =================== */
+  const $ = (id) => document.getElementById(id);
+  const setToken   = (t) => localStorage.setItem('bk_token', t);
+  const getToken   = ()  => localStorage.getItem('bk_token');
+  const clearToken = ()  => localStorage.removeItem('bk_token');
+
+  function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
+  function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
+
+  async function api(path, opts = {}) {
+    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+    const t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    const r = await fetch(`${BASE}${path}`, { ...opts, headers });
+    let data;
+    try { data = await r.json(); }
+    catch { data = { ok:false, error:'Bad JSON from server' }; }
+    return data;
+  }
+
+  /* ================ ELEMENT REFS ================ */
+  const accountCard  = $('accountCard');
+  const analysisCard = $('analysisCard');
+  const libraryPage  = $('libraryPage');
+  const profilePage  = $('profilePage');
+  const libraryList  = $('libraryList');
+  const pageTag      = $('pageTag');
+  const splash       = $('splash');
+
+  const landingSection  = $('landingSection');
+  const privacySection  = $('privacySection');
+  const feedbackSection = $('feedbackSection');
+
+  const heightFeetEl   = $('heightFeet');
+  const heightInchesEl = $('heightInches');
+  const weightEl       = $('weight');
+  const footEl         = $('foot');
+  const positionEl     = $('position');
+  const skillEl        = $('skill');
+
+  const clipFile  = $('clipFile');
+  const uploadBtn = $('uploadBtn');
+  const uploadMsg = $('uploadMsg');
+  const clipInfo  = $('clipInfo');
+
+  const analyzeBtn     = $('analyzeBtn');
+  const analyzeStatus  = $('analyzeStatus');
+  const viewLatestLink = $('viewLatestLink');
+
+  const results   = $('results');
+  const summary   = $('summary');
+  const focusList = $('focusList');
+  const improvementsList = $('improvementsList');
+  const drillList = $('drillList');
+
+  const authMsg      = $('authMsg');
+  const su_name      = $('su_name');
+  const su_email     = $('su_email');
+  const su_password  = $('su_password');
+  const su_age       = $('su_age');
+  const su_dob       = $('su_dob');
+  const li_email     = $('li_email');
+  const li_password  = $('li_password');
+
+  // Menu
+  const menuContainer   = document.querySelector('.menu-container');
+  const menuIcon        = $('menuIcon');
+  const menuPanel       = $('menu');
+  const newAnalysisLink = $('newAnalysis');
+  const libraryLink     = $('library');
+  const logoutBtn       = $('logout');
+
+  function hideSplash(){ if (splash) splash.style.display='none'; }
+
+  /* =================== MINI ROUTER =================== */
+  function goTo(screen){ // 'account' | 'analysis' | 'library' | 'profile'
+    hide(accountCard); hide(analysisCard); hide(libraryPage); hide(profilePage);
+    [landingSection, privacySection, feedbackSection].forEach(hide);
+
+    if (screen === 'analysis') {
+      show(analysisCard);
+      if (pageTag) pageTag.textContent = 'Analysis';
+    } else if (screen === 'library') {
+      show(libraryPage);
+      if (pageTag) pageTag.textContent = 'Library';
+    } else if (screen === 'profile') {
+      show(profilePage);
+      if (pageTag) pageTag.textContent = 'Profile';
+      loadProfile();
+    } else {
+      show(accountCard);
+      show(landingSection);
+      show(privacySection);
+      show(feedbackSection);
+      if (pageTag) pageTag.textContent = 'Account';
+    }
+
+    if (screen !== 'account' && menuContainer) {
+      menuContainer.style.display = 'block';
+    }
+    if (screen === 'account' && menuContainer) {
+      menuContainer.style.display = 'none';
+    }
+  }
+
+  function setHash(screen){ location.hash = `#/${screen}`; }
+  function currentHash(){ return (location.hash || '').replace(/^#\//,''); }
+
+  window.addEventListener('hashchange', () => {
+    const page = currentHash();
+    if (!getToken()) { goTo('account'); return; }
+    if (page === 'library') { loadLibrary(); }
+    else if (page === 'profile') { goTo('profile'); }
+    else if (page === 'analysis') { goTo('analysis'); }
+    else { setHash('analysis'); }
+  });
+
+  // Menu interactions
+  menuIcon.addEventListener('click', ()=> {
+    menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
+    if (menuPanel.style.display==='') menuPanel.style.display='flex';
+  });
+  window.addEventListener('click',(e)=>{
+    if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){
+      menuPanel.style.display='none';
+    }
+  });
+  newAnalysisLink.addEventListener('click',(e)=>{
+    e.preventDefault();
+    menuPanel.style.display='none';
+    setHash('analysis');
+    hide(results);
+    viewLatestLink.classList.add('hide');
+    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
+  });
+  libraryLink.addEventListener('click',(e)=>{
+    e.preventDefault();
+    menuPanel.style.display='none';
+    setHash('library');
+  });
+  const profileLink = $('profileLink');
+  if (profileLink) {
+    profileLink.addEventListener('click',(e)=>{
+      e.preventDefault();
+      menuPanel.style.display='none';
+      setHash('profile');
+    });
+  }
+  const shareLink = $('shareApp');
+  if (shareLink) {
+    shareLink.addEventListener('click',(e)=>{
+      e.preventDefault();
+      menuPanel.style.display='none';
+      const appUrl = window.location.origin + window.location.pathname;
+      const text = 'Check out Ball Knowledge - AI-powered soccer training analysis! Get instant feedback on your juggling, dribbling, and passing skills.';
+      if (navigator.share) {
+        navigator.share({
+          title: 'Ball Knowledge',
+          text: text,
+          url: appUrl
+        }).catch(err => console.log('Share cancelled'));
+      } else {
+        const msg = `${text}\n\n${appUrl}`;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(msg);
+          alert('Share link copied to clipboard!');
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
+
+  /* ================= AUTH ================= */
+  function setAuthMessage(t, ok=true){
+    authMsg.textContent = t;
+    authMsg.className   = ok ? 'ok' : 'err';
+  }
+
+  async function doSignup(){
+    const payload = {
+      name: su_name.value.trim(),
+      email: su_email.value.trim(),
+      password: su_password.value.trim(),
+      age: Number(su_age.value||0),
+      dob: su_dob.value
+    };
+    if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob){
+      return setAuthMessage('Please complete all sign-up fields (including Date of Birth).', false);
+    }
+    setAuthMessage('Creating your account…');
+    const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
+    if (out.ok && out.token){
+      setToken(out.token);
+      setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+      proceedToAnalysis();
+    } else {
+      setAuthMessage(out.error || 'Signup failed', false);
+    }
+  }
+
+  async function doLogin(){
+    const email = li_email.value.trim();
+    const password = li_password.value.trim();
+    if (!email || !password) return setAuthMessage('Enter email & password', false);
+    setAuthMessage('Logging in…');
+    const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
+    if (out.ok && out.token){
+      setToken(out.token);
+      setAuthMessage('Logged in ✅', true);
+      proceedToAnalysis();
+    } else {
+      setAuthMessage(out.error || 'Login failed', false);
+    }
+  }
+
+  function proceedToAnalysis(){
+    setHash('analysis');
+    goTo('analysis');
+    hideSplash();
+    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
+  }
+
+  function doLogout(){
+    clearToken();
+    try { menuPanel.style.display='none'; } catch {}
+    if (menuContainer) menuContainer.style.display='none';
+    setHash('account');
+    goTo('account');
+    hide(results);
+    viewLatestLink.classList.add('hide');
+  }
+  logoutBtn.addEventListener('click', e=>{e.preventDefault();doLogout();});
+
+  /* ============== CLOUDINARY UPLOAD ============== */
+  async function uploadToCloudinary(file){
+    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', UPLOAD_PRESET);
+    const r = await fetch(url, { method:'POST', body: fd });
+    return await r.json();
+  }
+
+  let lastVideoUrl = '';
+  let lastPublicId = '';
+
+  async function doUpload(){
+    const f = clipFile.files?.[0];
+    if (!f){
+      uploadMsg.textContent = 'Pick a video first';
+      uploadMsg.className   = 'err';
+      return;
+    }
+    uploadMsg.textContent = 'Uploading…';
+    uploadMsg.className   = 'muted';
+
+    try{
+      const up = await uploadToCloudinary(f);
+      if (up.secure_url){
+        lastVideoUrl = up.secure_url;
+        lastPublicId = up.public_id || '';
+        uploadMsg.textContent = 'Uploaded ✅';
+        uploadMsg.className   = 'ok';
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span> <a class="link" href="${lastVideoUrl}" target="_blank">View</a>`;
+
+        await api('/api/clip', {
+          method:'POST',
+          body: JSON.stringify({
+            url: up.secure_url,
+            public_id: up.public_id,
+            created_at: up.created_at || new Date().toISOString(),
+            bytes: up.bytes || f.size,
+            duration: up.duration || null,
+            width: up.width || null,
+            height: up.height || null,
+            format: up.format || f.type
+          })
+        });
+      } else {
+        uploadMsg.textContent = 'Upload failed';
+        uploadMsg.className   = 'err';
+      }
+    }catch(e){
+      console.error(e);
+      uploadMsg.textContent = 'Network error';
+      uploadMsg.className   = 'err';
+    }
+  }
+
+  /* ==================== ANALYZE ==================== */
+
+  function clearAnalysisValidation(){
+    [heightFeetEl, heightInchesEl, footEl, positionEl, skillEl].forEach(el=>{
+      if (!el) return;
+      el.classList.remove('input-error');
+    });
+  }
+
+  async function doAnalyze(){
+    viewLatestLink.classList.add('hide');
+    hide(results);
+    clearAnalysisValidation();
+
+    // Required fields (except weight)
+    const required = [
+      { el: heightFeetEl,   label: 'Height (ft)' },
+      { el: heightInchesEl, label: 'Height (in)' },
+      { el: footEl,         label: 'Dominant Foot' },
+      { el: positionEl,     label: 'Position' }
+    ];
+
+    const missingLabels = [];
+    required.forEach(({el,label})=>{
+      if (!el) return;
+      const v = (el.tagName === 'SELECT') ? el.value : el.value.trim();
+      if (!v){
+        missingLabels.push(label);
+        el.classList.add('input-error');
+      }
+    });
+
+    if (missingLabels.length){
+      analyzeStatus.textContent =
+        'Please fill these fields before analyzing: ' + missingLabels.join(', ') + '.';
+      analyzeStatus.className   = 'err';
+      return;
+    }
+
+    const payload = {
+      heightFeet:   Number(heightFeetEl.value || 0),
+      heightInches: Number(heightInchesEl.value || 0),
+      weight:       weightEl.value ? Number(weightEl.value) : null,
+      foot:         footEl.value,
+      position:     positionEl.value,
+      skill:        skillEl.value.trim(),
+      videoUrl:     lastVideoUrl,
+      publicId:     lastPublicId
+    };
+
+    if (!payload.videoUrl){
+      analyzeStatus.textContent = 'Upload a clip first before analyzing.';
+      analyzeStatus.className   = 'err';
+      return;
+    }
+
+    analyzeStatus.textContent = 'Analyzing… this can take a moment';
+    analyzeStatus.className   = 'muted';
+
+    try{
+      const out = await api('/api/analyze', {
+        method:'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (!out.ok){
+        analyzeStatus.textContent =
+          (out.error && typeof out.error === 'string')
+            ? `Analysis failed: ${out.error}`
+            : 'Analysis failed. Please check your connection and try again.';
+        analyzeStatus.className   = 'err';
+        return;
+      }
+
+      summary.textContent = out.summary || 'Summary not available.';
+      focusList.innerHTML = (out.focus || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
+      improvementsList.innerHTML = (out.improvements || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
+      drillList.innerHTML = (out.drills || []).map(d=>`
+        <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:18px;border-radius:12px;transition:all 0.3s">
+          <div style="color:var(--accent);font-weight:700;font-size:16px;margin-bottom:8px">${d.title || 'Drill'}</div>
+          ${d.description ? `<div style="margin:0 0 12px 0;font-size:15px;color:var(--text);line-height:1.6">${d.description}</div>` : ''}
+          <a class="link" href="${d.url}" target="_blank" style="font-size:14px;font-weight:600">→ Find this drill on YouTube</a>
+        </div>
+      `).join('');
+
+      analyzeStatus.textContent = 'Done ✅';
+      analyzeStatus.className   = 'ok';
+      show(results);
+      $('feedbackBtn')?.classList.remove('hide');
+      results.scrollIntoView({behavior:'smooth',block:'start'});
+
+      viewLatestLink.classList.remove('hide');
+      viewLatestLink.onclick = (e)=>{
+        e.preventDefault();
+        results.scrollIntoView({behavior:'smooth',block:'start'});
+      };
+    }catch(e){
+      console.error(e);
+      analyzeStatus.textContent = 'Analysis failed due to a network or server error. Please try again.';
+      analyzeStatus.className   = 'err';
+    }
+  }
+
+  /* ================ LIBRARY ================ */
+  let libraryCache = [];
+
+  function renderLibrary(items){
+    goTo('library');
+    libraryList.innerHTML = items.length
+      ? items.map(i => `
+          <div class="card" data-id="${i.id}">
+            <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
+            <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
+            <div class="row" style="gap:8px">
+              ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
+              <button class="block-btn" style="flex:0 0 auto;padding:6px 10px" data-action="view" data-id="${i.id}">View</button>
+              <button class="block-btn" style="flex:0 0 auto;padding:6px 10px;background:#ff6b6b" data-action="delete" data-id="${i.id}">Delete</button>
+            </div>
+          </div>
+        `).join('')
+      : `<div class="muted">No saved analyses yet. Upload a clip and press Analyze to create one.</div>`;
+  }
+
+  async function loadLibrary(){
+    try{
+      const res = await api('/api/analyses');
+      if (!res.ok) throw new Error(res.error || 'Failed to load library');
+      libraryCache = res.items || [];
+      renderLibrary(libraryCache);
+    }catch(e){
+      alert(e.message || 'Could not load library');
+    }
+  }
+
+  async function viewAnalysis(id){
+    try{
+      const res = await api(`/api/analyses/${id}`);
+      if (!res.ok) throw new Error(res.error || 'Not found');
+
+      const a = res.item || {};
+      setHash('analysis');
+      goTo('analysis');
+      summary.textContent = a.summary || 'Summary not available.';
+      focusList.innerHTML = (a.focus || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
+      improvementsList.innerHTML = (a.improvements || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
+      drillList.innerHTML = (a.drills || []).map(d=>`
+        <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:18px;border-radius:12px;transition:all 0.3s">
+          <div style="color:var(--accent);font-weight:700;font-size:16px;margin-bottom:8px">${d.title || 'Drill'}</div>
+          ${d.description ? `<div style="margin:0 0 12px 0;font-size:15px;color:var(--text);line-height:1.6">${d.description}</div>` : ''}
+          <a class="link" href="${d.url}" target="_blank" style="font-size:14px;font-weight:600">→ Find this drill on YouTube</a>
+        </div>
+      `).join('');
+      show(results);
+      results.scrollIntoView({behavior:'smooth',block:'start'});
+      viewLatestLink.classList.remove('hide');
+      viewLatestLink.onclick = (e)=>{
+        e.preventDefault();
+        results.scrollIntoView({behavior:'smooth',block:'start'});
+      };
+    }catch(e){
+      alert(e.message || 'Could not open analysis');
+    }
+  }
+
+  async function deleteAnalysis(id){
+    if (!confirm('Delete this analysis?')) return;
+    try{
+      const res = await api(`/api/analyses/${id}`, { method:'DELETE' });
+      if (!res.ok) throw new Error(res.error || 'Delete failed');
+      libraryCache = libraryCache.filter(x => x.id !== id);
+      renderLibrary(libraryCache);
+    }catch(e){
+      alert(e.message || 'Could not delete');
+    }
+  }
+
+  async function getFeedback(playerContext, clipsNotes) {
+    const res = await fetch("http://localhost:3001/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerContext, clipsNotes }),
+    });
+
+    return await res.json();
+  }
+
+  async function doGetFeedback(){
+    const feedbackBtn = $('feedbackBtn');
+    const analyzeStatus = $('analyzeStatus');
+    const results = $('results');
+    
+    analyzeStatus.textContent = 'Getting feedback…';
+    analyzeStatus.className = 'muted';
+    feedbackBtn.disabled = true;
+
+    try {
+      // Build player context from form
+      const playerContext = {
+        height: `${heightFeetEl.value}'${heightInchesEl.value}"`,
+        weight: weightEl.value ? `${weightEl.value} lbs` : 'Not specified',
+        position: positionEl.value,
+        dominantFoot: footEl.value,
+        notes: skillEl.value.trim() || 'None'
+      };
+
+      // Build clip notes - mock data for demo
+      const clipsNotes = [
+        {
+          timestamp: '0:00-0:10',
+          observation: 'Good ball control and touch'
+        },
+        {
+          timestamp: '0:10-0:20',
+          observation: 'Quick feet and change of direction'
+        }
+      ];
+
+      const result = await getFeedback(playerContext, clipsNotes);
+
+      if (!result.ok) {
+        analyzeStatus.textContent = `Feedback failed: ${result.error}`;
+        analyzeStatus.className = 'err';
+        feedbackBtn.disabled = false;
+        return;
+      }
+
+      // Display feedback results
+      const report = result.report || {};
+      const feedbackHtml = `
+        <div style="margin-top:24px">
+          <h3>Feedback Report</h3>
+          ${report.strengths ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Strengths</h4>${report.strengths.map(s=>`<p style="margin:8px 0;color:var(--text)">${s}</p>`).join('')}</div>` : ''}
+          ${report.improvements ? `<div style="margin:20px 0"><h4 style="color:var(--accent2)">Improvements</h4>${report.improvements.map(i=>`<p style="margin:8px 0;color:var(--text)">${i}</p>`).join('')}</div>` : ''}
+          ${report.coachingCues ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Coaching Cues</h4>${report.coachingCues.map(c=>`<p style="margin:8px 0;color:var(--text)">${c}</p>`).join('')}</div>` : ''}
+          ${report.drills ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Recommended Drills</h4>${report.drills.map(d=>`<div style="margin:12px 0;padding:12px;background:rgba(0,255,149,0.08);border-radius:8px"><strong>${d.name}</strong><p style="margin:4px 0;font-size:14px">${d.setup}</p></div>`).join('')}</div>` : ''}
+        </div>
+      `;
+      
+      const resultsDiv = results;
+      resultsDiv.innerHTML += feedbackHtml;
+      resultsDiv.scrollIntoView({behavior:'smooth',block:'start'});
+
+      analyzeStatus.textContent = 'Feedback ready ✅';
+      analyzeStatus.className = 'ok';
+      feedbackBtn.disabled = false;
+
+    } catch (e) {
+      console.error(e);
+      analyzeStatus.textContent = `Error: ${e.message}`;
+      analyzeStatus.className = 'err';
+      feedbackBtn.disabled = false;
+    }
+  }
+
+  document.addEventListener('click',(e)=>{
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    const action = t.getAttribute('data-action');
+    const id = t.getAttribute('data-id');
+    if (!action || !id) return;
+    if (action === 'view'){ e.preventDefault(); viewAnalysis(id); }
+    else if (action === 'delete'){ e.preventDefault(); deleteAnalysis(id); }
+  });
+
+  /* ================= PROFILE ================= */
+  let currentProfileData = {};
+
+  async function loadProfile(){
+    try {
+      const res = await api('/api/profile');
+      if (!res.ok) throw new Error(res.error || 'Could not load profile');
+      
+      currentProfileData = res;
+      const user = res.user || {};
+      const profile = res.profile || {};
+      
+      // Fill in view mode
+      $('profileName').textContent = user.name || '—';
+      $('profileEmail').textContent = user.email || '—';
+      $('profileAge').textContent = user.age ? `${user.age} years old` : '—';
+      
+      if (user.dob) {
+        const dobDate = new Date(user.dob);
+        $('profileDOB').textContent = dobDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      } else {
+        $('profileDOB').textContent = '—';
+      }
+      
+      $('profilePosition').textContent = profile.position || '—';
+      $('profileFoot').textContent = profile.foot ? (profile.foot === 'R' ? 'Right' : profile.foot === 'L' ? 'Left' : 'Both') : '—';
+      
+      if (profile.height) {
+        const feet = Math.floor(profile.height / 12);
+        const inches = profile.height % 12;
+        $('profileHeight').textContent = `${feet}'${inches}"`;
+      } else {
+        $('profileHeight').textContent = '—';
+      }
+      
+      $('profileWeight').textContent = profile.weight ? `${profile.weight} lbs` : '—';
+      
+      // Fill in edit mode
+      $('editName').value = user.name || '';
+      $('editAge').value = user.age || '';
+      $('editDOB').value = user.dob || '';
+      $('editPosition').value = profile.position || '';
+      $('editFoot').value = profile.foot || '';
+      $('editHeight').value = profile.height || '';
+      $('editWeight').value = profile.weight || '';
+      
+      // Show view mode, hide edit mode
+      hide($('profileEditMode'));
+      show($('profileViewMode'));
+      
+    } catch (e) {
+      console.error('Profile load error:', e);
+      alert('Could not load profile');
+    }
+  }
+
+  function showEditMode(){
+    hide($('profileViewMode'));
+    show($('profileEditMode'));
+  }
+
+  function hideEditMode(){
+    hide($('profileEditMode'));
+    show($('profileViewMode'));
+  }
+
+  async function saveProfile(){
+    const payload = {
+      name: $('editName').value.trim(),
+      age: Number($('editAge').value || 0),
+      dob: $('editDOB').value,
+      position: $('editPosition').value,
+      foot: $('editFoot').value,
+      height: Number($('editHeight').value || 0),
+      weight: Number($('editWeight').value || 0)
+    };
+
+    try {
+      const res = await api('/api/profile', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error(res.error || 'Update failed');
+      
+      alert('Profile updated successfully!');
+      await loadProfile();
+    } catch (e) {
+      alert('Error updating profile: ' + (e.message || 'Unknown error'));
+    }
+  }
+
+  /* ================= WIRE UP ================= */
+  $('signupBtn')?.addEventListener('click', doSignup);
+  $('loginBtn')?.addEventListener('click', doLogin);
+  uploadBtn?.addEventListener('click', doUpload);
+  analyzeBtn?.addEventListener('click', doAnalyze);
+  $('feedbackBtn')?.addEventListener('click', doGetFeedback);
+  
+  // Profile buttons
+  $('editProfileBtn')?.addEventListener('click', showEditMode);
+  $('cancelEditBtn')?.addEventListener('click', hideEditMode);
+  $('saveProfileBtn')?.addEventListener('click', saveProfile);
+  $('viewLibraryBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setHash('library');
+  });
+  
+  // Picture upload
+  $('uploadPictureBtn')?.addEventListener('click', () => {
+    $('profilePictureInput').click();
+  });
+  $('profilePictureInput')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // For now, just show local preview
+    // You can extend this to upload to Cloudinary later
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = $('profilePicture');
+      img.src = event.target.result;
+      img.style.display = 'block';
+      $('profilePictureDefault').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  /* ================= BOOTSTRAP ================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    try{
+      if (getToken()){
+        const page = currentHash();
+        if (page === 'library') { loadLibrary(); }
+        else { setHash('analysis'); goTo('analysis'); }
+      } else {
+        goTo('account');
+      }
+    } finally {
+      hideSplash();
+    }
+  });
+  </script>
+</body>
+</html>

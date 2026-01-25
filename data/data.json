@@ -1,0 +1,130 @@
+{
+  "users": [
+    {
+      "id": "170ac01e-d760-4dae-bdad-50fa3e9212d8",
+      "name": "Sydney Musoni",
+      "email": "sydnyjr@gmail.com",
+      "passHash": "$2a$10$gA3/XUtlvfEwVZIy82Iosu6D/EYjy1j0vBRssyyF8L4X7My.Gtoaq",
+      "age": 28,
+      "dob": "1997-06-13",
+      "createdAt": 1764771570356
+    }
+  ],
+  "profiles": {
+    "170ac01e-d760-4dae-bdad-50fa3e9212d8": {
+      "name": null,
+      "age": 28,
+      "dob": null,
+      "height": 66,
+      "weight": null,
+      "foot": "Right",
+      "position": "Attacking Mid",
+      "skill": "",
+      "updatedAt": 1764774119945
+    }
+  },
+  "clipsByUser": {
+    "170ac01e-d760-4dae-bdad-50fa3e9212d8": [
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772490/lt5t13frzuogmay9tgus.mov",
+        "public_id": "lt5t13frzuogmay9tgus",
+        "created_at": "2025-12-03T14:34:50Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      },
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772096/k0xitkulzxw5sanfzvbu.mov",
+        "public_id": "k0xitkulzxw5sanfzvbu",
+        "created_at": "2025-12-03T14:28:16Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      },
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771665/dfvfsqt8ddzlefsxms2h.mov",
+        "public_id": "dfvfsqt8ddzlefsxms2h",
+        "created_at": "2025-12-03T14:21:05Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      },
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771663/e5iqrdchyyqhdjdnu29a.mov",
+        "public_id": "e5iqrdchyyqhdjdnu29a",
+        "created_at": "2025-12-03T14:21:03Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      }
+    ]
+  },
+  "analysesByUser": {
+    "170ac01e-d760-4dae-bdad-50fa3e9212d8": [
+      {
+        "id": "b7dc89dc-5fb0-4daf-9543-9f86da231828",
+        "summary": "Quick training analysis for Attacking Mid. Continue focusing on your technique and decision making.",
+        "focus": [
+          "Technical repetition",
+          "Decision making under light pressure",
+          "Consistent body shape on the ball"
+        ],
+        "drills": [
+          {
+            "title": "Wall passes with tight touch",
+            "url": "https://www.youtube.com/results?search_query=Wall%20passes%20with%20tight%20touch%20soccer%20drill"
+          },
+          {
+            "title": "1v1 change-of-direction drill",
+            "url": "https://www.youtube.com/results?search_query=1v1%20change%20of%20direction%20soccer%20drill"
+          },
+          {
+            "title": "First-touch receiving patterns",
+            "url": "https://www.youtube.com/results?search_query=first%20touch%20receiving%20patterns%20soccer%20drill"
+          }
+        ],
+        "comps": [],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772096/k0xitkulzxw5sanfzvbu.mov",
+        "public_id": "k0xitkulzxw5sanfzvbu",
+        "skill": "shooting",
+        "created_at": 1764772114998
+      },
+      {
+        "id": "06f5f8f9-9a79-4ccb-991b-5fae0fce5f3f",
+        "summary": "Quick training analysis for Attacking Mid. Continue focusing on your technique and decision making.",
+        "focus": [
+          "Technical repetition",
+          "Decision making under light pressure",
+          "Consistent body shape on the ball"
+        ],
+        "drills": [
+          {
+            "title": "Wall passes with tight touch",
+            "url": "https://www.youtube.com/results?search_query=Wall%20passes%20with%20tight%20touch%20soccer%20drill"
+          },
+          {
+            "title": "1v1 change-of-direction drill",
+            "url": "https://www.youtube.com/results?search_query=1v1%20change%20of%20direction%20soccer%20drill"
+          },
+          {
+            "title": "First-touch receiving patterns",
+            "url": "https://www.youtube.com/results?search_query=first%20touch%20receiving%20patterns%20soccer%20drill"
+          }
+        ],
+        "comps": [],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771663/e5iqrdchyyqhdjdnu29a.mov",
+        "public_id": "e5iqrdchyyqhdjdnu29a",
+        "skill": "shooting",
+        "created_at": 1764771667548
+      }
+    ]
+  }
+}
