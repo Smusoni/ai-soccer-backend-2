@@ -668,6 +668,9 @@
 
   const authMsg      = $('authMsg');
   const su_name      = $('su_name');
+
+  // Store last analysis for feedback
+  let lastAnalysisData = null;
   const su_email     = $('su_email');
   const su_password  = $('su_password');
   const su_age       = $('su_age');
@@ -975,6 +978,15 @@
         return;
       }
 
+      // Store the analysis data for feedback use
+      lastAnalysisData = {
+        activity: out.activity,
+        summary: out.summary,
+        focus: out.focus,
+        improvements: out.improvements,
+        drills: out.drills
+      };
+
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
       improvementsList.innerHTML = (out.improvements || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
@@ -1092,7 +1104,14 @@
     const analyzeStatus = $('analyzeStatus');
     const results = $('results');
     
-    analyzeStatus.textContent = 'Getting feedback…';
+    // Check if analysis has been done first
+    if (!lastAnalysisData) {
+      analyzeStatus.textContent = 'Please analyze a video first before getting feedback.';
+      analyzeStatus.className = 'err';
+      return;
+    }
+
+    analyzeStatus.textContent = 'Getting coaching feedback…';
     analyzeStatus.className = 'muted';
     feedbackBtn.disabled = true;
 
@@ -1106,15 +1125,12 @@
         notes: skillEl.value.trim() || 'None'
       };
 
-      // Build clip notes - mock data for demo
+      // Use REAL analysis data from the video analysis, not mock data
       const clipsNotes = [
         {
-          timestamp: '0:00-0:10',
-          observation: 'Good ball control and touch'
-        },
-        {
-          timestamp: '0:10-0:20',
-          observation: 'Quick feet and change of direction'
+          activity: lastAnalysisData.activity || 'Training activity',
+          summary: lastAnalysisData.summary || 'Video analysis completed',
+          observations: lastAnalysisData.improvements || []
         }
       ];
 
@@ -1131,7 +1147,7 @@
       const report = result.report || {};
       const feedbackHtml = `
         <div style="margin-top:24px">
-          <h3>Feedback Report</h3>
+          <h3>Coaching Feedback Report</h3>
           ${report.strengths ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Strengths</h4>${report.strengths.map(s=>`<p style="margin:8px 0;color:var(--text)">${s}</p>`).join('')}</div>` : ''}
           ${report.improvements ? `<div style="margin:20px 0"><h4 style="color:var(--accent2)">Improvements</h4>${report.improvements.map(i=>`<p style="margin:8px 0;color:var(--text)">${i}</p>`).join('')}</div>` : ''}
           ${report.coachingCues ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Coaching Cues</h4>${report.coachingCues.map(c=>`<p style="margin:8px 0;color:var(--text)">${c}</p>`).join('')}</div>` : ''}
@@ -1143,7 +1159,7 @@
       resultsDiv.innerHTML += feedbackHtml;
       resultsDiv.scrollIntoView({behavior:'smooth',block:'start'});
 
-      analyzeStatus.textContent = 'Feedback ready ✅';
+      analyzeStatus.textContent = 'Coaching feedback ready ✅';
       analyzeStatus.className = 'ok';
       feedbackBtn.disabled = false;
 
