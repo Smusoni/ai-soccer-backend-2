@@ -1121,7 +1121,7 @@
       const result = await getFeedback(playerContext, clipsNotes);
 
       if (!result.ok) {
-        analyzeStatus.textContent = `Feedback failed: ${result.error}`;
+        analyzeStatus.textContent = result.error || 'Feedback failed. Please try again.';
         analyzeStatus.className = 'err';
         feedbackBtn.disabled = false;
         return;

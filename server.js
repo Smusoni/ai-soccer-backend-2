@@ -787,10 +787,10 @@ Return VALID JSON ONLY with this structure:
     return res.json({ ok: true, report: parsed });
 
   } catch (e) {
-    console.error(e);
+    console.error('[BK] Feedback error:', e.message);
     res.status(500).json({
       ok: false,
-      error: e.message
+      error: 'Failed to generate feedback. Please try again later.'
     });
   }
 });
