@@ -2,23 +2,128 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"/>
   <title>Ball Knowledge</title>
-
-  <!-- Favicons -->
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-
+  <link href="https://api.fontshare.com/v2/css?f[]=kola@400&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0a0a0a;--card:#1a1a1a;--muted:#6a7077;--text:#e8eaed;--line:#2a2a2a;--accent:#00ff95;--accent2:#19d3ff;--accent-dark:#00cc77}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     
-    *{box-sizing:border-box;font-family:'Segoe UI',Inter,system-ui,-apple-system,sans-serif}
+    :root{
+      --bg:#0A0E1A;
+      --bg-elevated:#0F1420;
+      --card:#141B2D;
+      --card-hover:#1A2338;
+      --surface:#0D1219;
+      --muted:#7B8BA3;
+      --text:#E4E8F0;
+      --text-bright:#FFFFFF;
+      --line:#1E2A42;
+      --line-bright:#2A3A5A;
+      --accent:#00D9FF;
+      --accent-hover:#33E3FF;
+      --accent2:#0088FF;
+      --accent-dark:#00B8DB;
+      --success:#00E676;
+      --warning:#FFB300;
+      --error:#FF3D57;
+      --gradient-primary:linear-gradient(135deg, #0088FF 0%, #00D9FF 100%);
+      --gradient-card:linear-gradient(180deg, rgba(20,27,45,0.7) 0%, rgba(20,27,45,0.95) 100%);
+      --shadow-sm:0 2px 4px rgba(0,0,0,0.4);
+      --shadow-md:0 4px 16px rgba(0,0,0,0.5);
+      --shadow-lg:0 8px 32px rgba(0,0,0,0.6);
+      --shadow-glow:0 0 24px rgba(0,217,255,0.35);
+    }
+    
+    [data-theme="light"]{
+      --bg:#FFFFFF;
+      --bg-elevated:#F6F8FA;
+      --card:#FFFFFF;
+      --card-hover:#F6F8FA;
+      --surface:#FAFBFC;
+      --muted:#57606A;
+      --text:#1F2328;
+      --text-bright:#000000;
+      --line:#D0D7DE;
+      --line-bright:#B0B8C0;
+      --accent:#2DA44E;
+      --accent-hover:#2C974B;
+      --accent2:#0969DA;
+      --accent-dark:#1A7F37;
+      --success:#2DA44E;
+      --warning:#BF8700;
+      --error:#CF222E;
+      --gradient-primary:linear-gradient(135deg, #2DA44E 0%, #0969DA 100%);
+      --gradient-card:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.95) 100%);
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md:0 4px 12px rgba(0,0,0,0.15);
+      --shadow-lg:0 8px 24px rgba(0,0,0,0.2);
+      --shadow-glow:0 0 20px rgba(45,164,78,0.2);
+    }
+    
+    [data-theme="light"]{
+      --bg:#FFFFFF;
+      --bg-elevated:#F6F8FA;
+      --card:#FFFFFF;
+      --card-hover:#F6F8FA;
+      --surface:#FAFBFC;
+      --muted:#57606A;
+      --text:#1F2328;
+      --text-bright:#000000;
+      --line:#D0D7DE;
+      --line-bright:#B0B8C0;
+      --accent:#2DA44E;
+      --accent-hover:#2C974B;
+      --accent2:#0969DA;
+      --accent-dark:#1A7F37;
+      --success:#2DA44E;
+      --warning:#BF8700;
+      --error:#CF222E;
+      --gradient-primary:linear-gradient(135deg, #2DA44E 0%, #0969DA 100%);
+      --gradient-card:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.95) 100%);
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md:0 4px 12px rgba(0,0,0,0.15);
+      --shadow-lg:0 8px 24px rgba(0,0,0,0.2);
+      --shadow-glow:0 0 20px rgba(45,164,78,0.2);
+    }
+    
+    [data-theme="light"]{
+      --bg:#FFFFFF;
+      --bg-elevated:#F6F8FA;
+      --card:#FFFFFF;
+      --card-hover:#F6F8FA;
+      --surface:#FAFBFC;
+      --muted:#57606A;
+      --text:#1F2328;
+      --text-bright:#000000;
+      --line:#D0D7DE;
+      --line-bright:#B0B8C0;
+      --accent:#2DA44E;
+      --accent-hover:#2C974B;
+      --accent2:#0969DA;
+      --accent-dark:#1A7F37;
+      --success:#2DA44E;
+      --warning:#BF8700;
+      --error:#CF222E;
+      --gradient-primary:linear-gradient(135deg, #2DA44E 0%, #0969DA 100%);
+      --gradient-card:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.95) 100%);
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md:0 4px 12px rgba(0,0,0,0.15);
+      --shadow-lg:0 8px 24px rgba(0,0,0,0.2);
+      --shadow-glow:0 0 20px rgba(45,164,78,0.2);
+    }
+    
+    *{
+      box-sizing:border-box;
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    }
     
     html{
       margin:0;
       padding:0;
       height:100%;
-      background-color: var(--bg);
+      background:var(--bg);
       color:var(--text);
     }
     
@@ -27,184 +132,303 @@
       padding:0;
       min-height:100vh;
       color:var(--text);
-      position:relative;
-      z-index:2;
       display:flex;
       flex-direction:column;
-      align-items:center;
+      background:radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,136,255,0.12), transparent),
+                 radial-gradient(ellipse 60% 50% at 50% 120%, rgba(0,217,255,0.08), transparent);
+      transition:background 0.3s ease, color 0.3s ease;
     }
     
-    .container{max-width:920px;margin:0 auto;padding:0 20px;width:100%}
+    [data-theme="light"] body{
+      background:radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,136,255,0.04), transparent),
+                 radial-gradient(ellipse 60% 50% at 50% 120%, rgba(0,217,255,0.03), transparent);
+    }
+    
+    .container{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 24px;
+      width:100%;
+    }
     
     .card{
-      background:linear-gradient(135deg, #1a1a1a 0%, #161616 100%);
+      background:var(--gradient-card);
+      backdrop-filter:blur(12px);
       border-radius:16px;
-      padding:24px;
-      margin:20px auto;
+      padding:32px;
+      margin:20px 0;
       border:1px solid var(--line);
-      backdrop-filter:blur(10px);
-      transition:all 0.3s ease;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      text-align:center;
+      box-shadow:var(--shadow-md);
+      transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .card:hover{
-      border-color:#333;
-      box-shadow:0 8px 32px rgba(0,255,149,0.05);
+      border-color:var(--line-bright);
+      box-shadow:var(--shadow-lg);
+      transform:translateY(-2px);
     }
     
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .row{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
     
-    input,select{
-      padding:12px 14px;
-      border-radius:12px;
+    input,select,textarea{
+      padding:14px 16px;
+      border-radius:10px;
       border:1.5px solid var(--line);
-      background:#0f0f0f;
+      background:var(--surface);
       color:var(--text);
-      font-size:14px;
-      transition:all 0.2s;
+      font-size:15px;
+      font-weight:500;
+      transition:all 0.2s ease;
       flex:1;
       min-width:140px;
     }
     
-    input:focus,select:focus{
+    input:focus,select:focus,textarea:focus{
       outline:none;
       border-color:var(--accent);
-      box-shadow:0 0 0 3px rgba(0,255,149,0.1);
-      background:#111;
+      box-shadow:0 0 0 3px rgba(63,185,80,0.15);
+      background:var(--bg-elevated);
     }
     
-    input::placeholder{color:#666}
+    input::placeholder{
+      color:var(--muted);
+    }
     
     button{
-      padding:12px 24px;
-      border-radius:12px;
+      padding:14px 28px;
+      border-radius:10px;
       border:none;
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
-      color:#000;
-      font-weight:600;
+      background:var(--gradient-primary);
+      color:var(--bg);
+      font-weight:700;
+      font-size:15px;
       cursor:pointer;
-      font-size:14px;
-      transition:all 0.3s;
-      box-shadow:0 4px 15px rgba(0,255,149,0.2);
+      transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow:var(--shadow-md), var(--shadow-glow);
+      min-height:48px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      letter-spacing:0.3px;
+      position:relative;
+      overflow:hidden;
+    }
+    
+    button::before{
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      opacity:0;
+      transition:opacity 0.3s;
     }
     
     button:hover{
-      transform:translateY(-2px);
-      box-shadow:0 6px 20px rgba(0,255,149,0.3);
+      transform:translateY(-3px);
+      box-shadow:var(--shadow-lg), 0 0 30px rgba(63,185,80,0.4);
+    }
+    
+    button:hover::before{
+      opacity:1;
     }
     
     button:active{
-      transform:translateY(0);
+      transform:translateY(-1px);
     }
     
-    h1{font-size:42px;margin:0;font-weight:800;letter-spacing:-1px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    h1{
+      font-size:56px;
+      margin:0;
+      font-weight:900;
+      letter-spacing:-2px;
+      background:var(--gradient-primary);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      line-height:1.1;
+    }
     
-    h3{margin:0 0 16px 0;font-size:24px;font-weight:700}
+    .logo{
+      font-family:'Kola', sans-serif;
+      font-size:96px;
+      margin:0;
+      font-weight:400;
+      letter-spacing:-3px;
+      background:var(--gradient-primary);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      line-height:1;
+      text-transform:uppercase;
+    }
     
-    h4{margin:0 0 12px 0;font-size:16px;font-weight:600;color:var(--accent)}
+    @media (max-width:768px){
+      .logo{font-size:72px;letter-spacing:-2px}
+    }
     
-    p{line-height:1.6;margin:0 0 12px 0}
+    @media (max-width:480px){
+      .logo{font-size:56px;letter-spacing:-1.5px}
+    }
     
-    .muted{color:var(--muted);font-size:14px}
+    h3{
+      margin:0 0 20px 0;
+      font-size:28px;
+      font-weight:700;
+      color:var(--text-bright);
+      letter-spacing:-0.5px;
+    }
+    
+    h4{
+      margin:0 0 16px 0;
+      font-size:17px;
+      font-weight:700;
+      color:var(--accent);
+      letter-spacing:0.3px;
+      text-transform:uppercase;
+      font-size:13px;
+    }
+    
+    p{
+      line-height:1.7;
+      margin:0 0 16px 0;
+      color:var(--text);
+    }
+    
+    .muted{
+      color:var(--muted);
+      font-size:14px;
+    }
     
     .hide{display:none!important}
+    .ok{color:var(--success)}
+    .err{color:var(--error)}
     
-    .ok{color:#00e676}
-    
-    .err{color:#ff6b6b}
-    
-    ul{margin:0;padding-left:20px;list-style-position:inside}
-    
-    li{margin:10px 0;line-height:1.5}
-    
-    .grid{display:grid;grid-template-columns:1fr;gap:20px;justify-items:center;width:100%;max-width:500px}
-    
-    @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    
-    .block-btn{width:100%;padding:14px 16px;font-size:16px}
-    
-    .pill{
-      display:inline-block;
-      padding:8px 16px;
-      border-radius:999px;
-      background:transparent;
-      border:1.5px solid var(--line);
-      margin-right:8px;
-      transition:all 0.2s;
+    ul{
+      margin:0;
+      padding-left:24px;
     }
     
-    .pill:hover{
-      border-color:var(--accent);
-      box-shadow:0 0 12px rgba(0,255,149,0.2);
+    li{
+      margin:14px 0;
+      line-height:1.7;
     }
     
-    a.link{color:var(--accent2);text-decoration:none;font-size:14px;font-weight:500;transition:all 0.2s}
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:24px;
+      width:100%;
+      max-width:600px;
+    }
     
-    a.link:hover{color:var(--accent);text-decoration:underline}
-
-    /* Splash Loader */
-    #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:999}
-    #splash .pulse{width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 20px var(--accent);animation:pulse 1.2s infinite}
-    @keyframes pulse{0%{transform:scale(.8);opacity:.6}50%{transform:scale(1.3);opacity:1}100%{transform:scale(.8);opacity:.6}}
-
-    /* Hamburger menu */
-    .menu-container{position:fixed;top:24px;right:24px;z-index:1000;display:none}
+    @media (min-width:720px){
+      .grid{grid-template-columns:1fr 1fr}
+    }
+    
+    .block-btn{
+      width:100%;
+      padding:16px;
+      font-size:16px;
+    }
+    
+    #splash{
+      position:fixed;
+      inset:0;
+      background:var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:999;
+    }
+    
+    #splash .pulse{
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 30px var(--accent);
+      animation:pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse{
+      0%, 100%{transform:scale(0.8);opacity:0.6}
+      50%{transform:scale(1.4);opacity:1}
+    }
+    
+    .menu-container{
+      position:fixed;
+      top:24px;
+      right:24px;
+      z-index:10000;
+      display:none;
+    }
+    
     .menu-icon{
       font-size:24px;
       cursor:pointer;
-      color:white;
+      color:var(--text-bright);
       user-select:none;
-      background:linear-gradient(135deg,#1a1a1a,#161616);
-      border:1.5px solid var(--line);
-      border-radius:12px;
-      padding:8px 10px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 12px;
+      box-shadow:var(--shadow-md);
       transition:all 0.2s;
     }
-    .menu-icon:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(0,255,149,0.2)}
+    
+    .menu-icon:hover{
+      border-color:var(--accent);
+      box-shadow:var(--shadow-lg);
+    }
     
     .menu{
-      display:none;
       flex-direction:column;
-      position:absolute;
-      right:0;
-      top:100%;
-      margin-top:8px;
-      background:linear-gradient(135deg,#1a1a1a,#161616);
-      border:1.5px solid var(--line);
+      position:fixed;
+      right:24px;
+      top:72px;
+      background:var(--card);
+      border:1px solid var(--line-bright);
       border-radius:12px;
-      box-shadow:0 8px 32px rgba(0,0,0,0.5);
-      padding:8px 0;
-      min-width:180px;
-      z-index:10;
-      max-height:70vh;
-      overflow:auto;
+      box-shadow:var(--shadow-lg);
+      padding:8px;
+      min-width:220px;
+      z-index:9999;
+      display:none;
     }
+    
+    .menu.active{display:flex!important}
+    
     .menu a{
       color:var(--text);
       text-decoration:none;
       padding:12px 16px;
       display:block;
-      font-weight:500;
+      font-weight:600;
+      font-size:14px;
+      border-radius:8px;
       transition:all 0.2s;
     }
+    
     .menu a:hover{
-      background:rgba(0,255,149,0.1);
+      background:rgba(63,185,80,0.15);
       color:var(--accent);
-      padding-left:20px;
     }
-
+    
     .app-header{
       display:flex;
       align-items:center;
-      justify-content:center;
-      gap:20px;
+      justify-content:space-between;
       padding:32px 0 24px 0;
       flex-wrap:wrap;
-      text-align:center;
     }
     
     .app-header .brand{
@@ -213,56 +437,84 @@
       gap:16px;
     }
     
-    #logo{height:40px;width:auto;display:block;filter:drop-shadow(0 0 8px rgba(0,255,149,0.2))}
-    @media (min-width:720px){#logo{height:48px}}
-    
-    #logoutTop{display:none}
-
-    #accountCard,#analysisCard,#libraryPage,#profilePage,.menu-container,#landingSection,#privacySection,#feedbackSection{
-      position:relative;z-index:10
-    }
-
-    .field-group{
-      display:flex;
-      flex-direction:column;
-      flex:1;
-      min-width:140px;
-    }
-    
     .field-label{
       font-size:12px;
       color:var(--muted);
-      margin:0 0 6px 0;
-      font-weight:500;
+      margin:0 0 8px 0;
+      font-weight:600;
       text-transform:uppercase;
-      letter-spacing:0.5px;
-    }
-
-    .input-error{
-      border-color:#ff6b6b !important;
-      box-shadow:0 0 0 3px rgba(255,107,107,0.15) !important;
+      letter-spacing:1px;
     }
     
-    /* Section styling */
-    section.card{margin:24px 0}
+    section.card{
+      margin:32px 0;
+    }
     
-    /* Status messages */
-    #authMsg,#uploadMsg,#analyzeStatus{
-      margin:12px 0;
-      padding:12px 14px;
+    #loginMsg,#signupMsg,#uploadMsg,#analyzeStatus{
+      margin:16px 0;
+      padding:14px 16px;
       border-radius:10px;
       font-size:14px;
-      font-weight:500;
+      font-weight:600;
+      border:1px solid transparent;
     }
     
-    #authMsg.ok,#uploadMsg.ok,#analyzeStatus.ok{
-      background:rgba(0,230,118,0.1);
-      color:#00e676;
+    #loginMsg.ok,#signupMsg.ok,#uploadMsg.ok,#analyzeStatus.ok{
+      background:rgba(63,185,80,0.1);
+      color:var(--success);
+      border-color:var(--success);
     }
     
-    #authMsg.err,#uploadMsg.err,#analyzeStatus.err{
-      background:rgba(255,107,107,0.1);
-      color:#ff6b6b;
+    #loginMsg.err,#signupMsg.err,#uploadMsg.err,#analyzeStatus.err{
+      background:rgba(248,81,73,0.1);
+      color:var(--error);
+      border-color:var(--error);
+    }
+    
+    .metric-card{
+      background:rgba(63,185,80,0.08);
+      border:1px solid var(--line);
+      border-left:4px solid var(--accent);
+      padding:20px;
+      border-radius:12px;
+      margin:12px 0;
+      transition:all 0.2s;
+    }
+    
+    .metric-card:hover{
+      background:rgba(63,185,80,0.12);
+      border-left-width:6px;
+    }
+    
+    .metric-label{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+      font-weight:700;
+    }
+    
+    .metric-value{
+      font-size:32px;
+      font-weight:800;
+      color:var(--accent);
+      margin:8px 0 0 0;
+      letter-spacing:-1px;
+    }
+    
+    @media (max-width:768px){
+      .container{padding:0 16px}
+      h1{font-size:40px}
+      h3{font-size:24px}
+      .card{padding:24px}
+      section.card{margin:20px 0}
+    }
+    
+    @media (max-width:480px){
+      h1{font-size:32px}
+      h3{font-size:20px}
+      .card{padding:20px}
+      button{padding:12px 20px;font-size:14px}
     }
   </style>
 </head>
@@ -270,11 +522,11 @@
   <!-- Hamburger Menu (only after login) -->
   <div class="menu-container">
     <div class="menu-icon" id="menuIcon" aria-label="Open menu" role="button">&#9776;</div>
+  <!-- Menu links -->
     <div class="menu" id="menu" role="menu">
       <a href="#" id="profileLink" role="menuitem">Profile</a>
       <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
       <a href="#" id="library" role="menuitem">Library</a>
-      <a href="#" id="shareApp" role="menuitem">Share App</a>
       <a href="#" id="logout" role="menuitem">Logout</a>
     </div>
   </div>
@@ -285,181 +537,627 @@
   <!-- Header -->
   <header class="container app-header">
     <div class="brand">
-      <img id="logo" alt="Ball Knowledge Logo">
-      <h1>Ball Knowledge</h1>
+      <h1 class="logo" style="font-size:42px">⚽ BALL KNOWLEDGE</h1>
+      <p class="muted" style="margin:0;font-size:12px">Personal Soccer Training Analysis</p>
     </div>
-
-    <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
+    <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:16px">
+      <button id="themeToggle" onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--line);color:var(--text);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;transition:all 0.3s ease;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+      </button>
       <a id="pageTag" class="muted" style="text-decoration:none;font-size:14px">Account</a>
     </nav>
-
-    <script>
-      // Make logo work on localhost + GitHub Pages
-      (function () {
-        const el = document.getElementById('logo');
-        if (!el) return;
-        const base = location.hostname.endsWith('github.io') ? '/ai-soccer-frontend' : '.';
-        el.src = `${base}/ball-knowledge-high-resolution-logo.png`;
-      })();
-    </script>
   </header>
 
-  <!-- =========== ACCOUNT (only before login) =========== -->
-  <section class="card container" id="accountCard">
-    <h3>Account</h3>
-    <div class="grid">
-      <div>
-        <p class="muted">Create your account</p>
-        <div class="row">
-          <input id="su_name" type="text" placeholder="Full name">
-          <input id="su_email" type="email" placeholder="Email">
-        </div>
-        <div class="row">
-          <input id="su_password" type="password" placeholder="Create password">
-          <input id="su_age" type="number" placeholder="Age">
-          <!-- DOB with visible label (iOS-friendly) -->
-          <div class="field-group">
-            <span class="field-label">Date of Birth</span>
-            <input id="su_dob" type="date">
+  <!-- =========== HOME/LANDING PAGE =========== -->
+  <section class="container hide" id="homePage" style="padding:40px 20px">
+    <!-- Hero Section -->
+    <div style="text-align:center;padding:80px 20px 60px">
+      <h1 class="logo" style="margin-bottom:20px;font-size:120px;line-height:1">⚽ BALL KNOWLEDGE</h1>
+      <p style="font-size:28px;line-height:1.4;margin:0 auto 40px;max-width:700px;color:var(--muted);font-weight:500">
+        Analyze. Improve. Dominate.
+      </p>
+      <button onclick="setHash('login'); goTo('login')" class="btn-primary" style="padding:22px 60px;font-size:22px;min-height:70px;font-weight:800;box-shadow:0 8px 30px rgba(63,185,80,0.4);text-transform:uppercase;letter-spacing:1px">
+        Start Free Analysis →
+      </button>
+    </div>
+
+    <!-- Features Grid -->
+    <div style="max-width:1000px;margin:80px auto">
+      <h2 style="text-align:center;font-size:42px;margin-bottom:16px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">How It Works</h2>
+      <p style="text-align:center;color:var(--muted);font-size:18px;margin-bottom:60px">Three simple steps to level up your game</p>
+      
+      <div style="display:grid;gap:32px">
+        <div class="card" style="display:flex;gap:32px;align-items:center;padding:40px;transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div style="flex-shrink:0;width:80px;height:80px;background:linear-gradient(135deg,rgba(63,185,80,0.2),rgba(88,166,255,0.2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:48px">📹</div>
+          <div style="flex:1">
+            <h3 style="margin:0 0 12px 0;font-size:24px;color:var(--accent)">1. Upload Your Video</h3>
+            <p style="margin:0;color:var(--muted);font-size:16px;line-height:1.6">Record yourself during training or a game. Drag and drop your video or paste a YouTube link. That's it.</p>
           </div>
         </div>
-        <button id="signupBtn" class="block-btn">Sign Up</button>
-      </div>
-
-      <div>
-        <p class="muted">Already have an account?</p>
-        <div class="row">
-          <input id="li_email" type="email" placeholder="Email">
-          <input id="li_password" type="password" placeholder="Password">
+        
+        <div class="card" style="display:flex;gap:32px;align-items:center;padding:40px;transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div style="flex-shrink:0;width:80px;height:80px;background:linear-gradient(135deg,rgba(63,185,80,0.2),rgba(88,166,255,0.2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:48px">🤖</div>
+          <div style="flex:1">
+            <h3 style="margin:0 0 12px 0;font-size:24px;color:var(--accent)">2. AI Analyzes Every Frame</h3>
+            <p style="margin:0;color:var(--muted);font-size:16px;line-height:1.6">GPT-5.2 Vision AI breaks down your technique, positioning, decision-making, and identifies your best moments.</p>
+          </div>
         </div>
-        <button id="loginBtn" class="block-btn">Login</button>
+        
+        <div class="card" style="display:flex;gap:32px;align-items:center;padding:40px;transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div style="flex-shrink:0;width:80px;height:80px;background:linear-gradient(135deg,rgba(63,185,80,0.2),rgba(88,166,255,0.2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:48px">🎯</div>
+          <div style="flex:1">
+            <h3 style="margin:0 0 12px 0;font-size:24px;color:var(--accent)">3. Get Actionable Feedback</h3>
+            <p style="margin:0;color:var(--muted);font-size:16px;line-height:1.6">Receive position-specific insights, priority improvements, highlight reels, and detailed technical analysis.</p>
+          </div>
+        </div>
       </div>
     </div>
-    <p id="authMsg" class="muted"></p>
+
+    <!-- CTA Section -->
+    <div style="text-align:center;padding:80px 20px;max-width:800px;margin:0 auto">
+      <h2 style="font-size:48px;margin-bottom:24px;line-height:1.2">Ready to Take Your<br>Game to the Next Level?</h2>
+      <p style="font-size:20px;color:var(--muted);margin-bottom:40px">Join thousands of players improving their skills with AI-powered analysis</p>
+      <button onclick="setHash('login'); goTo('login')" class="btn-primary" style="padding:22px 60px;font-size:22px;min-height:70px;font-weight:800;box-shadow:0 8px 30px rgba(63,185,80,0.4);text-transform:uppercase;letter-spacing:1px">
+        Get Started Free →
+      </button>
+    </div>
   </section>
 
-  <!-- =========== LANDING / INFO / PRIVACY / FEEDBACK (ACCOUNT ONLY) =========== -->
-  <section class="card container" id="landingSection">
-    <h3>What is Ball Knowledge?</h3>
-    <p class="muted">
-      Ball Knowledge is your personal soccer assistant. Upload a training clip,
-      tell us what skill you’re working on, and get a clear, coach-style report
-      with focus areas and suggested drills so you know exactly what to work on next.
-    </p>
-    <ul>
-      <li>Built for players who want to get better between training sessions</li>
-      <li>Simple: record on your phone, upload, and get feedback</li>
-      <li>No fancy camera or GPS required</li>
-    </ul>
+  <!-- =========== LOGIN PAGE =========== -->
+  <section class="card container hide" id="loginCard" style="max-width:500px">
+    <h3>Welcome Back</h3>
+    <p class="muted">Login to access your training analysis</p>
+    
+    <div style="margin:24px 0">
+      <div class="row" style="flex-direction:column;gap:12px">
+        <input id="li_email" type="email" placeholder="Email" style="width:100%">
+        <input id="li_password" type="password" placeholder="Password" style="width:100%">
+      </div>
+      <button id="loginBtn" class="block-btn" style="margin-top:16px">Login</button>
+    </div>
+
+    <p id="loginMsg" class="muted" style="margin:16px 0"></p>
+    
+    <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)">
+      <p class="muted" style="margin-bottom:12px">Don't have an account?</p>
+      <button onclick="setHash('signup'); goTo('signup')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
+        Create Account
+      </button>
+    </div>
   </section>
 
-  <section class="card container" id="privacySection">
-    <h3>Privacy & Data</h3>
-    <p class="muted">
-      Your clips and reports stay tied to your account. We use them only to generate
-      your analysis and to help improve the quality of feedback over time.
-    </p>
-    <ul>
-      <li>We don’t sell your data</li>
-      <li>You can delete reports from your Library anytime</li>
-      <li>Use short clips that you’re comfortable sharing</li>
-    </ul>
-  </section>
+  <!-- =========== SIGNUP PAGE =========== -->
+  <section class="card container hide" id="signupCard" style="max-width:500px">
+    <h3>Create Your Account</h3>
+    <p class="muted">Start analyzing your game today</p>
+    
+    <div style="margin:24px 0">
+      <div class="row" style="flex-direction:column;gap:12px">
+        <input id="su_name" type="text" placeholder="Full name" style="width:100%">
+        <input id="su_email" type="email" placeholder="Email" style="width:100%">
+        <input id="su_password" type="password" placeholder="Create password" style="width:100%">
+      </div>
+      <button id="signupBtn" class="block-btn" style="margin-top:16px">Sign Up</button>
+    </div>
 
-  <section class="card container" id="feedbackSection">
-    <h3>Feedback & Bug Reports</h3>
-    <p class="muted">
-      If something breaks or you have ideas for new features, I’d love to hear it.
-      During this early version, your feedback helps shape where Ball Knowledge goes next.
-    </p>
-    <p class="muted">
-      You can send feedback to: <br>
-      <strong>sydnyjr@gmail.com</strong>
-    </p>
+    <p id="signupMsg" class="muted" style="margin:16px 0"></p>
+    
+    <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)">
+      <p class="muted" style="margin-bottom:12px">Already have an account?</p>
+      <button onclick="setHash('login'); goTo('login')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
+        Login
+      </button>
+    </div>
   </section>
 
   <!-- =========== ANALYSIS (after login) =========== -->
   <section class="card container hide" id="analysisCard">
-    <h3>New Analysis</h3>
-
+    <h3>New Training Analysis</h3>
+    
+    <!-- Video Type Selection (TOP) -->
+    <div class="card">
+      <h4>What are you analyzing?</h4>
+      <div class="row" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="radio" id="videoType_game" name="videoType" value="game" checked style="width:auto;flex:none" onchange="updateFormFields()">
+          <span><strong>Game Video</strong> - Official match footage</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="radio" id="videoType_training" name="videoType" value="training" style="width:auto;flex:none" onchange="updateFormFields()">
+          <span><strong>Training Video</strong> - Drills & skill work</span>
+        </label>
+      </div>
+    </div>
+    
     <div class="grid">
-      <!-- Player + Session Info -->
-      <div class="card" style="margin:0">
-        <h4>Player + Session Info</h4>
+      <!-- Game Video Fields -->
+      <div id="gameFields" class="card" style="margin:0">
+        <h4>Game Information</h4>
         <div class="row">
-          <input id="heightFeet"   type="number" placeholder="Height (ft)">
-          <input id="heightInches" type="number" placeholder="Height (in)">
+          <input id="cand_name" type="text" placeholder="Player name">
+          <input id="cand_position" type="text" placeholder="Position">
         </div>
         <div class="row">
-          <input id="weight" type="number" placeholder="Weight (lbs) (optional)">
-          <select id="foot">
-            <option value="" disabled selected>Dominant Foot</option>
-            <option>Right</option><option>Left</option><option>Both</option>
+          <input id="cand_jersey" type="number" placeholder="Jersey #" required>
+          <input id="cand_age" type="number" placeholder="Age (optional)">
+        </div>
+        <div class="row">
+          <select id="cand_jersey_color" required style="flex:1;min-width:140px">
+            <option value="">Jersey Color</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+            <option value="red">Red</option>
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+            <option value="yellow">Yellow</option>
+            <option value="orange">Orange</option>
+            <option value="purple">Purple</option>
+            <option value="gray">Gray</option>
+            <option value="other">Other</option>
           </select>
         </div>
-        <div class="row">
-          <select id="position">
-            <option value="" disabled selected>Position</option>
-            <option>Goalkeeper</option>
-            <option>Right Back</option><option>Center Back</option><option>Left Back</option>
-            <option>Defensive Mid</option><option>Central Mid</option><option>Attacking Mid</option>
-            <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
-          </select>
-        </div>
-        <div class="row">
-          <textarea id="skill" placeholder="(Optional) Add any notes about what you're working on or what the AI should focus on" style="min-height:60px;width:100%;font-family:inherit"></textarea>
-        </div>
-        <p class="muted">These details + your clip help tailor feedback and drills to you.</p>
+        <p class="muted" style="margin-top:8px">Jersey number and color help identify the player on the field, especially when both teams have players with the same number.</p>
       </div>
 
-      <!-- Clip Upload -->
-      <div class="card" style="margin:0">
-        <h4>Attach a Training Clip</h4>
+      <!-- Training Video Fields -->
+      <div id="trainingFields" class="card hide" style="margin:0">
+        <h4>Training Information</h4>
         <div class="row">
-          <input id="clipFile" type="file" accept="video/*">
-          <button id="uploadBtn">Upload</button>
+          <input id="train_name" type="text" placeholder="Your name">
+          <input id="train_position" type="text" placeholder="Position">
         </div>
-        <p id="uploadMsg" class="muted"></p>
-        <div id="clipInfo" class="muted"></div>
+        <div class="row">
+          <input id="train_focus" type="text" placeholder="What skill/drill? (optional)">
+        </div>
+        <p class="muted" style="margin-top:8px">Tell us what you're working on to get more targeted feedback.</p>
       </div>
     </div>
 
-    <!-- Analyze actions -->
-    <div class="row" style="margin-top:12px;align-items:center">
-      <button id="analyzeBtn">Analyze</button>
-      <button id="feedbackBtn" class="hide">Get Feedback</button>
-      <span id="analyzeStatus" class="muted"></span>
-      <a href="#results" id="viewLatestLink" class="link hide">View report</a>
+    <!-- Video Upload -->
+    <div class="card">
+      <h4 style="margin-bottom:16px">Upload Video</h4>
+      
+      <!-- Upload Method Selector -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:rgba(0,255,149,0.05);min-height:44px">
+          <input type="radio" name="uploadMethod" value="file" checked style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">File</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;min-height:44px">
+          <input type="radio" name="uploadMethod" value="url" style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">URL</span>
+        </label>
+      </div>
+
+      <!-- File Upload Section -->
+      <div id="fileUploadSection">
+        <div id="dropZone" style="border:2px dashed var(--accent);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:all 0.3s;margin-bottom:14px;background:rgba(0,255,149,0.02);min-height:140px;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:40px;margin-bottom:10px">📱 📹</div>
+          <p style="margin:0 0 6px 0;font-weight:600;color:var(--accent);font-size:16px">Select Video</p>
+          <p class="muted" style="margin:0;font-size:13px;line-height:1.5">Tap a button or drag &<br>drop on desktop</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <button type="button" onclick="document.getElementById('videoLibraryInput').click()" style="margin:0;padding:14px 12px;font-size:15px;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+            <span style="font-size:24px">📸</span>
+            <span style="font-weight:600">Library</span>
+          </button>
+          <button type="button" onclick="document.getElementById('videoCameraInput').click()" style="margin:0;padding:14px 12px;font-size:15px;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+            <span style="font-size:24px">🎥</span>
+            <span style="font-weight:600">Record</span>
+          </button>
+        </div>
+        <input id="videoLibraryInput" type="file" accept="video/*" style="display:none">
+        <input id="videoCameraInput" type="file" accept="video/*" style="display:none" capture="environment">
+        <div id="fileInfo" class="muted" style="font-size:14px;margin:12px 0;padding:12px;border-radius:8px;background:rgba(0,0,0,0.3);line-height:1.5"></div>
+      </div>
+
+      <!-- URL Upload Section -->
+      <div id="urlUploadSection" class="hide">
+        <div style="display:grid;gap:14px;padding:8px 0">
+          <div>
+            <label class="field-label" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Video URL</label>
+            <input id="videoUrl" type="text" placeholder="Paste video URL" style="font-size:16px">
+          </div>
+          <div>
+            <label class="field-label" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Duration (seconds)</label>
+            <input id="videoDuration" type="number" placeholder="Duration" step="0.1" style="font-size:16px">
+          </div>
+        </div>
+      </div>
+
+      <p id="uploadMsg" class="muted" style="margin-top:14px;font-size:13px"></p>
+    </div>
+
+    <!-- Analyze Button -->
+    <div class="row" style="margin-top:16px">
+      <button id="analyzeBtn" class="block-btn" style="flex:1">Get Feedback</button>
+      <span id="analyzeStatus" class="muted" style="flex:1;margin-left:12px"></span>
     </div>
 
     <!-- Results -->
     <div id="results" class="hide" style="margin-top:24px">
-      <h3 style="margin-bottom:24px">Your Coaching Report</h3>
-      <div id="summary" style="margin:0 0 28px 0;line-height:1.8;color:var(--text);font-size:16px;background:linear-gradient(135deg,rgba(0,255,149,0.05),rgba(25,211,255,0.05));padding:20px;border-radius:12px;border-left:4px solid var(--accent)"></div>
+      <h3>Your Coaching Report</h3>
+      
+      <!-- Summary -->
+      <div class="card" style="margin:24px 0">
+        <h4>📋 Session Summary</h4>
+        <p id="summary" style="line-height:1.8;color:var(--text)">—</p>
+      </div>
 
-      <div class="row" style="gap:16px;margin-bottom:24px">
-        <div class="card" style="flex:1;min-width:280px">
-          <h4>Focus Areas</h4>
-          <ul id="focusList" style="padding-left:20px;color:var(--text);margin:0"></ul>
+      <!-- TRAINING VIDEO RESULTS -->
+      <div id="trainingResults" class="hide">
+        <!-- Skill Focus -->
+        <div class="card" style="margin:24px 0">
+          <h4>🎯 Skill Focus</h4>
+          <p id="skillFocus" style="font-size:18px;font-weight:600;color:var(--accent);margin:0 0 8px 0">—</p>
+          <p id="skillRecognition" style="color:var(--text);line-height:1.6">—</p>
         </div>
-        <div class="card" style="flex:1;min-width:280px">
-          <h4>Improvements to Work On</h4>
-          <ul id="improvementsList" style="padding-left:20px;color:var(--text);margin:0"></ul>
+
+        <!-- Technical Analysis -->
+        <div class="card" style="margin:24px 0">
+          <h4>🔬 Technical Analysis</h4>
+          <div id="technicalAnalysis" style="display:grid;gap:16px;margin-top:12px">
+            <div>
+              <p class="field-label">Footwork</p>
+              <p id="techFootwork" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Body Position</p>
+              <p id="techBodyPosition" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Follow Through</p>
+              <p id="techFollowThrough" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Consistency</p>
+              <p id="techConsistency" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Session Progression</p>
+              <p id="techProgression" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Level & Tips -->
+        <div class="row" style="gap:16px;margin-bottom:24px;flex-wrap:wrap">
+          <div class="card" style="flex:1;min-width:280px">
+            <h4>📊 Current Level</h4>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div style="font-size:32px;font-weight:700;color:var(--accent)" id="skillGrade">7</div>
+              <p id="skillLevelDesc" style="margin:0;color:var(--text)">Assessment</p>
+            </div>
+          </div>
+          <div class="card" style="flex:1;min-width:280px">
+            <h4>💡 Top 4 Improvements (Priority Order)</h4>
+            <ul id="improvementTips" style="padding-left:20px;color:var(--text);margin:0"></ul>
+          </div>
+        </div>
+
+        <!-- Common Mistakes -->
+        <div class="card" style="margin:24px 0">
+          <h4>⚠️ Common Mistakes for Your Position</h4>
+          <ul id="commonMistakes" style="padding-left:20px;color:var(--text);margin:0"></ul>
+        </div>
+
+        <!-- Practice Progression -->
+        <div class="card" style="margin:24px 0">
+          <h4>📈 Practice Progression</h4>
+          <div id="progressionList" style="display:flex;flex-direction:column;gap:14px"></div>
+        </div>
+
+        <!-- YouTube Recommendations -->
+        <div class="card" style="margin:24px 0">
+          <h4>🎬 YouTube Videos to Watch</h4>
+          <div id="youtubeList" style="display:flex;flex-direction:column;gap:12px"></div>
         </div>
       </div>
 
-      <div class="card">
-        <h4>Suggested Drills to Improve</h4>
-        <div id="drillList" style="display:flex;flex-direction:column;gap:14px"></div>
+      <!-- GAME VIDEO RESULTS -->
+      <div id="gameResults" class="hide">
+        <!-- Player Grade -->
+        <div class="card" style="margin:24px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h4 style="margin:0">Overall Performance</h4>
+            <div style="font-size:48px;font-weight:700;color:var(--accent)" id="playerGrade">7</div>
+          </div>
+          <p id="gameSmry" style="color:var(--text);line-height:1.6">—</p>
+        </div>
+
+        <!-- Player Stats -->
+        <div class="row" style="gap:12px;margin-bottom:24px;flex-wrap:wrap">
+          <div class="card" style="flex:1;min-width:180px">
+            <h4 style="color:var(--accent2);font-size:14px">Passes</h4>
+            <div style="font-size:28px;font-weight:700;color:var(--text)" id="statPasses">0</div>
+          </div>
+          <div class="card" style="flex:1;min-width:180px">
+            <h4 style="color:var(--accent2);font-size:14px">Shots</h4>
+            <div style="font-size:28px;font-weight:700;color:var(--text)" id="statShots">0</div>
+          </div>
+          <div class="card" style="flex:1;min-width:180px">
+            <h4 style="color:var(--accent2);font-size:14px">Tackles</h4>
+            <div style="font-size:28px;font-weight:700;color:var(--text)" id="statTackles">0</div>
+          </div>
+          <div class="card" style="flex:1;min-width:180px">
+            <h4 style="color:var(--accent2);font-size:14px">Interceptions</h4>
+            <div style="font-size:28px;font-weight:700;color:var(--text)" id="statInterceptions">0</div>
+          </div>
+        </div>
+
+        <!-- Pass Metrics -->
+        <div class="card" style="margin:24px 0">
+          <h4>⚽ Passing Metrics</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Attempts</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="passAttempts">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Completed</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="passCompleted">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Accuracy</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="passAccuracy">0%</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Key Passes</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="keyPasses">0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shot Metrics -->
+        <div class="card" style="margin:24px 0">
+          <h4>🎯 Shot Metrics</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Shot Attempts</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="shotAttempts">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">On Target</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="shotOnTarget">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Goals</p>
+              <p style="font-size:20px;font-weight:700;color:var(--success)" id="shotGoals">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Accuracy</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="shotAccuracy">0%</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Defensive Metrics -->
+        <div class="card" style="margin:24px 0">
+          <h4>🛡️ Defensive Metrics</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Tackles</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="defTackles">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Interceptions</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="defInterceptions">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Clearances</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="defClearances">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Success Rate</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="defSuccessRate">0%</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ball Control -->
+        <div class="card" style="margin:24px 0">
+          <h4>🎮 Ball Control</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Touches</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="ballTouches">0</p>
+            </div>
+            <div>
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Possession Time</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="ballPossession">0s</p>
+            </div>
+            <div colspan="2">
+              <p class="muted" style="font-size:12px;margin-bottom:4px">Dribble Success</p>
+              <p style="font-size:20px;font-weight:700;color:var(--accent)" id="ballSuccess">0%</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strengths & Areas to Improve -->
+        <div class="row" style="gap:16px;margin-bottom:24px;flex-wrap:wrap">
+          <div class="card" style="flex:1;min-width:280px">
+            <h4>💪 Strengths</h4>
+            <ul id="strengths" style="padding-left:20px;color:var(--text);margin:0"></ul>
+          </div>
+          <div class="card" style="flex:1;min-width:280px">
+            <h4>📍 Areas to Improve</h4>
+            <ul id="areasToImprove" style="padding-left:20px;color:var(--text);margin:0"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="row" style="gap:8px">
+        <button id="newAnalysisBtn" style="flex:1">Analyze Another Video</button>
+        <button id="saveAnalysisBtn" style="flex:1">Save Report</button>
       </div>
     </div>
   </section>
 
   <!-- =========== LIBRARY PAGE =========== -->
-  <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
-    <h3 id="libraryTitle">Your Library</h3>
-    <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
+  <section class="card container hide" id="libraryPage">
+    <h3>Your Training Reports</h3>
+    <p class="muted">Saved coaching reports</p>
     <div id="libraryList"></div>
+  </section>
+
+  <!-- =========== REPORT VIEW PAGE =========== -->
+  <section class="card container hide" id="reportViewPage">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h3 style="margin:0">Analysis Report</h3>
+      <button onclick="setHash('library'); goTo('library')" style="padding:10px 20px;font-size:14px">← Back to Library</button>
+    </div>
+
+    <div id="reportViewContent">
+      <!-- YouTube Video Player -->
+      <div id="viewYoutubeSection" class="card" style="margin:24px 0">
+        <h4>📹 Video</h4>
+        <div id="viewYoutubePlayer" style="margin-top:12px">
+          <p class="muted">No video available</p>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="card" style="margin:24px 0">
+        <h4>📋 Session Summary</h4>
+        <p id="viewSummary" style="line-height:1.8;color:var(--text)">—</p>
+      </div>
+
+      <!-- TRAINING VIDEO RESULTS -->
+      <div id="viewTrainingResults" class="hide">
+        <!-- Skill Focus -->
+        <div class="card" style="margin:24px 0">
+          <h4>🎯 Skill Focus</h4>
+          <p id="viewSkillFocus" style="font-size:18px;font-weight:600;color:var(--accent);margin:0 0 8px 0">—</p>
+          <p id="viewSkillRecognition" style="color:var(--text);line-height:1.6">—</p>
+        </div>
+
+        <!-- Technical Analysis -->
+        <div class="card" style="margin:24px 0">
+          <h4>🔬 Technical Analysis</h4>
+          <div style="display:grid;gap:16px;margin-top:12px">
+            <div>
+              <p class="field-label">Footwork</p>
+              <p id="viewTechFootwork" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Body Position</p>
+              <p id="viewTechBodyPosition" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Follow Through</p>
+              <p id="viewTechFollowThrough" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Consistency</p>
+              <p id="viewTechConsistency" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+            <div>
+              <p class="field-label">Session Progression</p>
+              <p id="viewTechProgression" style="color:var(--text);line-height:1.6;margin:0">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Level -->
+        <div class="card" style="margin:24px 0">
+          <h4>📊 Current Level</h4>
+          <div class="metric-card">
+            <div class="metric-label">Grade</div>
+            <div id="viewSkillGrade" class="metric-value">—</div>
+          </div>
+          <p id="viewSkillLevelDesc" style="line-height:1.8;margin-top:12px;color:var(--text)">—</p>
+        </div>
+
+        <!-- Improvement Tips -->
+        <div class="card" style="margin:24px 0">
+          <h4>💡 Top 4 Improvements (Priority Order)</h4>
+          <ul id="viewImprovementTips" style="line-height:1.8">
+            <li>No tips available</li>
+          </ul>
+        </div>
+
+        <!-- Common Mistakes -->
+        <div class="card" style="margin:24px 0">
+          <h4>⚠️ Common Mistakes for Your Position</h4>
+          <ul id="viewCommonMistakes" style="line-height:1.8">
+            <li>No mistakes data</li>
+          </ul>
+        </div>
+
+        <!-- Practice Progression -->
+        <div class="card" style="margin:24px 0">
+          <h4>📈 Practice Progression</h4>
+          <div id="viewProgressionList" style="display:grid;gap:12px;margin-top:12px">
+            <p>No progression data</p>
+          </div>
+        </div>
+
+        <!-- YouTube Recommendations -->
+        <div class="card" style="margin:24px 0">
+          <h4>📺 YouTube Recommendations</h4>
+          <div id="viewYoutubeList" style="display:grid;gap:12px;margin-top:12px">
+            <p>No video recommendations</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME VIDEO RESULTS -->
+      <div id="viewGameResults" class="hide">
+        <!-- Player Grade -->
+        <div class="card" style="margin:24px 0">
+          <h4>Overall Performance Grade</h4>
+          <div class="metric-card">
+            <div class="metric-label">Grade</div>
+            <div id="viewPlayerGrade" class="metric-value">—</div>
+          </div>
+          <p id="viewGameSmry" style="line-height:1.8;margin-top:12px;color:var(--text)">—</p>
+        </div>
+
+        <!-- Player Stats -->
+        <div class="card" style="margin:24px 0">
+          <h4>Player Statistics</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px">
+            <div class="metric-card"><div class="metric-label">Passes</div><div id="viewStatPasses" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Shots</div><div id="viewStatShots" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Tackles</div><div id="viewStatTackles" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Interceptions</div><div id="viewStatInterceptions" class="metric-value">0</div></div>
+          </div>
+        </div>
+
+        <!-- Pass Metrics -->
+        <div class="card" style="margin:24px 0">
+          <h4>Pass Metrics</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px">
+            <div class="metric-card"><div class="metric-label">Attempts</div><div id="viewPassAttempts" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Completed</div><div id="viewPassCompleted" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Accuracy</div><div id="viewPassAccuracy" class="metric-value">0%</div></div>
+            <div class="metric-card"><div class="metric-label">Key Passes</div><div id="viewKeyPasses" class="metric-value">0</div></div>
+          </div>
+        </div>
+
+        <!-- Shot Metrics -->
+        <div class="card" style="margin:24px 0">
+          <h4>Shot Metrics</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px">
+            <div class="metric-card"><div class="metric-label">Attempts</div><div id="viewShotAttempts" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">On Target</div><div id="viewShotOnTarget" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Goals</div><div id="viewShotGoals" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Accuracy</div><div id="viewShotAccuracy" class="metric-value">0%</div></div>
+          </div>
+        </div>
+
+        <!-- Defensive Metrics -->
+        <div class="card" style="margin:24px 0">
+          <h4>Defensive Metrics</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px">
+            <div class="metric-card"><div class="metric-label">Tackles</div><div id="viewDefTackles" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Interceptions</div><div id="viewDefInterceptions" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Clearances</div><div id="viewDefClearances" class="metric-value">0</div></div>
+            <div class="metric-card"><div class="metric-label">Success Rate</div><div id="viewDefSuccessRate" class="metric-value">0%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- =========== PROFILE PAGE (after login) =========== -->
@@ -468,22 +1166,6 @@
     
     <div id="profileViewMode">
       <div id="profileContent" style="display:grid;gap:24px">
-        <!-- Profile Picture Card -->
-        <div class="card" style="margin:0">
-          <h4 style="margin-top:0">Profile Picture</h4>
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-            <div style="width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,rgba(0,255,149,0.2),rgba(25,211,255,0.2));border:2px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
-              <img id="profilePicture" src="" alt="Profile" style="width:100%;height:100%;object-fit:cover;display:none">
-              <div id="profilePictureDefault" style="text-align:center;color:var(--muted)">
-                <div style="font-size:40px">📷</div>
-                <div style="font-size:12px;margin-top:4px">No photo yet</div>
-              </div>
-            </div>
-            <button id="uploadPictureBtn" style="flex:1;min-width:140px">Upload Photo</button>
-            <input id="profilePictureInput" type="file" accept="image/*" style="display:none">
-          </div>
-        </div>
-
         <!-- Basic Info Card -->
         <div class="card" style="margin:0">
           <h4 style="margin-top:0">Personal Information</h4>
@@ -575,9 +1257,15 @@
               <select id="editPosition" style="width:100%">
                 <option value="">Select Position</option>
                 <option value="Goalkeeper">Goalkeeper</option>
-                <option value="Defender">Defender</option>
-                <option value="Midfielder">Midfielder</option>
-                <option value="Forward">Forward</option>
+                <option value="Right Back">Right Back</option>
+                <option value="Center Back">Center Back</option>
+                <option value="Left Back">Left Back</option>
+                <option value="Defensive Mid">Defensive Mid</option>
+                <option value="Central Mid">Central Mid</option>
+                <option value="Attacking Mid">Attacking Mid</option>
+                <option value="Right Wing">Right Wing</option>
+                <option value="Left Wing">Left Wing</option>
+                <option value="Striker">Striker</option>
               </select>
             </div>
             <div>
@@ -591,13 +1279,17 @@
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div>
-                <label class="field-label">Height (inches)</label>
-                <input id="editHeight" type="number" placeholder="e.g., 70" style="width:100%">
+                <label class="field-label">Height (feet)</label>
+                <input id="editHeightFeet" type="number" placeholder="e.g., 6" style="width:100%">
               </div>
               <div>
-                <label class="field-label">Weight (lbs)</label>
-                <input id="editWeight" type="number" placeholder="e.g., 160" style="width:100%">
+                <label class="field-label">Height (inches)</label>
+                <input id="editHeightInches" type="number" placeholder="e.g., 2" style="width:100%">
               </div>
+            </div>
+            <div>
+              <label class="field-label">Weight (lbs)</label>
+              <input id="editWeight" type="number" placeholder="e.g., 160" style="width:100%">
             </div>
           </div>
         </div>
@@ -612,120 +1304,75 @@
   </section>
 
   <script>
-  /* =================== CONFIG =================== */
-  const BASE =
-    location.hostname.endsWith('github.io')
-      ? 'https://ai-soccer-backend-2-production.up.railway.app'
-      : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
+  const BASE = location.hostname.endsWith('github.io')
+    ? 'https://ai-soccer-backend-2-production.up.railway.app'
+    : (location.protocol === 'file:' ? 'http://localhost:3001' : '');
 
-  const CLOUD_NAME    = 'dblconpx8';
-  const UPLOAD_PRESET = 'ballknowledge_unsigned';
-
-  /* =================== HELPERS =================== */
   const $ = (id) => document.getElementById(id);
   const setToken   = (t) => localStorage.setItem('bk_token', t);
   const getToken   = ()  => localStorage.getItem('bk_token');
   const clearToken = ()  => localStorage.removeItem('bk_token');
 
-  function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
-  function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
+  function show(el){ if(!el) return; el.classList.remove('hide'); }
+  function hide(el){ if(!el) return; el.classList.add('hide'); }
 
   async function api(path, opts = {}) {
-    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+    // Handle FormData for file uploads
+    let headers = Object.assign({}, opts.headers || {});
+    if (!(opts.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    // Don't set Content-Type for FormData - let browser handle it
     const t = getToken();
     if (t) headers['Authorization'] = 'Bearer ' + t;
     const r = await fetch(`${BASE}${path}`, { ...opts, headers });
     let data;
     try { data = await r.json(); }
-    catch { data = { ok:false, error:'Bad JSON from server' }; }
+    catch { data = { ok:false, error:'Bad response from server' }; }
     return data;
   }
 
-  /* ================ ELEMENT REFS ================ */
-  const accountCard  = $('accountCard');
-  const analysisCard = $('analysisCard');
-  const libraryPage  = $('libraryPage');
-  const profilePage  = $('profilePage');
-  const libraryList  = $('libraryList');
-  const pageTag      = $('pageTag');
-  const splash       = $('splash');
+  /* Router */
+  function goTo(screen){
+    hide($('homePage')); hide($('loginCard')); hide($('signupCard'));
+    hide($('analysisCard')); hide($('libraryPage')); hide($('profilePage'));
+    hide($('reportViewPage'));
 
-  const landingSection  = $('landingSection');
-  const privacySection  = $('privacySection');
-  const feedbackSection = $('feedbackSection');
-
-  const heightFeetEl   = $('heightFeet');
-  const heightInchesEl = $('heightInches');
-  const weightEl       = $('weight');
-  const footEl         = $('foot');
-  const positionEl     = $('position');
-  const skillEl        = $('skill');
-
-  const clipFile  = $('clipFile');
-  const uploadBtn = $('uploadBtn');
-  const uploadMsg = $('uploadMsg');
-  const clipInfo  = $('clipInfo');
-
-  const analyzeBtn     = $('analyzeBtn');
-  const analyzeStatus  = $('analyzeStatus');
-  const viewLatestLink = $('viewLatestLink');
-
-  const results   = $('results');
-  const summary   = $('summary');
-  const focusList = $('focusList');
-  const improvementsList = $('improvementsList');
-  const drillList = $('drillList');
-
-  const authMsg      = $('authMsg');
-  const su_name      = $('su_name');
-
-  // Store last analysis for feedback
-  let lastAnalysisData = null;
-  const su_email     = $('su_email');
-  const su_password  = $('su_password');
-  const su_age       = $('su_age');
-  const su_dob       = $('su_dob');
-  const li_email     = $('li_email');
-  const li_password  = $('li_password');
-
-  // Menu
-  const menuContainer   = document.querySelector('.menu-container');
-  const menuIcon        = $('menuIcon');
-  const menuPanel       = $('menu');
-  const newAnalysisLink = $('newAnalysis');
-  const libraryLink     = $('library');
-  const logoutBtn       = $('logout');
-
-  function hideSplash(){ if (splash) splash.style.display='none'; }
-
-  /* =================== MINI ROUTER =================== */
-  function goTo(screen){ // 'account' | 'analysis' | 'library' | 'profile'
-    hide(accountCard); hide(analysisCard); hide(libraryPage); hide(profilePage);
-    [landingSection, privacySection, feedbackSection].forEach(hide);
-
-    if (screen === 'analysis') {
-      show(analysisCard);
-      if (pageTag) pageTag.textContent = 'Analysis';
-    } else if (screen === 'library') {
-      show(libraryPage);
-      if (pageTag) pageTag.textContent = 'Library';
+    const menuContainer = document.querySelector('.menu-container');
+    
+    if (screen === 'home') {
+      show($('homePage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Home';
+      if (menuContainer) menuContainer.style.display = 'none';
+    } else if (screen === 'login') {
+      show($('loginCard'));
+      if ($('pageTag')) $('pageTag').textContent = 'Login';
+      if (menuContainer) menuContainer.style.display = 'none';
+    } else if (screen === 'signup') {
+      show($('signupCard'));
+      if ($('pageTag')) $('pageTag').textContent = 'Sign Up';
+      if (menuContainer) menuContainer.style.display = 'none';
     } else if (screen === 'profile') {
-      show(profilePage);
-      if (pageTag) pageTag.textContent = 'Profile';
+      show($('profilePage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Profile';
+      if (menuContainer) menuContainer.style.display = 'block';
       loadProfile();
+    } else if (screen === 'analysis') {
+      show($('analysisCard'));
+      if ($('pageTag')) $('pageTag').textContent = 'Analysis';
+      if (menuContainer) menuContainer.style.display = 'block';
+    } else if (screen === 'library') {
+      show($('libraryPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Library';
+      if (menuContainer) menuContainer.style.display = 'block';
+    } else if (screen === 'reportView') {
+      show($('reportViewPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Report';
+      if (menuContainer) menuContainer.style.display = 'block';
     } else {
-      show(accountCard);
-      show(landingSection);
-      show(privacySection);
-      show(feedbackSection);
-      if (pageTag) pageTag.textContent = 'Account';
-    }
-
-    if (screen !== 'account' && menuContainer) {
-      menuContainer.style.display = 'block';
-    }
-    if (screen === 'account' && menuContainer) {
-      menuContainer.style.display = 'none';
+      show($('homePage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Home';
+      if (menuContainer) menuContainer.style.display = 'none';
     }
   }
 
@@ -734,464 +1381,513 @@
 
   window.addEventListener('hashchange', () => {
     const page = currentHash();
-    if (!getToken()) { goTo('account'); return; }
+    if (!getToken()) {
+      if (page === 'signup') { goTo('signup'); }
+      else if (page === 'login') { goTo('login'); }
+      else { goTo('home'); }
+      return;
+    }
     if (page === 'library') { loadLibrary(); }
     else if (page === 'profile') { goTo('profile'); }
     else if (page === 'analysis') { goTo('analysis'); }
+    else if (page.startsWith('reportView')) { goTo('reportView'); }
     else { setHash('analysis'); }
   });
 
-  // Menu interactions
-  menuIcon.addEventListener('click', ()=> {
-    menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
-    if (menuPanel.style.display==='') menuPanel.style.display='flex';
-  });
+  /* Menu */
+  const menuIcon = $('menuIcon');
+  const menuPanel = $('menu');
+  if (menuIcon) {
+    menuIcon.addEventListener('click', ()=> menuPanel.classList.toggle('active'));
+  }
   window.addEventListener('click',(e)=>{
     if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){
-      menuPanel.style.display='none';
+      menuPanel.classList.remove('active');
     }
   });
-  newAnalysisLink.addEventListener('click',(e)=>{
-    e.preventDefault();
-    menuPanel.style.display='none';
-    setHash('analysis');
-    hide(results);
-    viewLatestLink.classList.add('hide');
-    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
-  });
-  libraryLink.addEventListener('click',(e)=>{
-    e.preventDefault();
-    menuPanel.style.display='none';
-    setHash('library');
-  });
-  const profileLink = $('profileLink');
-  if (profileLink) {
-    profileLink.addEventListener('click',(e)=>{
-      e.preventDefault();
-      menuPanel.style.display='none';
-      setHash('profile');
-    });
-  }
-  const shareLink = $('shareApp');
-  if (shareLink) {
-    shareLink.addEventListener('click',(e)=>{
-      e.preventDefault();
-      menuPanel.style.display='none';
-      const appUrl = window.location.origin + window.location.pathname;
-      const text = 'Check out Ball Knowledge - AI-powered soccer training analysis! Get instant feedback on your juggling, dribbling, and passing skills.';
-      if (navigator.share) {
-        navigator.share({
-          title: 'Ball Knowledge',
-          text: text,
-          url: appUrl
-        }).catch(err => console.log('Share cancelled'));
-      } else {
-        const msg = `${text}\n\n${appUrl}`;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(msg);
-          alert('Share link copied to clipboard!');
-        } else {
-          alert(msg);
-        }
-      }
-    });
+
+  /* Auth */
+  function setLoginMessage(t, ok=true){
+    const msg = $('loginMsg');
+    if (!msg) return;
+    msg.textContent = t;
+    msg.className = ok ? 'ok' : 'err';
   }
 
-  /* ================= AUTH ================= */
-  function setAuthMessage(t, ok=true){
-    authMsg.textContent = t;
-    authMsg.className   = ok ? 'ok' : 'err';
+  function setSignupMessage(t, ok=true){
+    const msg = $('signupMsg');
+    if (!msg) return;
+    msg.textContent = t;
+    msg.className = ok ? 'ok' : 'err';
   }
 
   async function doSignup(){
     const payload = {
-      name: su_name.value.trim(),
-      email: su_email.value.trim(),
-      password: su_password.value.trim(),
-      age: Number(su_age.value||0),
-      dob: su_dob.value
+      name: $('su_name').value.trim(),
+      email: $('su_email').value.trim(),
+      password: $('su_password').value.trim()
     };
-    if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob){
-      return setAuthMessage('Please complete all sign-up fields (including Date of Birth).', false);
+    if (!payload.name || !payload.email || !payload.password){
+      return setSignupMessage('Please fill all fields', false);
     }
-    setAuthMessage('Creating your account…');
+    setSignupMessage('Creating account…');
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
       setToken(out.token);
-      setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+      setSignupMessage('Welcome! ✅', true);
       proceedToAnalysis();
     } else {
-      setAuthMessage(out.error || 'Signup failed', false);
+      setSignupMessage(out.error || 'Signup failed', false);
     }
   }
 
   async function doLogin(){
-    const email = li_email.value.trim();
-    const password = li_password.value.trim();
-    if (!email || !password) return setAuthMessage('Enter email & password', false);
-    setAuthMessage('Logging in…');
+    const email = $('li_email').value.trim();
+    const password = $('li_password').value.trim();
+    if (!email || !password) return setLoginMessage('Enter email & password', false);
+    setLoginMessage('Logging in…');
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
     if (out.ok && out.token){
       setToken(out.token);
-      setAuthMessage('Logged in ✅', true);
+      setLoginMessage('Logged in ✅', true);
       proceedToAnalysis();
     } else {
-      setAuthMessage(out.error || 'Login failed', false);
+      setLoginMessage(out.error || 'Login failed', false);
     }
   }
 
   function proceedToAnalysis(){
     setHash('analysis');
     goTo('analysis');
-    hideSplash();
-    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
+    $('splash').style.display='none';
   }
 
   function doLogout(){
     clearToken();
-    try { menuPanel.style.display='none'; } catch {}
-    if (menuContainer) menuContainer.style.display='none';
+    try { menuPanel.classList.remove('active'); } catch {}
+    document.querySelector('.menu-container').style.display='none';
     setHash('account');
     goTo('account');
-    hide(results);
-    viewLatestLink.classList.add('hide');
-  }
-  logoutBtn.addEventListener('click', e=>{e.preventDefault();doLogout();});
-
-  /* ============== CLOUDINARY UPLOAD ============== */
-  async function uploadToCloudinary(file){
-    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', UPLOAD_PRESET);
-    const r = await fetch(url, { method:'POST', body: fd });
-    return await r.json();
   }
 
-  let lastVideoUrl = '';
-  let lastPublicId = '';
+  /* Menu links */
+  $('profileLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('profile')});
+  $('newAnalysis')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('analysis');hide($('results'))});
+  $('library')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('library')});
+  $('logout')?.addEventListener('click',e=>{e.preventDefault();doLogout()});
 
-  async function doUpload(){
-    const f = clipFile.files?.[0];
-    if (!f){
-      uploadMsg.textContent = 'Pick a video first';
-      uploadMsg.className   = 'err';
-      return;
+  /* Analyze */
+  function updateFormFields(){
+    const videoType = document.querySelector('input[name="videoType"]:checked').value;
+    const gameFields = $('gameFields');
+    const trainingFields = $('trainingFields');
+    
+    if (videoType === 'game'){
+      show(gameFields);
+      hide(trainingFields);
+    } else {
+      hide(gameFields);
+      show(trainingFields);
     }
-    uploadMsg.textContent = 'Uploading…';
-    uploadMsg.className   = 'muted';
-
-    try{
-      const up = await uploadToCloudinary(f);
-      if (up.secure_url){
-        lastVideoUrl = up.secure_url;
-        lastPublicId = up.public_id || '';
-        uploadMsg.textContent = 'Uploaded ✅';
-        uploadMsg.className   = 'ok';
-        clipInfo.innerHTML = `<span class="pill">${f.name}</span> <a class="link" href="${lastVideoUrl}" target="_blank">View</a>`;
-
-        await api('/api/clip', {
-          method:'POST',
-          body: JSON.stringify({
-            url: up.secure_url,
-            public_id: up.public_id,
-            created_at: up.created_at || new Date().toISOString(),
-            bytes: up.bytes || f.size,
-            duration: up.duration || null,
-            width: up.width || null,
-            height: up.height || null,
-            format: up.format || f.type
-          })
-        });
-      } else {
-        uploadMsg.textContent = 'Upload failed';
-        uploadMsg.className   = 'err';
-      }
-    }catch(e){
-      console.error(e);
-      uploadMsg.textContent = 'Network error';
-      uploadMsg.className   = 'err';
-    }
-  }
-
-  /* ==================== ANALYZE ==================== */
-
-  function clearAnalysisValidation(){
-    [heightFeetEl, heightInchesEl, footEl, positionEl, skillEl].forEach(el=>{
-      if (!el) return;
-      el.classList.remove('input-error');
-    });
   }
 
   async function doAnalyze(){
-    viewLatestLink.classList.add('hide');
-    hide(results);
-    clearAnalysisValidation();
+    hide($('results'));
+    const uploadMethod = document.querySelector('input[name="uploadMethod"]:checked').value;
+    let videoUrl = '';
+    let videoDuration = 0;
+    const videoType = document.querySelector('input[name="videoType"]:checked').value;
 
-    // Required fields (except weight)
-    const required = [
-      { el: heightFeetEl,   label: 'Height (ft)' },
-      { el: heightInchesEl, label: 'Height (in)' },
-      { el: footEl,         label: 'Dominant Foot' },
-      { el: positionEl,     label: 'Position' }
-    ];
-
-    const missingLabels = [];
-    required.forEach(({el,label})=>{
-      if (!el) return;
-      const v = (el.tagName === 'SELECT') ? el.value : el.value.trim();
-      if (!v){
-        missingLabels.push(label);
-        el.classList.add('input-error');
+    // Determine video source and duration
+    if (uploadMethod === 'file') {
+      if (!uploadedFile) {
+        $('analyzeStatus').textContent = 'Please select a video file';
+        $('analyzeStatus').className = 'err';
+        return;
       }
-    });
-
-    if (missingLabels.length){
-      analyzeStatus.textContent =
-        'Please fill these fields before analyzing: ' + missingLabels.join(', ') + '.';
-      analyzeStatus.className   = 'err';
-      return;
+      // For file uploads, we'll use the file object and let the backend handle it
+      videoUrl = 'file://' + uploadedFile.name;
+      videoDuration = 0; // Backend will determine from file
+    } else {
+      videoUrl = $('videoUrl').value.trim();
+      videoDuration = Number($('videoDuration').value || 60);
+      if (!videoUrl){
+        $('analyzeStatus').textContent = 'Enter a video URL';
+        $('analyzeStatus').className = 'err';
+        return;
+      }
     }
 
-    const payload = {
-      heightFeet:   Number(heightFeetEl.value || 0),
-      heightInches: Number(heightInchesEl.value || 0),
-      weight:       weightEl.value ? Number(weightEl.value) : null,
-      foot:         footEl.value,
-      position:     positionEl.value,
-      skill:        skillEl.value.trim(),
-      videoUrl:     lastVideoUrl,
-      publicId:     lastPublicId
-    };
-
-    if (!payload.videoUrl){
-      analyzeStatus.textContent = 'Upload a clip first before analyzing.';
-      analyzeStatus.className   = 'err';
-      return;
+    let candInfo = {};
+    if (videoType === 'game'){
+      const jerseyNum = Number($('cand_jersey').value || 0);
+      const jerseyColor = $('cand_jersey_color').value;
+      if (!jerseyNum){
+        $('analyzeStatus').textContent = 'Jersey number required for game footage';
+        $('analyzeStatus').className = 'err';
+        return;
+      }
+      if (!jerseyColor){
+        $('analyzeStatus').textContent = 'Jersey color required for game footage';
+        $('analyzeStatus').className = 'err';
+        return;
+      }
+      candInfo = {
+        name: $('cand_name').value.trim(),
+        position: $('cand_position').value.trim(),
+        age: Number($('cand_age').value || 0),
+        jersey: jerseyNum,
+        jerseyColor: jerseyColor
+      };
+    } else {
+      candInfo = {
+        name: $('train_name').value.trim(),
+        position: $('train_position').value.trim(),
+        focus: $('train_focus').value.trim()
+      };
     }
 
-    analyzeStatus.textContent = 'Analyzing… this can take a moment';
-    analyzeStatus.className   = 'muted';
+    $('analyzeStatus').textContent = 'Analyzing…';
+    $('analyzeStatus').className = 'muted';
 
     try{
-      const out = await api('/api/analyze', {
-        method:'POST',
-        body: JSON.stringify(payload)
-      });
+      let out;
+
+      // Handle file upload with FormData
+      if (uploadMethod === 'file') {
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('duration', videoDuration);
+        formData.append('videoType', videoType);
+        formData.append('candidateInfo', JSON.stringify(candInfo));
+        
+        const headers = {};
+        const t = getToken();
+        if (t) headers['Authorization'] = 'Bearer ' + t;
+        
+        const response = await fetch(`${BASE}/api/analyze`, {
+          method: 'POST',
+          headers: headers,
+          body: formData
+        });
+        
+        const resText = await response.text();
+        try {
+          out = JSON.parse(resText);
+        } catch(e) {
+          throw new Error('Server error: ' + resText);
+        }
+      } else {
+        // Handle URL submission
+        const payload = {
+          videoUrl,
+          duration: videoDuration,
+          videoType,
+          candidateInfo: candInfo
+        };
+        out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
+      }
 
       if (!out.ok){
-        analyzeStatus.textContent =
-          (out.error && typeof out.error === 'string')
-            ? `Analysis failed: ${out.error}`
-            : 'Analysis failed. Please check your connection and try again.';
-        analyzeStatus.className   = 'err';
+        $('analyzeStatus').textContent = out.error || 'Analysis failed';
+        $('analyzeStatus').className = 'err';
         return;
       }
 
-      // Store the analysis data for feedback use
-      lastAnalysisData = {
-        activity: out.activity,
-        summary: out.summary,
-        focus: out.focus,
-        improvements: out.improvements,
-        drills: out.drills
-      };
+      $('summary').textContent = out.summary || 'Analysis complete';
 
-      summary.textContent = out.summary || 'Summary not available.';
-      focusList.innerHTML = (out.focus || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
-      improvementsList.innerHTML = (out.improvements || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>`
-        <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:18px;border-radius:12px;transition:all 0.3s">
-          <div style="color:var(--accent);font-weight:700;font-size:16px;margin-bottom:8px">${d.title || 'Drill'}</div>
-          ${d.description ? `<div style="margin:0 0 12px 0;font-size:15px;color:var(--text);line-height:1.6">${d.description}</div>` : ''}
-          <a class="link" href="${d.url}" target="_blank" style="font-size:14px;font-weight:600">→ Find this drill on YouTube</a>
-        </div>
-      `).join('');
+      if (videoType === 'training') {
+        // Show training results
+        hide($('gameResults'));
+        show($('trainingResults'));
 
-      analyzeStatus.textContent = 'Done ✅';
-      analyzeStatus.className   = 'ok';
-      show(results);
-      $('feedbackBtn')?.classList.remove('hide');
-      results.scrollIntoView({behavior:'smooth',block:'start'});
+        $('skillFocus').textContent = out.skillFocus || 'Skill assessment';
+        $('skillRecognition').textContent = (out.secondarySkills || []).join(', ') || 'Training session analysis';
+        $('skillGrade').textContent = out.currentLevel?.grade || '?';
+        $('skillLevelDesc').textContent = out.currentLevel?.description || 'Keep practicing';
 
-      viewLatestLink.classList.remove('hide');
-      viewLatestLink.onclick = (e)=>{
-        e.preventDefault();
-        results.scrollIntoView({behavior:'smooth',block:'start'});
-      };
+        // Technical Analysis
+        const tech = out.technicalAnalysis || {};
+        $('techFootwork').textContent = tech.footwork || '—';
+        $('techBodyPosition').textContent = tech.bodyPosition || '—';
+        $('techFollowThrough').textContent = tech.followThrough || '—';
+        $('techConsistency').textContent = tech.consistency || '—';
+        $('techProgression').textContent = tech.sessionProgression || '—';
+
+        // Improvement Tips (with priority structure)
+        if (out.improvementTips && out.improvementTips.length){
+          $('improvementTips').innerHTML = out.improvementTips.map(t => `
+            <li><strong>Priority ${t.priority}:</strong> ${t.tip}<br>
+            <span class="muted">Why: ${t.why}</span><br>
+            <span class="muted">How: ${t.how}</span></li>
+          `).join('');
+        } else {
+          $('improvementTips').innerHTML = '<li>No tips available</li>';
+        }
+
+        // Common Mistakes
+        if (out.commonMistakesForPosition && out.commonMistakesForPosition.length){
+          $('commonMistakes').innerHTML = out.commonMistakesForPosition.map(m => `
+            <li><strong>${m.mistake}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br>
+            <span class="muted">Correction: ${m.correction}</span></li>
+          `).join('');
+        } else {
+          $('commonMistakes').innerHTML = '<li>No mistakes data</li>';
+        }
+
+        if (out.practiceProgression && out.practiceProgression.length){
+          $('progressionList').innerHTML = out.practiceProgression.map(p=>`
+            <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:16px;border-radius:12px">
+              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${p.level}</div>
+              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p.drill}</p>
+            </div>
+          `).join('');
+        }
+
+        if (out.youtubeRecommendations && out.youtubeRecommendations.length){
+          $('youtubeList').innerHTML = out.youtubeRecommendations.map(y=>`
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
+              <div style="background:linear-gradient(135deg,rgba(25,211,255,0.08),rgba(0,255,149,0.04));border:1.5px solid var(--line);padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
+                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${y.title}</div>
+                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${y.coach}</p>
+                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${y.why}</p>
+              </div>
+            </a>
+          `).join('');
+        }
+      } else {
+        // Show game results
+        hide($('trainingResults'));
+        show($('gameResults'));
+
+        $('playerGrade').textContent = out.playerGrade || '?';
+        $('gameSmry').textContent = out.summary || 'Game performance analysis';
+
+        // Player Stats
+        if (out.playerStats) {
+          $('statPasses').textContent = out.playerStats.passes || 0;
+          $('statShots').textContent = out.playerStats.shots || 0;
+          $('statTackles').textContent = out.playerStats.tackles || 0;
+          $('statInterceptions').textContent = out.playerStats.interceptions || 0;
+        }
+
+        // Pass Metrics
+        if (out.passMetrics) {
+          $('passAttempts').textContent = out.passMetrics.attempts || 0;
+          $('passCompleted').textContent = out.passMetrics.completed || 0;
+          $('passAccuracy').textContent = (out.passMetrics.accuracy || 0) + '%';
+          $('keyPasses').textContent = out.passMetrics.keyPasses || 0;
+        }
+
+        // Shot Metrics
+        if (out.shotMetrics) {
+          $('shotAttempts').textContent = out.shotMetrics.attempts || 0;
+          $('shotOnTarget').textContent = out.shotMetrics.onTarget || 0;
+          $('shotGoals').textContent = out.shotMetrics.goals || 0;
+          $('shotAccuracy').textContent = (out.shotMetrics.accuracy || 0) + '%';
+        }
+
+        // Defensive Metrics
+        if (out.defensiveMetrics) {
+          $('defTackles').textContent = out.defensiveMetrics.tackles || 0;
+          $('defInterceptions').textContent = out.defensiveMetrics.interceptions || 0;
+          $('defClearances').textContent = out.defensiveMetrics.clearances || 0;
+          $('defSuccessRate').textContent = (out.defensiveMetrics.successRate || 0) + '%';
+        }
+
+        // Ball Control
+        if (out.ballControl) {
+          $('ballTouches').textContent = out.ballControl.touches || 0;
+          $('ballPossession').textContent = out.ballControl.possessionTime || '0s';
+          $('ballSuccess').textContent = (out.ballControl.successPercentage || 0) + '%';
+        }
+
+        // Strengths
+        if (out.strengths && out.strengths.length){
+          $('strengths').innerHTML = out.strengths.map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
+        }
+
+        // Areas to Improve
+        if (out.areasToImprove && out.areasToImprove.length){
+          $('areasToImprove').innerHTML = out.areasToImprove.map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
+        }
+      }
+
+      show($('results'));
+      $('analyzeStatus').textContent = 'Done ✅';
+      $('analyzeStatus').className = 'ok';
+      $('results').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(e){
       console.error(e);
-      analyzeStatus.textContent = 'Analysis failed due to a network or server error. Please try again.';
-      analyzeStatus.className   = 'err';
+      $('analyzeStatus').textContent = 'Error: ' + e.message;
+      $('analyzeStatus').className = 'err';
     }
   }
 
-  /* ================ LIBRARY ================ */
-  let libraryCache = [];
-
-  function renderLibrary(items){
-    goTo('library');
-    libraryList.innerHTML = items.length
-      ? items.map(i => `
-          <div class="card" data-id="${i.id}">
-            <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
-            <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
-            <div class="row" style="gap:8px">
-              ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
-              <button class="block-btn" style="flex:0 0 auto;padding:6px 10px" data-action="view" data-id="${i.id}">View</button>
-              <button class="block-btn" style="flex:0 0 auto;padding:6px 10px;background:#ff6b6b" data-action="delete" data-id="${i.id}">Delete</button>
-            </div>
-          </div>
-        `).join('')
-      : `<div class="muted">No saved analyses yet. Upload a clip and press Analyze to create one.</div>`;
-  }
-
+  /* Library */
   async function loadLibrary(){
     try{
       const res = await api('/api/analyses');
-      if (!res.ok) throw new Error(res.error || 'Failed to load library');
-      libraryCache = res.items || [];
-      renderLibrary(libraryCache);
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      const items = res.items || [];
+      goTo('library');
+      $('libraryList').innerHTML = items.length
+        ? items.map(i => `
+            <div class="card">
+              <strong>${i.candidateName || 'Candidate'}</strong><br>
+              <span class="muted">${new Date(i.createdAt).toLocaleString()}</span><br>
+              <span>${i.summary || 'Analysis saved'}</span><br>
+              <button style="margin-top:8px;padding:6px 12px;font-size:13px" onclick="viewAnalysis('${i.id}')">View</button>
+              <button style="margin-top:8px;padding:6px 12px;font-size:13px;background:#ff6b6b;box-shadow:0 2px 8px rgba(255,107,107,0.2)" onclick="deleteAnalysis('${i.id}')">Delete</button>
+            </div>
+          `).join('')
+        : '<p class="muted">No analyses saved yet</p>';
     }catch(e){
-      alert(e.message || 'Could not load library');
+      alert(e.message);
     }
   }
 
   async function viewAnalysis(id){
-    try{
+    try {
       const res = await api(`/api/analyses/${id}`);
-      if (!res.ok) throw new Error(res.error || 'Not found');
-
-      const a = res.item || {};
-      setHash('analysis');
-      goTo('analysis');
-      summary.textContent = a.summary || 'Summary not available.';
-      focusList.innerHTML = (a.focus || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
-      improvementsList.innerHTML = (a.improvements || []).map(x=>`<li style="margin-bottom:12px;color:var(--text);font-size:15px">${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>`
-        <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:18px;border-radius:12px;transition:all 0.3s">
-          <div style="color:var(--accent);font-weight:700;font-size:16px;margin-bottom:8px">${d.title || 'Drill'}</div>
-          ${d.description ? `<div style="margin:0 0 12px 0;font-size:15px;color:var(--text);line-height:1.6">${d.description}</div>` : ''}
-          <a class="link" href="${d.url}" target="_blank" style="font-size:14px;font-weight:600">→ Find this drill on YouTube</a>
-        </div>
-      `).join('');
-      show(results);
-      results.scrollIntoView({behavior:'smooth',block:'start'});
-      viewLatestLink.classList.remove('hide');
-      viewLatestLink.onclick = (e)=>{
-        e.preventDefault();
-        results.scrollIntoView({behavior:'smooth',block:'start'});
-      };
-    }catch(e){
-      alert(e.message || 'Could not open analysis');
+      if (!res.ok) throw new Error(res.error || 'Failed to load analysis');
+      
+      const item = res;
+      
+      console.log('[Ball Knowledge] Loading analysis:', item.videoType, item.candidateName);
+      
+      // Navigate to report view page
+      setHash('reportView');
+      goTo('reportView');
+      
+      // Wait a moment for DOM to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Display YouTube video if available
+      const videoUrl = item.videoUrl || '';
+      if (videoUrl && videoUrl.includes('youtube.com')) {
+        const videoId = videoUrl.split('v=')[1]?.split('&')[0];
+        if (videoId) {
+          $('viewYoutubePlayer').innerHTML = `<iframe width="100%" height="450" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px"></iframe>`;
+          $('viewYoutubeSection').classList.remove('hide');
+        } else {
+          $('viewYoutubePlayer').innerHTML = '<p class="muted">Invalid YouTube URL</p>';
+        }
+      } else {
+        $('viewYoutubeSection').classList.add('hide');
+      }
+      
+      // Set video type to show correct sections
+      if (item.videoType === 'training') {
+        $('viewTrainingResults').classList.remove('hide');
+        $('viewGameResults').classList.add('hide');
+        
+        // Use flattened fields from API response
+        $('viewSkillFocus').textContent = item.skillFocus || '—';
+        $('viewSkillRecognition').textContent = item.secondarySkills?.join(', ') || '—';
+        $('viewSkillGrade').textContent = item.currentLevel?.grade || '—';
+        $('viewSkillLevelDesc').textContent = item.currentLevel?.description || '—';
+        
+        // Technical Analysis
+        const tech = item.technicalAnalysis || {};
+        $('viewTechFootwork').textContent = tech.footwork || '—';
+        $('viewTechBodyPosition').textContent = tech.bodyPosition || '—';
+        $('viewTechFollowThrough').textContent = tech.followThrough || '—';
+        $('viewTechConsistency').textContent = tech.consistency || '—';
+        $('viewTechProgression').textContent = tech.sessionProgression || '—';
+        
+        // Improvement Tips
+        const tips = item.improvementTips || [];
+        $('viewImprovementTips').innerHTML = tips.length 
+          ? tips.map(t => `<li><strong>Priority ${t.priority}:</strong> ${t.tip}<br><span class="muted">Why: ${t.why}</span><br><span class="muted">How: ${t.how}</span></li>`).join('')
+          : '<li>No tips available</li>';
+        
+        // Common Mistakes
+        const mistakes = item.commonMistakesForPosition || [];
+        $('viewCommonMistakes').innerHTML = mistakes.length
+          ? mistakes.map(m => `<li><strong>${m.mistake}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br><span class="muted">Correction: ${m.correction}</span></li>`).join('')
+          : '<li>No mistakes data</li>';
+        
+        // Practice Progression
+        const progression = item.practiceProgression || [];
+        $('viewProgressionList').innerHTML = progression.length
+          ? progression.map(p => `<div style="padding:12px;background:rgba(0,255,149,0.05);border-left:3px solid var(--accent);border-radius:8px"><strong>${p.level}</strong><p style="margin:8px 0 0 0;color:var(--text)">${p.drill}</p></div>`).join('')
+          : '<p>No progression data</p>';
+        
+        // YouTube Recommendations
+        const youtube = item.youtubeRecommendations || [];
+        $('viewYoutubeList').innerHTML = youtube.length
+          ? youtube.map(y => `
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
+              <div style="background:linear-gradient(135deg,rgba(25,211,255,0.08),rgba(0,255,149,0.04));border:1.5px solid var(--line);padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
+                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${y.title}</div>
+                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${y.coach}</p>
+                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${y.why}</p>
+              </div>
+            </a>
+          `).join('')
+          : '<p>No video recommendations</p>';
+        
+        // Session Summary
+        $('viewSummary').textContent = item.sessionSummary || item.summary || '—';
+        
+      } else {
+        // Game analysis
+        $('viewGameResults').classList.remove('hide');
+        $('viewTrainingResults').classList.add('hide');
+        
+        // Use flattened fields from API response
+        $('viewPlayerGrade').textContent = item.playerGrade || '—';
+        $('viewGameSmry').textContent = item.summary || '—';
+        $('viewSummary').textContent = item.summary || '—';
+        
+        // Stats
+        const stats = item.playerStats || {};
+        $('viewStatPasses').textContent = stats.passes || 0;
+        $('viewStatShots').textContent = stats.shots || 0;
+        $('viewStatTackles').textContent = stats.tackles || 0;
+        $('viewStatInterceptions').textContent = stats.interceptions || 0;
+        
+        // Pass metrics
+        const passMetrics = item.passMetrics || {};
+        $('viewPassAttempts').textContent = passMetrics.attempts || 0;
+        $('viewPassCompleted').textContent = passMetrics.completed || 0;
+        $('viewPassAccuracy').textContent = (passMetrics.accuracy || 0) + '%';
+        $('viewKeyPasses').textContent = passMetrics.keyPasses || 0;
+        
+        // Shot metrics
+        const shotMetrics = item.shotMetrics || {};
+        $('viewShotAttempts').textContent = shotMetrics.attempts || 0;
+        $('viewShotOnTarget').textContent = shotMetrics.onTarget || 0;
+        $('viewShotGoals').textContent = shotMetrics.goals || 0;
+        $('viewShotAccuracy').textContent = (shotMetrics.accuracy || 0) + '%';
+        
+        // Defensive metrics
+        const defMetrics = item.defensiveMetrics || {};
+        $('viewDefTackles').textContent = defMetrics.tackles || 0;
+        $('viewDefInterceptions').textContent = defMetrics.interceptions || 0;
+        $('viewDefClearances').textContent = defMetrics.clearances || 0;
+        $('viewDefSuccessRate').textContent = (defMetrics.successRate || 0) + '%';
+      }
+      
+      // Highlights
+      const highlights = item.highlights || [];
+      if (highlights.length) {
+        // Display highlights if there's a highlights section
+        console.log('Highlights:', highlights);
+      }
+      
+    } catch(e) {
+      alert('Error loading analysis: ' + e.message);
     }
   }
 
   async function deleteAnalysis(id){
-    if (!confirm('Delete this analysis?')) return;
-    try{
-      const res = await api(`/api/analyses/${id}`, { method:'DELETE' });
-      if (!res.ok) throw new Error(res.error || 'Delete failed');
-      libraryCache = libraryCache.filter(x => x.id !== id);
-      renderLibrary(libraryCache);
-    }catch(e){
-      alert(e.message || 'Could not delete');
-    }
+    if (!confirm('Delete?')) return;
+    const res = await api(`/api/analyses/${id}`, { method:'DELETE' });
+    if (res.ok) loadLibrary();
   }
-
-  async function getFeedback(playerContext, clipsNotes) {
-    const res = await fetch("https://ai-soccer-backend-2-production.up.railway.app/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerContext, clipsNotes }),
-    });
-
-    return await res.json();
-  }
-
-  async function doGetFeedback(){
-    const feedbackBtn = $('feedbackBtn');
-    const analyzeStatus = $('analyzeStatus');
-    const results = $('results');
-    
-    // Check if analysis has been done first
-    if (!lastAnalysisData) {
-      analyzeStatus.textContent = 'Please analyze a video first before getting feedback.';
-      analyzeStatus.className = 'err';
-      return;
-    }
-
-    analyzeStatus.textContent = 'Getting coaching feedback…';
-    analyzeStatus.className = 'muted';
-    feedbackBtn.disabled = true;
-
-    try {
-      // Build player context from form
-      const playerContext = {
-        height: `${heightFeetEl.value}'${heightInchesEl.value}"`,
-        weight: weightEl.value ? `${weightEl.value} lbs` : 'Not specified',
-        position: positionEl.value,
-        dominantFoot: footEl.value,
-        notes: skillEl.value.trim() || 'None'
-      };
-
-      // Use REAL analysis data from the video analysis, not mock data
-      const clipsNotes = [
-        {
-          activity: lastAnalysisData.activity || 'Training activity',
-          summary: lastAnalysisData.summary || 'Video analysis completed',
-          observations: lastAnalysisData.improvements || []
-        }
-      ];
-
-      const result = await getFeedback(playerContext, clipsNotes);
-
-      if (!result.ok) {
-        analyzeStatus.textContent = result.error || 'Feedback failed. Please try again.';
-        analyzeStatus.className = 'err';
-        feedbackBtn.disabled = false;
-        return;
-      }
-
-      // Display feedback results
-      const report = result.report || {};
-      const feedbackHtml = `
-        <div style="margin-top:24px">
-          <h3>Coaching Feedback Report</h3>
-          ${report.strengths ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Strengths</h4>${report.strengths.map(s=>`<p style="margin:8px 0;color:var(--text)">${s}</p>`).join('')}</div>` : ''}
-          ${report.improvements ? `<div style="margin:20px 0"><h4 style="color:var(--accent2)">Improvements</h4>${report.improvements.map(i=>`<p style="margin:8px 0;color:var(--text)">${i}</p>`).join('')}</div>` : ''}
-          ${report.coachingCues ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Coaching Cues</h4>${report.coachingCues.map(c=>`<p style="margin:8px 0;color:var(--text)">${c}</p>`).join('')}</div>` : ''}
-          ${report.drills ? `<div style="margin:20px 0"><h4 style="color:var(--accent)">Recommended Drills</h4>${report.drills.map(d=>`<div style="margin:12px 0;padding:12px;background:rgba(0,255,149,0.08);border-radius:8px"><strong>${d.name}</strong><p style="margin:4px 0;font-size:14px">${d.setup}</p></div>`).join('')}</div>` : ''}
-        </div>
-      `;
-      
-      const resultsDiv = results;
-      resultsDiv.innerHTML += feedbackHtml;
-      resultsDiv.scrollIntoView({behavior:'smooth',block:'start'});
-
-      analyzeStatus.textContent = 'Coaching feedback ready ✅';
-      analyzeStatus.className = 'ok';
-      feedbackBtn.disabled = false;
-
-    } catch (e) {
-      console.error(e);
-      analyzeStatus.textContent = `Error: ${e.message}`;
-      analyzeStatus.className = 'err';
-      feedbackBtn.disabled = false;
-    }
-  }
-
-  document.addEventListener('click',(e)=>{
-    const t = e.target;
-    if (!(t instanceof HTMLElement)) return;
-    const action = t.getAttribute('data-action');
-    const id = t.getAttribute('data-id');
-    if (!action || !id) return;
-    if (action === 'view'){ e.preventDefault(); viewAnalysis(id); }
-    else if (action === 'delete'){ e.preventDefault(); deleteAnalysis(id); }
-  });
-
-  /* ================= PROFILE ================= */
+  /* Profile */
   let currentProfileData = {};
 
   async function loadProfile(){
@@ -1209,8 +1905,21 @@
       $('profileAge').textContent = user.age ? `${user.age} years old` : '—';
       
       if (user.dob) {
-        const dobDate = new Date(user.dob);
-        $('profileDOB').textContent = dobDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        let dobDate;
+        if (user.dob.includes('T')) {
+          dobDate = new Date(user.dob);
+        } else if (user.dob.includes('-')) {
+          const [year, month, day] = user.dob.split('-');
+          dobDate = new Date(year, parseInt(month) - 1, day);
+        } else {
+          dobDate = new Date(user.dob);
+        }
+        
+        if (!isNaN(dobDate.getTime())) {
+          $('profileDOB').textContent = dobDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        } else {
+          $('profileDOB').textContent = user.dob || '—';
+        }
       } else {
         $('profileDOB').textContent = '—';
       }
@@ -1234,7 +1943,8 @@
       $('editDOB').value = user.dob || '';
       $('editPosition').value = profile.position || '';
       $('editFoot').value = profile.foot || '';
-      $('editHeight').value = profile.height || '';
+      $('editHeightFeet').value = profile.height ? Math.floor(profile.height / 12) : '';
+      $('editHeightInches').value = profile.height ? (profile.height % 12) : '';
       $('editWeight').value = profile.weight || '';
       
       // Show view mode, hide edit mode
@@ -1257,14 +1967,86 @@
     show($('profileViewMode'));
   }
 
+  /* Upload Handling */
+  let uploadedFile = null;
+
+  // Upload method toggle
+  document.querySelectorAll('input[name="uploadMethod"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'file') {
+        show($('fileUploadSection'));
+        hide($('urlUploadSection'));
+      } else {
+        hide($('fileUploadSection'));
+        show($('urlUploadSection'));
+      }
+    });
+  });
+
+  // File upload handling
+  const dropZone = $('dropZone');
+  const libraryInput = $('videoLibraryInput');
+  const cameraInput = $('videoCameraInput');
+  const fileInfo = $('fileInfo');
+
+  dropZone.addEventListener('click', () => libraryInput.click());
+
+  libraryInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileSelected(file);
+    }
+  });
+
+  cameraInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileSelected(file);
+    }
+  });
+
+  // Drag and drop
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent2)';
+    dropZone.style.background = 'rgba(0,255,149,0.05)';
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = 'var(--accent)';
+    dropZone.style.background = 'transparent';
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+    dropZone.style.background = 'transparent';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) {
+      handleFileSelected(file);
+    } else {
+      alert('Please drop a video file');
+    }
+  });
+
+  function handleFileSelected(file) {
+    uploadedFile = file;
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+    fileInfo.innerHTML = `<span style="color:var(--success)">✓ ${file.name}</span><br><span class="muted">${sizeMB} MB</span>`;
+  }
+
   async function saveProfile(){
+    const heightFeet = Number($('editHeightFeet').value || 0);
+    const heightInches = Number($('editHeightInches').value || 0);
+    const totalHeight = (heightFeet * 12) + heightInches;
+
     const payload = {
       name: $('editName').value.trim(),
       age: Number($('editAge').value || 0),
       dob: $('editDOB').value,
       position: $('editPosition').value,
       foot: $('editFoot').value,
-      height: Number($('editHeight').value || 0),
+      height: totalHeight || 0,
       weight: Number($('editWeight').value || 0)
     };
 
@@ -1282,14 +2064,51 @@
       alert('Error updating profile: ' + (e.message || 'Unknown error'));
     }
   }
-
-  /* ================= WIRE UP ================= */
+  
+  // ========= THEME TOGGLE =========
+  function toggleTheme(){
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    const icon = document.getElementById('themeIcon');
+    const text = document.getElementById('themeText');
+    
+    if(newTheme === 'light'){
+      icon.textContent = '☀️';
+      text.textContent = 'Light';
+    } else {
+      icon.textContent = '🌙';
+      text.textContent = 'Dark';
+    }
+  }
+  
+  // Load saved theme on startup
+  (function(){
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    const icon = document.getElementById('themeIcon');
+    const text = document.getElementById('themeText');
+    if(icon && text && savedTheme === 'light'){
+      icon.textContent = '☀️';
+      text.textContent = 'Light';
+    }
+  })();
+  
+  /* Wire up */
   $('signupBtn')?.addEventListener('click', doSignup);
   $('loginBtn')?.addEventListener('click', doLogin);
-  uploadBtn?.addEventListener('click', doUpload);
-  analyzeBtn?.addEventListener('click', doAnalyze);
-  $('feedbackBtn')?.addEventListener('click', doGetFeedback);
-  
+  $('analyzeBtn')?.addEventListener('click', doAnalyze);
+  $('newAnalysisBtn')?.addEventListener('click', () => { hide($('results')); $('videoUrl').value=''; $('videoDuration').value=''; });
+  $('saveAnalysisBtn')?.addEventListener('click', async () => {
+    const res = await api('/api/analyses', { method:'POST', body: JSON.stringify({ summary: $('summary').textContent }) });
+    if (res.ok) alert('Saved!');
+    else alert(res.error || 'Save failed');
+  });
+
   // Profile buttons
   $('editProfileBtn')?.addEventListener('click', showEditMode);
   $('cancelEditBtn')?.addEventListener('click', hideEditMode);
@@ -1298,39 +2117,23 @@
     e.preventDefault();
     setHash('library');
   });
-  
-  // Picture upload
-  $('uploadPictureBtn')?.addEventListener('click', () => {
-    $('profilePictureInput').click();
-  });
-  $('profilePictureInput')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    // For now, just show local preview
-    // You can extend this to upload to Cloudinary later
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = $('profilePicture');
-      img.src = event.target.result;
-      img.style.display = 'block';
-      $('profilePictureDefault').style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-  });
 
-  /* ================= BOOTSTRAP ================= */
+  /* Bootstrap */
   document.addEventListener('DOMContentLoaded', () => {
     try{
-      if (getToken()){
+      if (getToken()) {
         const page = currentHash();
         if (page === 'library') { loadLibrary(); }
+        else if (page === 'profile') { goTo('profile'); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
-        goTo('account');
+        const page = currentHash();
+        if (page === 'login') { goTo('login'); }
+        else if (page === 'signup') { goTo('signup'); }
+        else { goTo('home'); }
       }
     } finally {
-      hideSplash();
+      $('splash').style.display='none';
     }
   });
   </script>
