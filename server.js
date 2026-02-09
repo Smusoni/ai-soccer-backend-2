@@ -96,16 +96,16 @@ async function extractFramesFromVideo(videoUrl, duration) {
     const frames = [];
     
     if (!videoUrl) {
-      console.log('[Ball Knowledge] ⚠️ No video URL provided');
+      console.log('[Ball Knowledge] [WARNING] No video URL provided');
       return null;
     }
 
-    console.log('[Ball Knowledge] 🎬 Video URL:', videoUrl.substring(0, 100));
-    console.log('[Ball Knowledge] 🎬 Video duration:', duration, 'seconds');
+    console.log('[Ball Knowledge] [INFO] Video URL:', videoUrl.substring(0, 100));
+    console.log('[Ball Knowledge] [INFO] Video duration:', duration, 'seconds');
 
     // For Cloudinary URLs: use so_(time_in_seconds) to extract frame at specific timestamp
     if (videoUrl.includes('cloudinary')) {
-      console.log('[Ball Knowledge] ✅ Cloudinary URL detected - extracting frames');
+      console.log('[Ball Knowledge] [SUCCESS] Cloudinary URL detected - extracting frames');
       const timestamps = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
       
       for (const time of timestamps) {
@@ -119,16 +119,16 @@ async function extractFramesFromVideo(videoUrl, duration) {
           console.log(`[Ball Knowledge] Could not create frame URL for time ${time}`);
         }
       }
-      console.log(`[Ball Knowledge] ✅ Extracted ${frames.length} frames from Cloudinary video`);
+      console.log(`[Ball Knowledge] [SUCCESS] Extracted ${frames.length} frames from Cloudinary video`);
       return frames.length > 0 ? frames : null;
     }
     
     // For other video sources (YouTube, Vimeo, etc.): cannot extract frames
-    console.log('[Ball Knowledge] ⚠️ Non-Cloudinary URL detected - cannot extract frames');
-    console.log('[Ball Knowledge] ⚠️ Video analysis will be TEXT-ONLY (less accurate)');
+    console.log('[Ball Knowledge] [WARNING] Non-Cloudinary URL detected - cannot extract frames');
+    console.log('[Ball Knowledge] [WARNING] Video analysis will be TEXT-ONLY (less accurate)');
     return null;
   } catch (err) {
-    console.error('[Ball Knowledge] ❌ Error extracting video frames:', err.message);
+    console.error('[Ball Knowledge] [ERROR] Error extracting video frames:', err.message);
     return null;
   }
 }
@@ -232,8 +232,8 @@ Return STRICT JSON ONLY with no markdown or extra text:
     });
 
     const rawContent = resp.choices?.[0]?.message?.content || '{}';
-    console.log('[Ball Knowledge] 📊 OpenAI response length:', rawContent.length, 'characters');
-    console.log('[Ball Knowledge] 📊 OpenAI response preview:', rawContent.substring(0, 200));
+    console.log('[Ball Knowledge] [INFO] OpenAI response length:', rawContent.length, 'characters');
+    console.log('[Ball Knowledge] [INFO] OpenAI response preview:', rawContent.substring(0, 200));
     
     let data = {};
     try {
@@ -244,28 +244,28 @@ Return STRICT JSON ONLY with no markdown or extra text:
         if (codeBlockMatch) jsonStr = codeBlockMatch[1];
       }
       data = JSON.parse(jsonStr);
-      console.log('[Ball Knowledge] ✅ Successfully parsed game metrics JSON');
+      console.log('[Ball Knowledge] [SUCCESS] Successfully parsed game metrics JSON');
     } catch (parseError) {
-      console.log('[Ball Knowledge] ⚠️ Game metrics JSON parse failed, trying regex extraction...');
+      console.log('[Ball Knowledge] [WARNING] Game metrics JSON parse failed, trying regex extraction...');
       const m = rawContent.match(/\{[\s\S]*\}/);
       if (m) {
         try {
           data = JSON.parse(m[0]);
-          console.log('[Ball Knowledge] ✅ Successfully parsed with regex extraction');
+          console.log('[Ball Knowledge] [SUCCESS] Successfully parsed with regex extraction');
         } catch (e) {
-          console.log('[Ball Knowledge] ❌ Regex extraction also failed:', e.message);
-          console.log('[Ball Knowledge] ❌ Raw content preview:', rawContent.substring(0, 500));
+          console.log('[Ball Knowledge] [ERROR] Regex extraction also failed:', e.message);
+          console.log('[Ball Knowledge] [ERROR] Raw content preview:', rawContent.substring(0, 500));
           throw new Error('Failed to parse OpenAI response. The AI returned invalid JSON. Raw response: ' + rawContent.substring(0, 200));
         }
       } else {
-        console.log('[Ball Knowledge] ❌ No JSON object found in response');
+        console.log('[Ball Knowledge] [ERROR] No JSON object found in response');
         throw new Error('No JSON found in OpenAI response. Raw: ' + rawContent.substring(0, 200));
       }
     }
 
     // Validate we got meaningful data
     if (!data.summary && !data.playerGrade && !data.playerStats) {
-      console.log('[Ball Knowledge] ❌ OpenAI returned empty/incomplete data');
+      console.log('[Ball Knowledge] [ERROR] OpenAI returned empty/incomplete data');
       throw new Error('OpenAI returned empty analysis data. This usually means the video could not be analyzed properly.');
     }
 
@@ -425,8 +425,8 @@ Return STRICT JSON ONLY - no markdown, no backticks:
     });
 
     const rawContent = resp.choices?.[0]?.message?.content || '{}';
-    console.log('[Ball Knowledge] 📊 OpenAI response length:', rawContent.length, 'characters');
-    console.log('[Ball Knowledge] 📊 OpenAI response preview:', rawContent.substring(0, 200));
+    console.log('[Ball Knowledge] [INFO] OpenAI response length:', rawContent.length, 'characters');
+    console.log('[Ball Knowledge] [INFO] OpenAI response preview:', rawContent.substring(0, 200));
     
     let data = {};
     try {
@@ -437,28 +437,28 @@ Return STRICT JSON ONLY - no markdown, no backticks:
         if (codeBlockMatch) jsonStr = codeBlockMatch[1];
       }
       data = JSON.parse(jsonStr);
-      console.log('[Ball Knowledge] ✅ Successfully parsed training analysis JSON');
+      console.log('[Ball Knowledge] [SUCCESS] Successfully parsed training analysis JSON');
     } catch (parseError) {
-      console.log('[Ball Knowledge] ⚠️ Training analysis JSON parse failed, trying regex extraction...');
+      console.log('[Ball Knowledge] [WARNING] Training analysis JSON parse failed, trying regex extraction...');
       const m = rawContent.match(/\{[\s\S]*\}/);
       if (m) {
         try {
           data = JSON.parse(m[0]);
-          console.log('[Ball Knowledge] ✅ Successfully parsed with regex extraction');
+          console.log('[Ball Knowledge] [SUCCESS] Successfully parsed with regex extraction');
         } catch (e) {
-          console.log('[Ball Knowledge] ❌ Regex extraction also failed:', e.message);
-          console.log('[Ball Knowledge] ❌ Raw content preview:', rawContent.substring(0, 500));
+          console.log('[Ball Knowledge] [ERROR] Regex extraction also failed:', e.message);
+          console.log('[Ball Knowledge] [ERROR] Raw content preview:', rawContent.substring(0, 500));
           throw new Error('Failed to parse OpenAI response. The AI returned invalid JSON. Raw response: ' + rawContent.substring(0, 200));
         }
       } else {
-        console.log('[Ball Knowledge] ❌ No JSON object found in response');
+        console.log('[Ball Knowledge] [ERROR] No JSON object found in response');
         throw new Error('No JSON found in OpenAI response. Raw: ' + rawContent.substring(0, 200));
       }
     }
 
     // Validate we got meaningful data
     if (!data.sessionSummary && !data.skillFocus && !data.currentLevel) {
-      console.log('[Ball Knowledge] ❌ OpenAI returned empty/incomplete data');
+      console.log('[Ball Knowledge] [ERROR] OpenAI returned empty/incomplete data');
       throw new Error('OpenAI returned empty analysis data. This usually means the video could not be analyzed properly.');
     }
 
@@ -904,35 +904,35 @@ app.post('/api/analyze', auth, async (req, res) => {
       return res.status(400).json({ ok: false, error: 'videoType must be "game" or "training"' });
     }
 
-    console.log(`[Ball Knowledge] 🚀 Starting ${videoType} analysis`);
-    console.log(`[Ball Knowledge] 📹 Video URL: ${videoUrl.substring(0, 100)}...`);
-    console.log(`[Ball Knowledge] ⏱️  Duration: ${videoDuration} seconds`);
+    console.log(`[Ball Knowledge] [START] Starting ${videoType} analysis`);
+    console.log(`[Ball Knowledge] [INFO] Video URL: ${videoUrl.substring(0, 100)}...`);
+    console.log(`[Ball Knowledge] [INFO] Duration: ${videoDuration} seconds`);
     
     const candidateName = candidateInfo.name || 'Unknown Player';
     const position = candidateInfo.position || 'Unknown';
-    console.log(`[Ball Knowledge] 👤 Candidate: ${candidateName}, Position: ${position}`);
+    console.log(`[Ball Knowledge] [INFO] Candidate: ${candidateName}, Position: ${position}`);
     
     const frames = await extractFramesFromVideo(videoUrl, videoDuration);
-    console.log(`[Ball Knowledge] 🎬 Extracted ${frames ? frames.length : 0} frames from video`);
+    console.log(`[Ball Knowledge] [INFO] Extracted ${frames ? frames.length : 0} frames from video`);
     
     if (!frames || frames.length === 0) {
-      console.log(`[Ball Knowledge] ⚠️ WARNING: No video frames extracted! Analysis will be text-only and less accurate.`);
-      console.log(`[Ball Knowledge] ⚠️ This usually happens with non-Cloudinary URLs (YouTube, Vimeo, etc.)`);
+      console.log(`[Ball Knowledge] [WARNING] No video frames extracted! Analysis will be text-only and less accurate.`);
+      console.log(`[Ball Knowledge] [WARNING] This usually happens with non-Cloudinary URLs (YouTube, Vimeo, etc.)`);
     }
     
     let analysis = {};
-    console.log(`[Ball Knowledge] 🤖 Calling ${videoType === 'game' ? 'analyzeGameMetrics' : 'analyzeTraining'}...`);
+    console.log(`[Ball Knowledge] [INFO] Calling ${videoType === 'game' ? 'analyzeGameMetrics' : 'analyzeTraining'}...`);
     if (videoType === 'game') {
       analysis = await analyzeGameMetrics(videoUrl, frames, candidateName, position, videoDuration);
     } else {
       analysis = await analyzeTraining(videoUrl, frames, candidateName, position, videoDuration);
     }
-    console.log(`[Ball Knowledge] ✅ ${videoType} analysis completed`);
-    console.log(`[Ball Knowledge] 📊 Analysis keys:`, Object.keys(analysis));
+    console.log(`[Ball Knowledge] [SUCCESS] ${videoType} analysis completed`);
+    console.log(`[Ball Knowledge] [INFO] Analysis keys:`, Object.keys(analysis));
     
-    console.log(`[Ball Knowledge] 🎯 Extracting highlights...`);
+    console.log(`[Ball Knowledge] [INFO] Extracting highlights...`);
     const highlights = await extractHighlights(videoUrl, frames, candidateName, videoType);
-    console.log(`[Ball Knowledge] ✅ Highlights extraction completed (${highlights ? highlights.length : 0} highlights)`);
+    console.log(`[Ball Knowledge] [SUCCESS] Highlights extraction completed (${highlights ? highlights.length : 0} highlights)`);
     
     const id = uuidv4();
     
