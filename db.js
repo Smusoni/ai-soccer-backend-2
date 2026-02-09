@@ -2,7 +2,7 @@
  * PostgreSQL Database Connection
  * 
  * Creates a connection pool for the Ball Knowledge database.
- * Uses environment variables for configuration.
+ * Uses POSTGRES_URL connection string from environment.
  */
 
 import pg from 'pg';
@@ -12,24 +12,23 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Use POSTGRES_URL connection string (AWS Aurora PostgreSQL)
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'ball_knowledge',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  connectionString: process.env.POSTGRES_URL,
+  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Test connection on startup
 pool.on('connect', () => {
-  console.log('✅ PostgreSQL connected');
+  console.log('[PostgreSQL] Connected successfully');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ PostgreSQL connection error:', err);
+  console.error('[PostgreSQL] Connection error:', err.message);
+  // Don't exit in serverless environment - let individual queries handle errors
 });
 
 export default pool;
