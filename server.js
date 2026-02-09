@@ -60,8 +60,10 @@ const __dirname  = path.dirname(__filename);
 const app = express();
 
 // Configure multer for file uploads (store in temp folder)
+// Use /tmp on Vercel (serverless), or local uploads folder otherwise
+const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, 'uploads');
 const upload = multer({
-  dest: path.join(__dirname, 'uploads'),
+  dest: uploadDir,
   limits: { fileSize: 500 * 1024 * 1024 }, // 500MB max
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('video/')) {
@@ -77,7 +79,8 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.static('.'));
 
 /* ---------- Tiny JSON "DB" ---------- */
-const DATA_DIR  = path.join(__dirname, 'data');
+// Use /tmp on Vercel (serverless), or local data folder otherwise
+const DATA_DIR  = process.env.VERCEL ? '/tmp/data' : path.join(__dirname, 'data');
 
 /* ---------- Analytics Cache ---------- */
 let analyticsCache = {
@@ -1253,18 +1256,24 @@ app.get('/api/analytics/engagement', (req, res) => {
 });
 
 /* ---------- Start server ---------- */
-app.listen(PORT, '0.0.0.0', () => {
-  const interfaces = os.networkInterfaces();
-  const ipv4Addresses = [];
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        ipv4Addresses.push(iface.address);
+if (process.env.VERCEL !== '1') {
+  // Only listen on a port in local development, not on Vercel
+  app.listen(PORT, '0.0.0.0', () => {
+    const interfaces = os.networkInterfaces();
+    const ipv4Addresses = [];
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          ipv4Addresses.push(iface.address);
+        }
       }
     }
-  }
-  const ipUrl = ipv4Addresses.length > 0 ? ipv4Addresses[0] : 'localhost';
-  console.log(`🎯 Ball Knowledge running on http://${ipUrl}:${PORT}`);
-  console.log(`   On this device: http://127.0.0.1:${PORT}`);
-});
+    const ipUrl = ipv4Addresses.length > 0 ? ipv4Addresses[0] : 'localhost';
+    console.log(`🎯 Ball Knowledge running on http://${ipUrl}:${PORT}`);
+    console.log(`   On this device: http://127.0.0.1:${PORT}`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;
 
