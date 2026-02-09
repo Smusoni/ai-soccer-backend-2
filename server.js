@@ -15,7 +15,7 @@
  * - Express.js for HTTP server
  * - OpenAI GPT-4o for vision analysis
  * - Cloudinary for video hosting
- * - JSON persistence (upgrade to PostgreSQL for production)
+ * - PostgreSQL for data persistence
  * 
  * Start: npm start (port 3001)
  * Docs: See README.md
@@ -23,7 +23,6 @@
 
 import express from 'express';
 import cors from 'cors';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
@@ -33,14 +32,9 @@ import OpenAI from 'openai';
 import https from 'https';
 import dotenv from 'dotenv';
 import os from 'os';
-import multer from 'multer';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegStatic from 'ffmpeg-static';
+import pool from './db.js';
 
 dotenv.config();
-
-// Configure FFmpeg to use the static binary
-ffmpeg.setFfmpegPath(ffmpegStatic);
 
 /* ---------- ENV + constants ---------- */
 const JWT_SECRET  = process.env.JWT_SECRET || 'dev_secret_change_me';
@@ -59,157 +53,26 @@ const __dirname  = path.dirname(__filename);
 
 const app = express();
 
-// Configure multer for file uploads (store in temp folder)
-// Use /tmp on Vercel (serverless), or local uploads folder otherwise
-const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, 'uploads');
-const upload = multer({
-  dest: uploadDir,
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB max
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only video files allowed'));
-    }
-  }
-});
-
 app.use(cors({ origin: APP_ORIGINS }));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "100mb" }));
 app.use(express.static('.'));
 
-/* ---------- Tiny JSON "DB" ---------- */
-// Use /tmp on Vercel (serverless), or local data folder otherwise
-const DATA_DIR  = process.env.VERCEL ? '/tmp/data' : path.join(__dirname, 'data');
-
-/* ---------- Analytics Cache ---------- */
-let analyticsCache = {
-  totalUsers: 0,
-  totalAnalyses: 0,
-  gameAnalyses: 0,
-  trainingAnalyses: 0,
-  avgCompletionRate: 0,
-  dailyActiveUsers: 0,
-  weeklyTrend: [],
-  lastUpdated: 0
-};
-const DATA_PATH = path.join(DATA_DIR, 'data.json');
-
-let db = {
-  users: [],              // [{id,name,email,passHash,age,dob,createdAt}]
-  coordinators: {},       // userId -> {name, organization, role}
-  candidates: {},         // userId -> {candidateName, position, age, height, weight, foot, jerseyNumber}
-  analysesByUser: {},     // userId -> [{...analysis}]
-};
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function loadDB() {
-  ensureDataDir();
-  if (fs.existsSync(DATA_PATH)) {
-    try {
-      const raw = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
-      db = { ...db, ...raw };
-    } catch (e) {
-      console.error('[SOTA] loadDB error', e);
-    }
-  }
-}
-
-let saveTimer = null;
-function saveDB(immediate = false) {
-  const write = () => {
-    ensureDataDir();
-    fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
-  };
-
-  if (immediate) return write();
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try { write(); } catch (e) { console.error('[SOTA] saveDB', e); }
-    saveTimer = null;
-  }, 250);
-}
-
-loadDB();
-
-/* ---------- Analytics Functions ---------- */
-function refreshAnalyticsCache() {
-  try {
-    // Total users
-    analyticsCache.totalUsers = Array.isArray(db.users) ? db.users.length : Object.keys(db.users || {}).length;
-    
-    // Analyses stats
-    let totalAnalyses = 0;
-    let gameCount = 0;
-    let trainingCount = 0;
-    
-    for (const userId in db.analysesByUser || {}) {
-      const userAnalyses = db.analysesByUser[userId] || [];
-      totalAnalyses += userAnalyses.length;
-      
-      userAnalyses.forEach(a => {
-        if (a.videoType === 'game') gameCount++;
-        else if (a.videoType === 'training') trainingCount++;
-      });
-    }
-    
-    analyticsCache.totalAnalyses = totalAnalyses;
-    analyticsCache.gameAnalyses = gameCount;
-    analyticsCache.trainingAnalyses = trainingCount;
-    analyticsCache.avgCompletionRate = totalAnalyses > 0 ? 100 : 0;
-    
-    // Daily active users (last 24 hours)
-    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-    let activeUsers = new Set();
-    
-    for (const userId in db.analysesByUser || {}) {
-      const userAnalyses = db.analysesByUser[userId] || [];
-      const hasRecent = userAnalyses.some(a => a.createdAt > oneDayAgo);
-      if (hasRecent) activeUsers.add(userId);
-    }
-    
-    analyticsCache.dailyActiveUsers = activeUsers.size;
-    
-    // Weekly trend (last 7 days)
-    const trend = [];
-    for (let i = 6; i >= 0; i--) {
-      const dayStart = Date.now() - (i * 24 * 60 * 60 * 1000);
-      const dayEnd = dayStart + (24 * 60 * 60 * 1000);
-      
-      let dayCount = 0;
-      for (const userId in db.analysesByUser || {}) {
-        const userAnalyses = db.analysesByUser[userId] || [];
-        dayCount += userAnalyses.filter(a => 
-          a.createdAt >= dayStart && a.createdAt < dayEnd
-        ).length;
-      }
-      
-      trend.push({ date: new Date(dayStart).toISOString().split('T')[0], count: dayCount });
-    }
-    
-    analyticsCache.weeklyTrend = trend;
-    analyticsCache.lastUpdated = Date.now();
-    
-    console.log('📊 Analytics cache refreshed');
-  } catch (err) {
-    console.error('Analytics cache refresh error:', err);
-  }
-}
-
-function onAnalysisCompleted() {
-  refreshAnalyticsCache();
-}
-
-// Refresh analytics cache on startup
-refreshAnalyticsCache();
-
 /* ---------- Helpers ---------- */
-const findUser     = email =>
-  db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-const findUserById = id => db.users.find(u => u.id === id);
+async function findUser(email) {
+  const result = await pool.query(
+    'SELECT * FROM users WHERE email = $1',
+    [email.toLowerCase()]
+  );
+  return result.rows[0] || null;
+}
+
+async function findUserById(id) {
+  const result = await pool.query(
+    'SELECT * FROM users WHERE id = $1',
+    [id]
+  );
+  return result.rows[0] || null;
+}
 
 function auth(req, res, next) {
   try {
@@ -233,11 +96,16 @@ async function extractFramesFromVideo(videoUrl, duration) {
     const frames = [];
     
     if (!videoUrl) {
+      console.log('[Ball Knowledge] ⚠️ No video URL provided');
       return null;
     }
 
+    console.log('[Ball Knowledge] 🎬 Video URL:', videoUrl.substring(0, 100));
+    console.log('[Ball Knowledge] 🎬 Video duration:', duration, 'seconds');
+
     // For Cloudinary URLs: use so_(time_in_seconds) to extract frame at specific timestamp
     if (videoUrl.includes('cloudinary')) {
+      console.log('[Ball Knowledge] ✅ Cloudinary URL detected - extracting frames');
       const timestamps = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
       
       for (const time of timestamps) {
@@ -251,65 +119,16 @@ async function extractFramesFromVideo(videoUrl, duration) {
           console.log(`[Ball Knowledge] Could not create frame URL for time ${time}`);
         }
       }
+      console.log(`[Ball Knowledge] ✅ Extracted ${frames.length} frames from Cloudinary video`);
       return frames.length > 0 ? frames : null;
     }
     
-    // For local file:// URLs: extract frames using FFmpeg
-    if (videoUrl.startsWith('file://')) {
-      const filePath = videoUrl.replace('file://', '');
-      console.log(`[Ball Knowledge] Extracting frames from local file: ${filePath}`);
-      
-      // Check if file exists
-      if (!fs.existsSync(filePath)) {
-        console.error(`[Ball Knowledge] File not found: ${filePath}`);
-        return null;
-      }
-      
-      const videoDuration = duration || 10;
-      const numFrames = 10;
-      const timestamps = [];
-      
-      // Calculate timestamps to extract (evenly distributed)
-      for (let i = 1; i <= numFrames; i++) {
-        timestamps.push((i / (numFrames + 1)) * videoDuration);
-      }
-      
-      // Extract frames using FFmpeg
-      for (const time of timestamps) {
-        try {
-          const outputPath = path.join(__dirname, 'uploads', `frame_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
-          
-          await new Promise((resolve, reject) => {
-            ffmpeg(filePath)
-              .seekInput(time)
-              .frames(1)
-              .output(outputPath)
-              .on('end', resolve)
-              .on('error', reject)
-              .run();
-          });
-          
-          // Read frame and convert to base64
-          const frameBuffer = fs.readFileSync(outputPath);
-          const base64Frame = `data:image/jpeg;base64,${frameBuffer.toString('base64')}`;
-          frames.push({ timestamp: time / videoDuration, base64: base64Frame });
-          
-          // Clean up temporary frame file
-          fs.unlinkSync(outputPath);
-          
-        } catch (e) {
-          console.error(`[Ball Knowledge] Error extracting frame at ${time}s:`, e.message);
-        }
-      }
-      
-      console.log(`[Ball Knowledge] Extracted ${frames.length} frames from local video`);
-      return frames.length > 0 ? frames : null;
-    }
-    
-    // For other sources: return null
+    // For other video sources (YouTube, Vimeo, etc.): cannot extract frames
+    console.log('[Ball Knowledge] ⚠️ Non-Cloudinary URL detected - cannot extract frames');
+    console.log('[Ball Knowledge] ⚠️ Video analysis will be TEXT-ONLY (less accurate)');
     return null;
   } catch (err) {
-    console.error('[Ball Knowledge] Error extracting video frames:', err.message);
+    console.error('[Ball Knowledge] ❌ Error extracting video frames:', err.message);
     return null;
   }
 }
@@ -403,7 +222,7 @@ Return STRICT JSON ONLY with no markdown or extra text:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       temperature: 0.5,
       max_completion_tokens: 8000,
       messages: [
@@ -413,6 +232,9 @@ Return STRICT JSON ONLY with no markdown or extra text:
     });
 
     const rawContent = resp.choices?.[0]?.message?.content || '{}';
+    console.log('[Ball Knowledge] 📊 OpenAI response length:', rawContent.length, 'characters');
+    console.log('[Ball Knowledge] 📊 OpenAI response preview:', rawContent.substring(0, 200));
+    
     let data = {};
     try {
       // Try to extract JSON from markdown code blocks first
@@ -422,17 +244,29 @@ Return STRICT JSON ONLY with no markdown or extra text:
         if (codeBlockMatch) jsonStr = codeBlockMatch[1];
       }
       data = JSON.parse(jsonStr);
+      console.log('[Ball Knowledge] ✅ Successfully parsed game metrics JSON');
     } catch (parseError) {
-      console.log('[Ball Knowledge] Game metrics JSON parse failed, trying regex extraction...');
+      console.log('[Ball Knowledge] ⚠️ Game metrics JSON parse failed, trying regex extraction...');
       const m = rawContent.match(/\{[\s\S]*\}/);
       if (m) {
         try {
           data = JSON.parse(m[0]);
+          console.log('[Ball Knowledge] ✅ Successfully parsed with regex extraction');
         } catch (e) {
-          console.log('[Ball Knowledge] Regex extraction also failed:', e.message);
-          console.log('[Ball Knowledge] Raw content preview:', rawContent.substring(0, 500));
+          console.log('[Ball Knowledge] ❌ Regex extraction also failed:', e.message);
+          console.log('[Ball Knowledge] ❌ Raw content preview:', rawContent.substring(0, 500));
+          throw new Error('Failed to parse OpenAI response. The AI returned invalid JSON. Raw response: ' + rawContent.substring(0, 200));
         }
+      } else {
+        console.log('[Ball Knowledge] ❌ No JSON object found in response');
+        throw new Error('No JSON found in OpenAI response. Raw: ' + rawContent.substring(0, 200));
       }
+    }
+
+    // Validate we got meaningful data
+    if (!data.summary && !data.playerGrade && !data.playerStats) {
+      console.log('[Ball Knowledge] ❌ OpenAI returned empty/incomplete data');
+      throw new Error('OpenAI returned empty analysis data. This usually means the video could not be analyzed properly.');
     }
 
     return {
@@ -581,7 +415,7 @@ Return STRICT JSON ONLY - no markdown, no backticks:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       temperature: 0.5,
       max_completion_tokens: 8000,
       messages: [
@@ -591,6 +425,9 @@ Return STRICT JSON ONLY - no markdown, no backticks:
     });
 
     const rawContent = resp.choices?.[0]?.message?.content || '{}';
+    console.log('[Ball Knowledge] 📊 OpenAI response length:', rawContent.length, 'characters');
+    console.log('[Ball Knowledge] 📊 OpenAI response preview:', rawContent.substring(0, 200));
+    
     let data = {};
     try {
       // Try to extract JSON from markdown code blocks first
@@ -600,17 +437,29 @@ Return STRICT JSON ONLY - no markdown, no backticks:
         if (codeBlockMatch) jsonStr = codeBlockMatch[1];
       }
       data = JSON.parse(jsonStr);
+      console.log('[Ball Knowledge] ✅ Successfully parsed training analysis JSON');
     } catch (parseError) {
-      console.log('[Ball Knowledge] Training analysis JSON parse failed, trying regex extraction...');
+      console.log('[Ball Knowledge] ⚠️ Training analysis JSON parse failed, trying regex extraction...');
       const m = rawContent.match(/\{[\s\S]*\}/);
       if (m) {
         try {
           data = JSON.parse(m[0]);
+          console.log('[Ball Knowledge] ✅ Successfully parsed with regex extraction');
         } catch (e) {
-          console.log('[Ball Knowledge] Regex extraction also failed:', e.message);
-          console.log('[Ball Knowledge] Raw content preview:', rawContent.substring(0, 500));
+          console.log('[Ball Knowledge] ❌ Regex extraction also failed:', e.message);
+          console.log('[Ball Knowledge] ❌ Raw content preview:', rawContent.substring(0, 500));
+          throw new Error('Failed to parse OpenAI response. The AI returned invalid JSON. Raw response: ' + rawContent.substring(0, 200));
         }
+      } else {
+        console.log('[Ball Knowledge] ❌ No JSON object found in response');
+        throw new Error('No JSON found in OpenAI response. Raw: ' + rawContent.substring(0, 200));
       }
+    }
+
+    // Validate we got meaningful data
+    if (!data.sessionSummary && !data.skillFocus && !data.currentLevel) {
+      console.log('[Ball Knowledge] ❌ OpenAI returned empty/incomplete data');
+      throw new Error('OpenAI returned empty analysis data. This usually means the video could not be analyzed properly.');
     }
 
     return {
@@ -676,7 +525,7 @@ Return STRICT JSON ONLY:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       temperature: 0.3,
       max_completion_tokens: 4000,
       messages: [
@@ -759,31 +608,31 @@ app.post('/api/signup', async (req, res) => {
     if (!name || !email || !password || !age || !dob) {
       return res.status(400).json({ ok: false, error: 'All fields required' });
     }
-    if (findUser(email)) {
+    
+    const existingUser = await findUser(email);
+    if (existingUser) {
       return res.status(409).json({ ok: false, error: 'Email already registered' });
     }
+    
     const id = uuidv4();
     const passHash = await bcrypt.hash(String(password), 10);
-    const user = {
-      id,
-      name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
-      passHash,
-      age: Number(age),
-      dob: String(dob).trim(),
-      createdAt: Date.now(),
-    };
-    db.users.push(user);
-    saveDB();
+    
+    await pool.query(
+      `INSERT INTO users (id, email, password_hash, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())`,
+      [id, String(email).trim().toLowerCase(), passHash]
+    );
+    
     const token = jwt.sign(
-      { sub: id, email: user.email, name: user.name },
+      { sub: id, email: String(email).trim().toLowerCase(), name: String(name).trim() },
       JWT_SECRET,
       { expiresIn: '90d' },
     );
+    
     res.json({
       ok: true,
       token,
-      user: { id, name: user.name, email: user.email },
+      user: { id, name: String(name).trim(), email: String(email).trim().toLowerCase() },
     });
   } catch (e) {
     console.error('[SOTA] signup', e);
@@ -797,19 +646,23 @@ app.post('/api/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ ok: false, error: 'Email and password required' });
     }
-    const user = findUser(email);
+    
+    const user = await findUser(email);
     if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
-    const ok = await bcrypt.compare(String(password), user.passHash);
+    
+    const ok = await bcrypt.compare(String(password), user.password_hash);
     if (!ok) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    
     const token = jwt.sign(
-      { sub: user.id, email: user.email, name: user.name },
+      { sub: user.id, email: user.email, name: user.email },
       JWT_SECRET,
       { expiresIn: '90d' },
     );
+    
     res.json({
       ok: true,
       token,
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.email, email: user.email },
     });
   } catch (e) {
     console.error('[SOTA] login', e);
@@ -817,203 +670,297 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.get('/api/me', auth, (req, res) => {
-  const u = findUserById(req.userId);
-  if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
-  res.json({ ok: true, user: { id: u.id, name: u.name, email: u.email } });
+app.get('/api/me', auth, async (req, res) => {
+  try {
+    const u = await findUserById(req.userId);
+    if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
+    res.json({ ok: true, user: { id: u.id, name: u.email, email: u.email } });
+  } catch (e) {
+    console.error('[SOTA] /api/me error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
 /* ==================================================================== */
 /*                           COORDINATOR PROFILE                        */
 /* ==================================================================== */
 
-app.post('/api/coordinator', auth, (req, res) => {
-  const { coordinatorName, organization, role } = req.body || {};
-  if (!db.coordinators) db.coordinators = {};
-  db.coordinators[req.userId] = {
-    coordinatorName: coordinatorName || null,
-    organization: organization || null,
-    role: role || null,
-    updatedAt: Date.now()
-  };
-  saveDB();
-  res.json({ ok: true, profile: db.coordinators[req.userId] });
+app.post('/api/coordinator', auth, async (req, res) => {
+  try {
+    const { coordinatorName, organization, role } = req.body || {};
+    
+    await pool.query(
+      `INSERT INTO coordinator_profiles (user_id, coordinator_name, organization, role, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (user_id) 
+       DO UPDATE SET 
+         coordinator_name = EXCLUDED.coordinator_name,
+         organization = EXCLUDED.organization,
+         role = EXCLUDED.role,
+         updated_at = NOW()`,
+      [req.userId, coordinatorName || null, organization || null, role || null]
+    );
+    
+    res.json({ 
+      ok: true, 
+      profile: { coordinatorName, organization, role, updatedAt: Date.now() }
+    });
+  } catch (e) {
+    console.error('[SOTA] coordinator profile error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
-app.get('/api/coordinator', auth, (req, res) => {
-  const profile = (db.coordinators || {})[req.userId] || {};
-  res.json({ ok: true, profile });
+app.get('/api/coordinator', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT coordinator_name, organization, role, updated_at FROM coordinator_profiles WHERE user_id = $1',
+      [req.userId]
+    );
+    
+    const profile = result.rows[0] || {};
+    res.json({ ok: true, profile });
+  } catch (e) {
+    console.error('[SOTA] get coordinator error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
 /* ==================================================================== */
 /*                           CANDIDATE PROFILE                          */
 /* ==================================================================== */
 
-app.post('/api/candidate', auth, (req, res) => {
-  const { candidateName, position, age, height, weight, foot, jerseyNumber } = req.body || {};
-  if (!db.candidates) db.candidates = {};
-  db.candidates[req.userId] = {
-    candidateName: candidateName || null,
-    position: position || null,
-    age: age ? Number(age) : null,
-    height: height ? Number(height) : null,
-    weight: weight ? Number(weight) : null,
-    foot: foot || null,
-    jerseyNumber: jerseyNumber ? Number(jerseyNumber) : null,
-    updatedAt: Date.now()
-  };
-  saveDB();
-  res.json({ ok: true, candidate: db.candidates[req.userId] });
+app.post('/api/candidate', auth, async (req, res) => {
+  try {
+    const { candidateName, position, age, height, weight, foot, jerseyNumber } = req.body || {};
+    
+    await pool.query(
+      `INSERT INTO candidate_profiles (user_id, candidate_name, position, age, height, weight, foot, jersey_number, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+       ON CONFLICT (user_id)
+       DO UPDATE SET
+         candidate_name = EXCLUDED.candidate_name,
+         position = EXCLUDED.position,
+         age = EXCLUDED.age,
+         height = EXCLUDED.height,
+         weight = EXCLUDED.weight,
+         foot = EXCLUDED.foot,
+         jersey_number = EXCLUDED.jersey_number,
+         updated_at = NOW()`,
+      [
+        req.userId,
+        candidateName || null,
+        position || null,
+        age ? Number(age) : null,
+        height ? Number(height) : null,
+        weight ? Number(weight) : null,
+        foot || null,
+        jerseyNumber ? Number(jerseyNumber) : null
+      ]
+    );
+    
+    res.json({ 
+      ok: true, 
+      candidate: { candidateName, position, age, height, weight, foot, jerseyNumber, updatedAt: Date.now() }
+    });
+  } catch (e) {
+    console.error('[SOTA] candidate profile error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
-app.get('/api/candidate', auth, (req, res) => {
-  const candidate = (db.candidates || {})[req.userId] || {};
-  res.json({ ok: true, candidate });
+app.get('/api/candidate', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT candidate_name, position, age, height, weight, foot, jersey_number, updated_at FROM candidate_profiles WHERE user_id = $1',
+      [req.userId]
+    );
+    
+    const candidate = result.rows[0] || {};
+    res.json({ ok: true, candidate });
+  } catch (e) {
+    console.error('[SOTA] get candidate error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
 /* ==================================================================== */
 /*                           UNIFIED PROFILE                            */
 /* ==================================================================== */
 
-app.get('/api/profile', auth, (req, res) => {
-  const user = Array.isArray(db.users) ? db.users.find(u => u.id === req.userId) : db.users[req.userId];
-  const coordinator = (db.coordinators || {})[req.userId] || {};
-  const candidate = (db.candidates || {})[req.userId] || {};
-  
-  res.json({ 
-    ok: true, 
-    user: { email: user?.email },
-    coordinator,
-    candidate
-  });
+app.get('/api/profile', auth, async (req, res) => {
+  try {
+    const userResult = await pool.query(
+      'SELECT email FROM users WHERE id = $1',
+      [req.userId]
+    );
+    
+    const coordinatorResult = await pool.query(
+      'SELECT coordinator_name, organization, role FROM coordinator_profiles WHERE user_id = $1',
+      [req.userId]
+    );
+    
+    const candidateResult = await pool.query(
+      'SELECT candidate_name, position, age, height, weight, foot, jersey_number FROM candidate_profiles WHERE user_id = $1',
+      [req.userId]
+    );
+    
+    res.json({ 
+      ok: true, 
+      user: { email: userResult.rows[0]?.email },
+      coordinator: coordinatorResult.rows[0] || {},
+      candidate: candidateResult.rows[0] || {}
+    });
+  } catch (e) {
+    console.error('[SOTA] get profile error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
-app.post('/api/profile', auth, (req, res) => {
-  const { coordinator, candidate } = req.body || {};
-  
-  // Update coordinator if provided
-  if (coordinator) {
-    if (!db.coordinators) db.coordinators = {};
-    db.coordinators[req.userId] = {
-      coordinatorName: coordinator.coordinatorName || null,
-      organization: coordinator.organization || null,
-      role: coordinator.role || null,
-      updatedAt: Date.now()
-    };
+app.post('/api/profile', auth, async (req, res) => {
+  try {
+    const { coordinator, candidate } = req.body || {};
+    
+    // Update coordinator if provided
+    if (coordinator) {
+      await pool.query(
+        `INSERT INTO coordinator_profiles (user_id, coordinator_name, organization, role, updated_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (user_id) 
+         DO UPDATE SET 
+           coordinator_name = EXCLUDED.coordinator_name,
+           organization = EXCLUDED.organization,
+           role = EXCLUDED.role,
+           updated_at = NOW()`,
+        [req.userId, coordinator.coordinatorName || null, coordinator.organization || null, coordinator.role || null]
+      );
+    }
+    
+    // Update candidate if provided
+    if (candidate) {
+      await pool.query(
+        `INSERT INTO candidate_profiles (user_id, candidate_name, position, age, height, weight, foot, jersey_number, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+         ON CONFLICT (user_id)
+         DO UPDATE SET
+           candidate_name = EXCLUDED.candidate_name,
+           position = EXCLUDED.position,
+           age = EXCLUDED.age,
+           height = EXCLUDED.height,
+           weight = EXCLUDED.weight,
+           foot = EXCLUDED.foot,
+           jersey_number = EXCLUDED.jersey_number,
+           updated_at = NOW()`,
+        [
+          req.userId,
+          candidate.candidateName || null,
+          candidate.position || null,
+          candidate.age ? Number(candidate.age) : null,
+          candidate.height ? Number(candidate.height) : null,
+          candidate.weight ? Number(candidate.weight) : null,
+          candidate.foot || null,
+          candidate.jerseyNumber ? Number(candidate.jerseyNumber) : null
+        ]
+      );
+    }
+    
+    const coordinatorResult = await pool.query(
+      'SELECT coordinator_name, organization, role FROM coordinator_profiles WHERE user_id = $1',
+      [req.userId]
+    );
+    
+    const candidateResult = await pool.query(
+      'SELECT candidate_name, position, age, height, weight, foot, jersey_number FROM candidate_profiles WHERE user_id = $1',
+      [req.userId]
+    );
+    
+    res.json({ 
+      ok: true, 
+      coordinator: coordinatorResult.rows[0] || {},
+      candidate: candidateResult.rows[0] || {}
+    });
+  } catch (e) {
+    console.error('[SOTA] update profile error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
   }
-  
-  // Update candidate if provided
-  if (candidate) {
-    if (!db.candidates) db.candidates = {};
-    db.candidates[req.userId] = {
-      candidateName: candidate.candidateName || null,
-      position: candidate.position || null,
-      age: candidate.age ? Number(candidate.age) : null,
-      height: candidate.height ? Number(candidate.height) : null,
-      weight: candidate.weight ? Number(candidate.weight) : null,
-      foot: candidate.foot || null,
-      jerseyNumber: candidate.jerseyNumber ? Number(candidate.jerseyNumber) : null,
-      updatedAt: Date.now()
-    };
-  }
-  
-  saveDB();
-  
-  res.json({ 
-    ok: true, 
-    coordinator: db.coordinators[req.userId] || {},
-    candidate: db.candidates[req.userId] || {}
-  });
 });
 
 /* ==================================================================== */
 /*                              ANALYSIS                                */
 /* ==================================================================== */
 
-app.post('/api/analyze', auth, upload.single('file'), async (req, res) => {
+app.post('/api/analyze', auth, async (req, res) => {
   try {
     const videoType = req.body.videoType;
-    const candidateInfoStr = req.body.candidateInfo;
-    const candidateInfo = candidateInfoStr ? JSON.parse(candidateInfoStr) : {};
+    const candidateInfo = req.body.candidateInfo || {};
     
-    let videoUrl;
-    let videoDuration = Number(req.body.duration) || 10;
-
-    // Handle file upload
-    if (req.file) {
-      const filePath = req.file.path;
-      videoUrl = 'file://' + filePath;
-      console.log(`[Ball Knowledge] File uploaded: ${req.file.filename} (${req.file.size} bytes)`);
-    } else {
-      // Handle URL submission
-      videoUrl = req.body.videoUrl?.trim();
-      videoDuration = Number(req.body.duration) || 60;
-    }
+    const videoUrl = req.body.videoUrl?.trim();
+    const videoDuration = Number(req.body.duration) || 60;
 
     if (!videoUrl) {
-      return res.status(400).json({ ok: false, error: 'Video URL or file required' });
+      return res.status(400).json({ ok: false, error: 'Video URL required' });
     }
     if (!['game', 'training'].includes(videoType)) {
       return res.status(400).json({ ok: false, error: 'videoType must be "game" or "training"' });
     }
 
-    console.log(`[Ball Knowledge] Starting ${videoType} analysis`);
+    console.log(`[Ball Knowledge] 🚀 Starting ${videoType} analysis`);
+    console.log(`[Ball Knowledge] 📹 Video URL: ${videoUrl.substring(0, 100)}...`);
+    console.log(`[Ball Knowledge] ⏱️  Duration: ${videoDuration} seconds`);
     
     const candidateName = candidateInfo.name || 'Unknown Player';
     const position = candidateInfo.position || 'Unknown';
+    console.log(`[Ball Knowledge] 👤 Candidate: ${candidateName}, Position: ${position}`);
+    
     const frames = await extractFramesFromVideo(videoUrl, videoDuration);
-    console.log(`[Ball Knowledge] Extracted ${frames ? frames.length : 0} frames from video`);
+    console.log(`[Ball Knowledge] 🎬 Extracted ${frames ? frames.length : 0} frames from video`);
+    
+    if (!frames || frames.length === 0) {
+      console.log(`[Ball Knowledge] ⚠️ WARNING: No video frames extracted! Analysis will be text-only and less accurate.`);
+      console.log(`[Ball Knowledge] ⚠️ This usually happens with non-Cloudinary URLs (YouTube, Vimeo, etc.)`);
+    }
     
     let analysis = {};
-    console.log(`[Ball Knowledge] Calling ${videoType === 'game' ? 'analyzeGameMetrics' : 'analyzeTraining'}...`);
+    console.log(`[Ball Knowledge] 🤖 Calling ${videoType === 'game' ? 'analyzeGameMetrics' : 'analyzeTraining'}...`);
     if (videoType === 'game') {
       analysis = await analyzeGameMetrics(videoUrl, frames, candidateName, position, videoDuration);
     } else {
       analysis = await analyzeTraining(videoUrl, frames, candidateName, position, videoDuration);
     }
-    console.log(`[Ball Knowledge] ${videoType} analysis completed`);
+    console.log(`[Ball Knowledge] ✅ ${videoType} analysis completed`);
+    console.log(`[Ball Knowledge] 📊 Analysis keys:`, Object.keys(analysis));
     
-    console.log(`[Ball Knowledge] Extracting highlights...`);
+    console.log(`[Ball Knowledge] 🎯 Extracting highlights...`);
     const highlights = await extractHighlights(videoUrl, frames, candidateName, videoType);
-    console.log(`[Ball Knowledge] Highlights extraction completed`);
+    console.log(`[Ball Knowledge] ✅ Highlights extraction completed (${highlights ? highlights.length : 0} highlights)`);
     
-    if (!Array.isArray(db.analysesByUser[req.userId])) {
-      db.analysesByUser[req.userId] = [];
-    }
+    const id = uuidv4();
     
-    const item = {
-      id: uuidv4(),
+    // Save to PostgreSQL
+    await pool.query(
+      `INSERT INTO analyses (id, user_id, video_type, video_url, candidate_name, position, analysis_data, highlights, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+      [
+        id,
+        req.userId,
+        videoType,
+        videoUrl,
+        candidateName,
+        position,
+        JSON.stringify(analysis),
+        JSON.stringify(highlights)
+      ]
+    );
+    
+    res.json({
+      ok: true,
+      id: id,
       videoType: videoType,
-      videoUrl: videoUrl,
       candidateName: candidateName,
       position: position,
       analysis: analysis,
       highlights: highlights,
       createdAt: Date.now(),
-    };
-    
-    db.analysesByUser[req.userId].unshift(item);
-    saveDB();
-    
-    // Refresh analytics cache
-    onAnalysisCompleted();
-    
-    // Clean up uploaded file if needed
-    if (req.file && process.env.DELETE_UPLOADS !== 'false') {
-      setTimeout(() => {
-        try { fs.unlinkSync(req.file.path); } catch (e) { }
-      }, 5000);
-    }
-    
-    res.json({
-      ok: true,
-      id: item.id,
-      videoType: item.videoType,
-      candidateName: item.candidateName,
-      position: item.position,
-      analysis: item.analysis,
-      highlights: item.highlights,
-      createdAt: item.createdAt,
       summary: analysis.summary || analysis.sessionSummary,
       // Flattened fields for easier frontend access
       skillFocus: analysis.skillFocus,
@@ -1041,44 +988,98 @@ app.post('/api/analyze', auth, upload.single('file'), async (req, res) => {
 /*                              LIBRARY                                 */
 /* ==================================================================== */
 
-app.get('/api/analyses', auth, (req, res) => {
-  const analyses = db.analysesByUser[req.userId] || [];
-  res.json({ ok: true, analyses, items: analyses });
+app.get('/api/analyses', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, video_type, video_url, candidate_name, position, analysis_data, highlights, created_at
+       FROM analyses
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [req.userId]
+    );
+    
+    const analyses = result.rows.map(row => ({
+      id: row.id,
+      videoType: row.video_type,
+      videoUrl: row.video_url,
+      candidateName: row.candidate_name,
+      position: row.position,
+      analysis: row.analysis_data,
+      highlights: row.highlights,
+      createdAt: new Date(row.created_at).getTime()
+    }));
+    
+    res.json({ ok: true, analyses, items: analyses });
+  } catch (e) {
+    console.error('[SOTA] get analyses error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
-app.get('/api/analyses/:id', auth, (req, res) => {
-  const analyses = db.analysesByUser[req.userId] || [];
-  const item = analyses.find(x => x.id === req.params.id);
-  if (!item) return res.status(404).json({ ok: false, error: 'Analysis not found' });
-  
-  // Include flattened fields for easier frontend consumption
-  res.json({ 
-    ok: true, 
-    analysis: item,
-    ...item,
-    skillFocus: item.analysis?.skillFocus,
-    currentLevel: item.analysis?.currentLevel,
-    improvementTips: item.analysis?.improvementTips,
-    technicalAnalysis: item.analysis?.technicalAnalysis,
-    practiceProgression: item.analysis?.practiceProgression,
-    youtubeRecommendations: item.analysis?.youtubeRecommendations,
-    sessionSummary: item.analysis?.sessionSummary,
-    summary: item.analysis?.summary || item.analysis?.sessionSummary,
-    strengths: item.analysis?.strengths,
-    areasToImprove: item.analysis?.areasToImprove,
-    playerGrade: item.analysis?.playerGrade
-  });
+app.get('/api/analyses/:id', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, video_type, video_url, candidate_name, position, analysis_data, highlights, created_at
+       FROM analyses
+       WHERE id = $1 AND user_id = $2`,
+      [req.params.id, req.userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ ok: false, error: 'Analysis not found' });
+    }
+    
+    const row = result.rows[0];
+    const item = {
+      id: row.id,
+      videoType: row.video_type,
+      videoUrl: row.video_url,
+      candidateName: row.candidate_name,
+      position: row.position,
+      analysis: row.analysis_data,
+      highlights: row.highlights,
+      createdAt: new Date(row.created_at).getTime()
+    };
+    
+    // Include flattened fields for easier frontend consumption
+    res.json({ 
+      ok: true, 
+      analysis: item,
+      ...item,
+      skillFocus: item.analysis?.skillFocus,
+      currentLevel: item.analysis?.currentLevel,
+      improvementTips: item.analysis?.improvementTips,
+      technicalAnalysis: item.analysis?.technicalAnalysis,
+      practiceProgression: item.analysis?.practiceProgression,
+      youtubeRecommendations: item.analysis?.youtubeRecommendations,
+      sessionSummary: item.analysis?.sessionSummary,
+      summary: item.analysis?.summary || item.analysis?.sessionSummary,
+      strengths: item.analysis?.strengths,
+      areasToImprove: item.analysis?.areasToImprove,
+      playerGrade: item.analysis?.playerGrade
+    });
+  } catch (e) {
+    console.error('[SOTA] get analysis by id error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
-app.delete('/api/analyses/:id', auth, (req, res) => {
-  const analyses = db.analysesByUser[req.userId] || [];
-  const idx = analyses.findIndex(x => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ ok: false, error: 'Analysis not found' });
-  analyses.splice(idx, 1);
-  db.analysesByUser[req.userId] = analyses;
-  saveDB();
-  onAnalysisCompleted(); // Refresh analytics
-  res.json({ ok: true });
+app.delete('/api/analyses/:id', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM analyses WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.userId]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: 'Analysis not found' });
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[SOTA] delete analysis error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
 /* ==================================================================== */
