@@ -588,6 +588,28 @@ app.get('/api/test', (_req, res) =>
   res.json({ ok: true, message: 'Test route working!', timestamp: new Date().toISOString() }),
 );
 
+app.post('/api/migrate', async (req, res) => {
+  try {
+    console.log('[SOTA] Running database migration...');
+    const schemaPath = path.join(__dirname, 'migrations', '001_initial_schema.sql');
+    const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+    await pool.query(schemaSql);
+    console.log('[SOTA] Migration completed successfully');
+    res.json({ 
+      ok: true, 
+      message: 'Database migration completed successfully',
+      tables: ['users', 'coordinator_profiles', 'candidate_profiles', 'analyses', 'analytics_events']
+    });
+  } catch (error) {
+    console.error('[SOTA] Migration failed:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: 'Migration failed', 
+      detail: error.message 
+    });
+  }
+});
+
 app.post('/api/test-openai', async (req, res) => {
   try {
     if (!openai) {
