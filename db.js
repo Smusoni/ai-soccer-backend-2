@@ -5,6 +5,8 @@
  */
 
 import pg from 'pg';
+import { Signer } from '@aws-sdk/rds-signer';
+import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -18,38 +20,30 @@ const isVercel = process.env.AWS_ROLE_ARN && process.env.PGHOST;
 
 if (isVercel) {
   // Vercel: Use AWS IAM authentication
-  try {
-    const { Signer } = await import('@aws-sdk/rds-signer');
-    const { awsCredentialsProvider } = await import('@vercel/oidc-aws-credentials-provider');
-    
-    const signer = new Signer({
-      hostname: process.env.PGHOST,
-      port: Number(process.env.PGPORT || 5432),
-      username: process.env.PGUSER || 'postgres',
-      region: process.env.AWS_REGION || 'us-east-1',
-      credentials: awsCredentialsProvider({
-        roleArn: process.env.AWS_ROLE_ARN,
-        clientConfig: { region: process.env.AWS_REGION || 'us-east-1' },
-      }),
-    });
+  const signer = new Signer({
+    hostname: process.env.PGHOST,
+    port: Number(process.env.PGPORT || 5432),
+    username: process.env.PGUSER || 'postgres',
+    region: process.env.AWS_REGION || 'us-east-1',
+    credentials: awsCredentialsProvider({
+      roleArn: process.env.AWS_ROLE_ARN,
+      clientConfig: { region: process.env.AWS_REGION || 'us-east-1' },
+    }),
+  });
 
-    pool = new Pool({
-      host: process.env.PGHOST,
-      user: process.env.PGUSER || 'postgres',
-      database: process.env.PGDATABASE || 'postgres',
-      password: () => signer.getAuthToken(),
-      port: Number(process.env.PGPORT || 5432),
-      ssl: { rejectUnauthorized: false },
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    });
-    
-    console.log('[PostgreSQL] Using AWS IAM authentication');
-  } catch (err) {
-    console.error('[PostgreSQL] Failed to setup IAM auth:', err.message);
-    throw err;
-  }
+  pool = new Pool({
+    host: process.env.PGHOST,
+    user: process.env.PGUSER || 'postgres',
+    database: process.env.PGDATABASE || 'postgres',
+    password: () => signer.getAuthToken(),
+    port: Number(process.env.PGPORT || 5432),
+    ssl: { rejectUnauthorized: false },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  });
+  
+  console.log('[PostgreSQL] Using AWS IAM authentication');
 } else if (process.env.POSTGRES_URL) {
   // Local: Use connection string
   pool = new Pool({
