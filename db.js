@@ -12,18 +12,27 @@ dotenv.config();
 const { Pool } = pg;
 
 // Use connection string if available, otherwise use individual env vars
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-  host: !process.env.POSTGRES_URL ? process.env.PGHOST : undefined,
-  port: !process.env.POSTGRES_URL ? Number(process.env.PGPORT) : undefined,
-  database: !process.env.POSTGRES_URL ? (process.env.PGDATABASE || 'postgres') : undefined,
-  user: !process.env.POSTGRES_URL ? process.env.PGUSER : undefined,
-  password: !process.env.POSTGRES_URL ? process.env.PGPASSWORD : undefined,
-  ssl: { rejectUnauthorized: false },
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+const config = process.env.POSTGRES_URL 
+  ? {
+      connectionString: process.env.POSTGRES_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    }
+  : {
+      host: process.env.PGHOST,
+      port: Number(process.env.PGPORT),
+      database: process.env.PGDATABASE || 'postgres',
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      ssl: { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    };
+
+const pool = new Pool(config);
 
 // Error handler
 pool.on('error', (err) => {
