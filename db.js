@@ -11,34 +11,62 @@ dotenv.config();
 
 const { Pool } = pg;
 
-// Use connection string if available, otherwise use individual env vars
-const config = process.env.POSTGRES_URL 
-  ? {
-      connectionString: process.env.POSTGRES_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    }
-  : {
-      host: process.env.PGHOST,
-      port: Number(process.env.PGPORT),
-      database: process.env.PGDATABASE || 'postgres',
-      user: process.env.PGUSER,
-      password: process.env.PGPASSWORD,
-      ssl: { rejectUnauthorized: false },
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    };
+let pool;
 
-const pool = new Pool(config);
+// Check if running on Vercel with AWS IAM (has AWS_ROLE_ARN)
+const isVercel = process.env.AWS_ROLE_ARN && process.env.PGHOST;
+
+if (isVercel) {
+  // Vercel: Use AWS IAM authentication
+  try {
+    const { Signer } = await import('@aws-sdk/rds-signer');
+    const { awsCredentialsProvider } = await import('@vercel/oidc-aws-credentials-provider');
+    
+    const signer = new Signer({
+      hostname: process.env.PGHOST,
+      port: Number(process.env.PGPORT || 5432),
+      username: process.env.PGUSER || 'postgres',
+      region: process.env.AWS_REGION || 'us-east-1',
+      credentials: awsCredentialsProvider({
+        roleArn: process.env.AWS_ROLE_ARN,
+        clientConfig: { region: process.env.AWS_REGION || 'us-east-1' },
+      }),
+    });
+
+    pool = new Pool({
+      host: process.env.PGHOST,
+      user: process.env.PGUSER || 'postgres',
+      database: process.env.PGDATABASE || 'postgres',
+      password: () => signer.getAuthToken(),
+      port: Number(process.env.PGPORT || 5432),
+      ssl: { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+    
+    console.log('[PostgreSQL] Using AWS IAM authentication');
+  } catch (err) {
+    console.error('[PostgreSQL] Failed to setup IAM auth:', err.message);
+    throw err;
+  }
+} else if (process.env.POSTGRES_URL) {
+  // Local: Use connection string
+  pool = new Pool({
+    connectionString: process.env.POSTGRES_URL,
+    ssl: { rejectUnauthorized: false },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  });
+  console.log('[PostgreSQL] Using connection string');
+} else {
+  throw new Error('No database configuration found');
+}
 
 // Error handler
 pool.on('error', (err) => {
   console.error('[PostgreSQL] Connection error:', err.message);
 });
-
-console.log('[PostgreSQL] Pool initialized');
 
 export default pool;
