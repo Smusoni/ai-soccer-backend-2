@@ -2,7 +2,7 @@
  * PostgreSQL Database Connection
  * 
  * Creates a connection pool for the Ball Knowledge database.
- * Uses POSTGRES_URL connection string from environment.
+ * Uses AWS IAM authentication for Vercel deployment.
  */
 
 import pg from 'pg';
@@ -12,23 +12,52 @@ dotenv.config();
 
 const { Pool } = pg;
 
-// Use POSTGRES_URL connection string (AWS Aurora PostgreSQL)
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+let pool;
 
-// Test connection on startup
-pool.on('connect', () => {
-  console.log('[PostgreSQL] Connected successfully');
-});
+// Check if running on Vercel (has AWS_ROLE_ARN)
+if (process.env.AWS_ROLE_ARN) {
+  // Vercel production: Use AWS IAM authentication
+  const { Signer } = await import('@aws-sdk/rds-signer');
+  const { awsCredentialsProvider } = await import('@vercel/oidc-aws-credentials-provider');
+  const { attachDatabasePool } = await import('@vercel/functions');
 
+  const signer = new Signer({
+    hostname: process.env.PGHOST,
+    port: Number(process.env.PGPORT),
+    username: process.env.PGUSER,
+    region: process.env.AWS_REGION,
+    credentials: awsCredentialsProvider({
+      roleArn: process.env.AWS_ROLE_ARN,
+      clientConfig: { region: process.env.AWS_REGION },
+    }),
+  });
+
+  pool = new Pool({
+    host: process.env.PGHOST,
+    user: process.env.PGUSER,
+    database: process.env.PGDATABASE || 'postgres',
+    password: () => signer.getAuthToken(),
+    port: Number(process.env.PGPORT),
+    ssl: { rejectUnauthorized: false },
+  });
+  
+  attachDatabasePool(pool);
+  console.log('[PostgreSQL] Connected with AWS IAM authentication');
+} else {
+  // Local development: Use POSTGRES_URL connection string
+  pool = new Pool({
+    connectionString: process.env.POSTGRES_URL,
+    ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  });
+  console.log('[PostgreSQL] Connected with connection string');
+}
+
+// Error handler
 pool.on('error', (err) => {
   console.error('[PostgreSQL] Connection error:', err.message);
-  // Don't exit in serverless environment - let individual queries handle errors
 });
 
 export default pool;
