@@ -32,6 +32,7 @@ import OpenAI from 'openai';
 import https from 'https';
 import dotenv from 'dotenv';
 import os from 'os';
+import fs from 'fs';
 import pool from './db.js';
 
 dotenv.config();
