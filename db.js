@@ -6,6 +6,9 @@
  */
 
 import pg from 'pg';
+import { Signer } from '@aws-sdk/rds-signer';
+import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider';
+import { attachDatabasePool } from '@vercel/functions';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -17,10 +20,6 @@ let pool;
 // Check if running on Vercel (has AWS_ROLE_ARN)
 if (process.env.AWS_ROLE_ARN) {
   // Vercel production: Use AWS IAM authentication
-  const { Signer } = await import('@aws-sdk/rds-signer');
-  const { awsCredentialsProvider } = await import('@vercel/oidc-aws-credentials-provider');
-  const { attachDatabasePool } = await import('@vercel/functions');
-
   const signer = new Signer({
     hostname: process.env.PGHOST,
     port: Number(process.env.PGPORT),
