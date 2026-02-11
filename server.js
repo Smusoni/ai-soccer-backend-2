@@ -513,6 +513,7 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
   }
 
   const age      = profile.age ?? user?.age ?? null;
+  const position = profile.position || user?.position || 'player';
   const isYouth  = age != null ? Number(age) < 18 : false;
   const heightIn = profile.height || null;
   const weightLb = profile.weight || null;
@@ -522,49 +523,27 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
   const messageContent = [
     {
       type: 'text',
-      text: `You are an expert soccer training analyst. Analyze this training footage in detail.
+      text: `You are an expert soccer training analyst. Analyze this training footage showing a ${age} year old ${position} training.
+
+Analyze whatever soccer training activity is visible in the frames provided. Even if the player appears distant or partially visible, provide your professional analysis based on what you can observe.
 
 Return ONLY valid JSON (no markdown, no code blocks). Schema:
 {
-  "sessionSummary": "2-3 paragraph professional evaluation of the training session",
-  "skillFocus": "Primary skill being trained (e.g., 'Dribbling', 'Passing', 'Shooting')",
-  "secondarySkills": ["Secondary skill 1", "Secondary skill 2"],
+  "sessionSummary": "2-3 paragraph professional evaluation",
+  "skillFocus": "Primary skill being trained",
+  "secondarySkills": ["skill 1", "skill 2"],
   "currentLevel": "Beginner | Intermediate | Advanced",
   "technicalAnalysis": {
-    "footwork": "Analysis of foot placement and technique",
-    "bodyPosition": "Analysis of body posture and positioning",
-    "followThrough": "Analysis of follow-through mechanics",
-    "consistency": "Analysis of touch consistency and control",
-    "sessionProgression": "How the session progressed"
+    "footwork": "detailed analysis",
+    "bodyPosition": "detailed analysis", 
+    "followThrough": "detailed analysis",
+    "consistency": "detailed analysis",
+    "sessionProgression": "detailed analysis"
   },
-  "improvementTips": [
-    {
-      "priority": 1,
-      "tip": "Main improvement tip",
-      "why": "Reason why this is important",
-      "how": "Specific instruction on how to improve"
-    }
-  ],
-  "commonMistakesForPosition": [
-    {
-      "mistake": "Common mistake description",
-      "observed": true,
-      "correction": "How to correct this mistake"
-    }
-  ],
-  "practiceProgression": [
-    {
-      "level": "Drill difficulty level",
-      "drill": "Detailed drill description"
-    }
-  ],
-  "youtubeRecommendations": [
-    {
-      "title": "Video title",
-      "coach": "Coach/Channel name",
-      "why": "Why this video is relevant"
-    }
-  ]
+  "improvementTips": [{"priority": 1, "tip": "tip text", "why": "reason", "how": "instruction"}],
+  "commonMistakesForPosition": [{"mistake": "mistake text", "observed": true, "correction": "correction text"}],
+  "practiceProgression": [{"level": "level name", "drill": "drill description"}],
+  "youtubeRecommendations": [{"title": "video title", "coach": "channel name", "why": "relevance"}]
 }`,
     },
   ];

@@ -29,7 +29,7 @@
       "foot": "Right",
       "position": "Attacking Mid",
       "skill": "",
-      "updatedAt": 1770828144557
+      "updatedAt": 1770830426302
     },
     "94423f70-cb8b-4ace-975a-c06e9ccc4bd5": {
       "name": null,
@@ -89,6 +89,428 @@
   },
   "analysesByUser": {
     "170ac01e-d760-4dae-bdad-50fa3e9212d8": [
+      {
+        "id": "76245b9e-891d-476e-b96c-a9dbd596bbf2",
+        "skillFocus": "Dribbling and Ball Control",
+        "secondarySkills": [
+          "Agility",
+          "Precision",
+          "Spatial Awareness"
+        ],
+        "sessionSummary": "The training session appears to focus on dribbling and ball control around a stationary pole. The setup suggests an emphasis on agility and precision in movement, which are crucial for an attacking midfielder. The player is likely practicing close control and quick changes of direction, essential for navigating tight spaces on the field.",
+        "currentLevel": "Intermediate",
+        "technicalAnalysis": {
+          "footwork": "The footwork should be quick and precise, allowing for tight control around the pole. The player needs to maintain a low center of gravity to enhance balance and agility.",
+          "bodyPosition": "The body should be slightly leaned forward, with knees bent to allow for quick directional changes. The head should be up to maintain awareness of the surroundings.",
+          "followThrough": "Follow-through should be smooth, ensuring the ball remains close to the feet after each touch. This will help in maintaining control and preparing for the next move.",
+          "consistency": "Consistency in maintaining control and speed around the pole is crucial. The player should aim for minimal touches while keeping the ball close.",
+          "sessionProgression": "The session should progress from slow, controlled dribbling to faster, more dynamic movements as the player becomes more comfortable with the drill."
+        },
+        "improvementTips": [
+          {
+            "priority": 1,
+            "tip": "Focus on keeping the ball close to the feet.",
+            "why": "This will improve control and allow for quicker reactions.",
+            "how": "Practice dribbling in tight spaces, gradually increasing speed while maintaining control."
+          }
+        ],
+        "commonMistakesForPosition": [
+          {
+            "mistake": "Looking down at the ball too often.",
+            "observed": true,
+            "correction": "Encourage the player to keep their head up to improve spatial awareness."
+          }
+        ],
+        "practiceProgression": [
+          {
+            "level": "Beginner",
+            "drill": "Basic dribbling around cones with focus on control."
+          },
+          {
+            "level": "Intermediate",
+            "drill": "Incorporate quick turns and changes of direction around the pole."
+          },
+          {
+            "level": "Advanced",
+            "drill": "Add a defender to simulate game-like pressure and decision-making."
+          }
+        ],
+        "youtubeRecommendations": [
+          {
+            "title": "Mastering Dribbling Skills",
+            "coach": "Soccer Training Channel",
+            "why": "Provides comprehensive drills for improving dribbling and ball control."
+          }
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770830415/vobajsr5rqefhwfula9p.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session appears to focus on dribbling and ball control around a stationary pole. The setup suggests an emphasis on agility and precision in movement, which are crucial for an attacking midfielder. The player is likely practicing close control and quick changes of direction, essential for navigating tight spaces on the field.",
+          "skillFocus": "Dribbling and Ball Control",
+          "secondarySkills": [
+            "Agility",
+            "Precision",
+            "Spatial Awareness"
+          ],
+          "currentLevel": "Intermediate",
+          "technicalAnalysis": {
+            "footwork": "The footwork should be quick and precise, allowing for tight control around the pole. The player needs to maintain a low center of gravity to enhance balance and agility.",
+            "bodyPosition": "The body should be slightly leaned forward, with knees bent to allow for quick directional changes. The head should be up to maintain awareness of the surroundings.",
+            "followThrough": "Follow-through should be smooth, ensuring the ball remains close to the feet after each touch. This will help in maintaining control and preparing for the next move.",
+            "consistency": "Consistency in maintaining control and speed around the pole is crucial. The player should aim for minimal touches while keeping the ball close.",
+            "sessionProgression": "The session should progress from slow, controlled dribbling to faster, more dynamic movements as the player becomes more comfortable with the drill."
+          },
+          "improvementTips": [
+            {
+              "priority": 1,
+              "tip": "Focus on keeping the ball close to the feet.",
+              "why": "This will improve control and allow for quicker reactions.",
+              "how": "Practice dribbling in tight spaces, gradually increasing speed while maintaining control."
+            }
+          ],
+          "commonMistakesForPosition": [
+            {
+              "mistake": "Looking down at the ball too often.",
+              "observed": true,
+              "correction": "Encourage the player to keep their head up to improve spatial awareness."
+            }
+          ],
+          "practiceProgression": [
+            {
+              "level": "Beginner",
+              "drill": "Basic dribbling around cones with focus on control."
+            },
+            {
+              "level": "Intermediate",
+              "drill": "Incorporate quick turns and changes of direction around the pole."
+            },
+            {
+              "level": "Advanced",
+              "drill": "Add a defender to simulate game-like pressure and decision-making."
+            }
+          ],
+          "youtubeRecommendations": [
+            {
+              "title": "Mastering Dribbling Skills",
+              "coach": "Soccer Training Channel",
+              "why": "Provides comprehensive drills for improving dribbling and ball control."
+            }
+          ]
+        },
+        "created_at": 1770830464503
+      },
+      {
+        "id": "5e88ab7a-eb14-4efa-8851-75900c05dac9",
+        "skillFocus": "Passing and receiving",
+        "secondarySkills": [
+          "Ball control",
+          "Decision-making"
+        ],
+        "sessionSummary": "The training session focuses on quick passing and receiving under pressure, which is crucial for an attacking midfielder. The player is engaged in a drill involving short passes between teammates, emphasizing precision and speed. The use of cones suggests a confined space, enhancing the player's ability to control the ball in tight areas. This setup is ideal for improving decision-making and ball control, essential skills for creating opportunities in a match.",
+        "currentLevel": "Advanced",
+        "technicalAnalysis": {
+          "footwork": "The player's footwork is agile and quick, allowing for efficient movement and balance during the drill.",
+          "bodyPosition": "The body position is slightly forward, which aids in maintaining balance and readiness to receive or pass the ball.",
+          "followThrough": "The follow-through on passes is consistent, ensuring accuracy and speed.",
+          "consistency": "The player demonstrates a high level of consistency in passing and receiving, maintaining control under pressure.",
+          "sessionProgression": "The session progresses from simple passing to more complex movements, integrating agility and quick decision-making."
+        },
+        "improvementTips": [
+          {
+            "priority": 1,
+            "tip": "Increase passing speed",
+            "why": "To enhance the ability to break through defensive lines quickly.",
+            "how": "Incorporate drills that focus on one-touch passing and quick transitions."
+          }
+        ],
+        "commonMistakesForPosition": [
+          {
+            "mistake": "Hesitation in passing",
+            "observed": false,
+            "correction": "Encourage quicker decision-making by reducing the time allowed to make a pass."
+          }
+        ],
+        "practiceProgression": [
+          {
+            "level": "Intermediate",
+            "drill": "Two-touch passing in a confined space with increasing speed."
+          },
+          {
+            "level": "Advanced",
+            "drill": "One-touch passing with movement around cones to simulate game scenarios."
+          }
+        ],
+        "youtubeRecommendations": [
+          {
+            "title": "Mastering the Art of Passing",
+            "coach": "Soccer Coach TV",
+            "why": "Provides advanced passing drills and techniques for midfielders."
+          }
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770829921/dnbxii8tnlgbjt4iuge5.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on quick passing and receiving under pressure, which is crucial for an attacking midfielder. The player is engaged in a drill involving short passes between teammates, emphasizing precision and speed. The use of cones suggests a confined space, enhancing the player's ability to control the ball in tight areas. This setup is ideal for improving decision-making and ball control, essential skills for creating opportunities in a match.",
+          "skillFocus": "Passing and receiving",
+          "secondarySkills": [
+            "Ball control",
+            "Decision-making"
+          ],
+          "currentLevel": "Advanced",
+          "technicalAnalysis": {
+            "footwork": "The player's footwork is agile and quick, allowing for efficient movement and balance during the drill.",
+            "bodyPosition": "The body position is slightly forward, which aids in maintaining balance and readiness to receive or pass the ball.",
+            "followThrough": "The follow-through on passes is consistent, ensuring accuracy and speed.",
+            "consistency": "The player demonstrates a high level of consistency in passing and receiving, maintaining control under pressure.",
+            "sessionProgression": "The session progresses from simple passing to more complex movements, integrating agility and quick decision-making."
+          },
+          "improvementTips": [
+            {
+              "priority": 1,
+              "tip": "Increase passing speed",
+              "why": "To enhance the ability to break through defensive lines quickly.",
+              "how": "Incorporate drills that focus on one-touch passing and quick transitions."
+            }
+          ],
+          "commonMistakesForPosition": [
+            {
+              "mistake": "Hesitation in passing",
+              "observed": false,
+              "correction": "Encourage quicker decision-making by reducing the time allowed to make a pass."
+            }
+          ],
+          "practiceProgression": [
+            {
+              "level": "Intermediate",
+              "drill": "Two-touch passing in a confined space with increasing speed."
+            },
+            {
+              "level": "Advanced",
+              "drill": "One-touch passing with movement around cones to simulate game scenarios."
+            }
+          ],
+          "youtubeRecommendations": [
+            {
+              "title": "Mastering the Art of Passing",
+              "coach": "Soccer Coach TV",
+              "why": "Provides advanced passing drills and techniques for midfielders."
+            }
+          ]
+        },
+        "created_at": 1770830081602
+      },
+      {
+        "id": "eb5e95c7-7ef7-4a0e-af68-4e6d2947936a",
+        "skillFocus": "Quick passing and receiving",
+        "secondarySkills": [
+          "Spatial awareness",
+          "Decision-making"
+        ],
+        "sessionSummary": "The training session involves a small group of players working on quick passing and receiving skills within a confined space marked by cones. The focus is on maintaining close control and quick decision-making under pressure. The players are actively engaged in a rondo-like drill, which is excellent for improving technical skills and spatial awareness. The session is well-structured to enhance the player's ability to operate in tight spaces, a crucial skill for an attacking midfielder.",
+        "currentLevel": "Advanced",
+        "technicalAnalysis": {
+          "footwork": "The player's footwork is agile and precise, allowing for quick adjustments and efficient ball control.",
+          "bodyPosition": "The body position is well-aligned, facilitating smooth transitions between receiving and passing.",
+          "followThrough": "The follow-through is consistent, ensuring accurate and controlled passes.",
+          "consistency": "The player demonstrates a high level of consistency in executing passes and maintaining control.",
+          "sessionProgression": "The session progresses smoothly, with players maintaining a high tempo and focus throughout."
+        },
+        "improvementTips": [
+          {
+            "priority": 1,
+            "tip": "Increase the speed of decision-making.",
+            "why": "Faster decision-making will enhance effectiveness in high-pressure situations.",
+            "how": "Incorporate time constraints in drills to simulate match conditions."
+          }
+        ],
+        "commonMistakesForPosition": [
+          {
+            "mistake": "Over-reliance on dominant foot.",
+            "observed": false,
+            "correction": "Encourage use of both feet to improve versatility."
+          }
+        ],
+        "practiceProgression": [
+          {
+            "level": "Intermediate",
+            "drill": "4v1 rondo with increased speed and reduced space."
+          },
+          {
+            "level": "Advanced",
+            "drill": "3v3 small-sided games focusing on quick transitions."
+          }
+        ],
+        "youtubeRecommendations": [
+          {
+            "title": "Mastering the Rondo",
+            "coach": "Soccer Coach TV",
+            "why": "Provides insights into improving rondo drills for better passing and receiving skills."
+          }
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770829921/dnbxii8tnlgbjt4iuge5.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session involves a small group of players working on quick passing and receiving skills within a confined space marked by cones. The focus is on maintaining close control and quick decision-making under pressure. The players are actively engaged in a rondo-like drill, which is excellent for improving technical skills and spatial awareness. The session is well-structured to enhance the player's ability to operate in tight spaces, a crucial skill for an attacking midfielder.",
+          "skillFocus": "Quick passing and receiving",
+          "secondarySkills": [
+            "Spatial awareness",
+            "Decision-making"
+          ],
+          "currentLevel": "Advanced",
+          "technicalAnalysis": {
+            "footwork": "The player's footwork is agile and precise, allowing for quick adjustments and efficient ball control.",
+            "bodyPosition": "The body position is well-aligned, facilitating smooth transitions between receiving and passing.",
+            "followThrough": "The follow-through is consistent, ensuring accurate and controlled passes.",
+            "consistency": "The player demonstrates a high level of consistency in executing passes and maintaining control.",
+            "sessionProgression": "The session progresses smoothly, with players maintaining a high tempo and focus throughout."
+          },
+          "improvementTips": [
+            {
+              "priority": 1,
+              "tip": "Increase the speed of decision-making.",
+              "why": "Faster decision-making will enhance effectiveness in high-pressure situations.",
+              "how": "Incorporate time constraints in drills to simulate match conditions."
+            }
+          ],
+          "commonMistakesForPosition": [
+            {
+              "mistake": "Over-reliance on dominant foot.",
+              "observed": false,
+              "correction": "Encourage use of both feet to improve versatility."
+            }
+          ],
+          "practiceProgression": [
+            {
+              "level": "Intermediate",
+              "drill": "4v1 rondo with increased speed and reduced space."
+            },
+            {
+              "level": "Advanced",
+              "drill": "3v3 small-sided games focusing on quick transitions."
+            }
+          ],
+          "youtubeRecommendations": [
+            {
+              "title": "Mastering the Rondo",
+              "coach": "Soccer Coach TV",
+              "why": "Provides insights into improving rondo drills for better passing and receiving skills."
+            }
+          ]
+        },
+        "created_at": 1770830079109
+      },
+      {
+        "id": "db1e6028-93e5-414c-b7e4-e3249ca966d1",
+        "skillFocus": "Dribbling and ball control",
+        "secondarySkills": [
+          "Agility",
+          "Precision"
+        ],
+        "sessionSummary": "The training session appears to focus on dribbling and ball control. The setup includes a stationary ball and a pole, suggesting drills that require maneuvering around the obstacle. This type of exercise is crucial for an attacking midfielder to improve agility and precision in tight spaces. The environment is controlled, allowing for focused skill development without external pressures.",
+        "currentLevel": "Intermediate",
+        "technicalAnalysis": {
+          "footwork": "The player's footwork should be quick and precise, allowing for smooth transitions around the pole.",
+          "bodyPosition": "The player should maintain a low center of gravity to enhance balance and control.",
+          "followThrough": "Ensuring proper follow-through after each dribble will help in maintaining momentum and control.",
+          "consistency": "Consistency in movement and control is key to mastering this drill.",
+          "sessionProgression": "The session should progress from slow, controlled dribbles to faster, more dynamic movements as the player gains confidence."
+        },
+        "improvementTips": [
+          {
+            "priority": 1,
+            "tip": "Focus on maintaining close ball control.",
+            "why": "Close control is essential for maneuvering in tight spaces.",
+            "how": "Practice dribbling with small touches and using both feet."
+          }
+        ],
+        "commonMistakesForPosition": [
+          {
+            "mistake": "Overextending touches",
+            "observed": false,
+            "correction": "Keep touches small and controlled to maintain possession."
+          }
+        ],
+        "practiceProgression": [
+          {
+            "level": "Beginner",
+            "drill": "Basic dribbling around cones with both feet."
+          },
+          {
+            "level": "Intermediate",
+            "drill": "Dribbling through a slalom course at varying speeds."
+          },
+          {
+            "level": "Advanced",
+            "drill": "Incorporate defensive pressure while dribbling around obstacles."
+          }
+        ],
+        "youtubeRecommendations": [
+          {
+            "title": "Mastering Dribbling Skills",
+            "coach": "Soccer Coach TV",
+            "why": "Provides detailed drills and techniques for improving dribbling."
+          }
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770829604/app7xfmphvrrdluvskuh.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session appears to focus on dribbling and ball control. The setup includes a stationary ball and a pole, suggesting drills that require maneuvering around the obstacle. This type of exercise is crucial for an attacking midfielder to improve agility and precision in tight spaces. The environment is controlled, allowing for focused skill development without external pressures.",
+          "skillFocus": "Dribbling and ball control",
+          "secondarySkills": [
+            "Agility",
+            "Precision"
+          ],
+          "currentLevel": "Intermediate",
+          "technicalAnalysis": {
+            "footwork": "The player's footwork should be quick and precise, allowing for smooth transitions around the pole.",
+            "bodyPosition": "The player should maintain a low center of gravity to enhance balance and control.",
+            "followThrough": "Ensuring proper follow-through after each dribble will help in maintaining momentum and control.",
+            "consistency": "Consistency in movement and control is key to mastering this drill.",
+            "sessionProgression": "The session should progress from slow, controlled dribbles to faster, more dynamic movements as the player gains confidence."
+          },
+          "improvementTips": [
+            {
+              "priority": 1,
+              "tip": "Focus on maintaining close ball control.",
+              "why": "Close control is essential for maneuvering in tight spaces.",
+              "how": "Practice dribbling with small touches and using both feet."
+            }
+          ],
+          "commonMistakesForPosition": [
+            {
+              "mistake": "Overextending touches",
+              "observed": false,
+              "correction": "Keep touches small and controlled to maintain possession."
+            }
+          ],
+          "practiceProgression": [
+            {
+              "level": "Beginner",
+              "drill": "Basic dribbling around cones with both feet."
+            },
+            {
+              "level": "Intermediate",
+              "drill": "Dribbling through a slalom course at varying speeds."
+            },
+            {
+              "level": "Advanced",
+              "drill": "Incorporate defensive pressure while dribbling around obstacles."
+            }
+          ],
+          "youtubeRecommendations": [
+            {
+              "title": "Mastering Dribbling Skills",
+              "coach": "Soccer Coach TV",
+              "why": "Provides detailed drills and techniques for improving dribbling."
+            }
+          ]
+        },
+        "created_at": 1770829769057
+      },
       {
         "id": "ffb45f37-f291-4aa4-aecf-e793f91e4437",
         "skillFocus": "Dribbling",
