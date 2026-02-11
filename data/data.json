@@ -8,12 +8,689 @@
       "age": 28,
       "dob": "1997-06-13",
       "createdAt": 1764771570356
+    },
+    {
+      "id": "94423f70-cb8b-4ace-975a-c06e9ccc4bd5",
+      "name": "Test Player",
+      "email": "test144977823@test.com",
+      "passHash": "$2a$10$27DriuTcDxMrhzuFQBeuf.RNLOssP66A8DYx4NakPJrKwe4ZAL2yW",
+      "age": 16,
+      "dob": "2008-01-15",
+      "createdAt": 1770822734293
     }
   ],
-  "coordinators": {},
-  "candidates": {},
+  "profiles": {
+    "170ac01e-d760-4dae-bdad-50fa3e9212d8": {
+      "name": null,
+      "age": 28,
+      "dob": null,
+      "height": 66,
+      "weight": null,
+      "foot": "Right",
+      "position": "Attacking Mid",
+      "skill": "",
+      "updatedAt": 1770828144557
+    },
+    "94423f70-cb8b-4ace-975a-c06e9ccc4bd5": {
+      "name": null,
+      "age": 16,
+      "dob": null,
+      "height": 68,
+      "weight": 150,
+      "foot": "Left",
+      "position": "Midfielder",
+      "skill": "Passing drills",
+      "updatedAt": 1770822844303
+    }
+  },
+  "clipsByUser": {
+    "170ac01e-d760-4dae-bdad-50fa3e9212d8": [
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772490/lt5t13frzuogmay9tgus.mov",
+        "public_id": "lt5t13frzuogmay9tgus",
+        "created_at": "2025-12-03T14:34:50Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      },
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772096/k0xitkulzxw5sanfzvbu.mov",
+        "public_id": "k0xitkulzxw5sanfzvbu",
+        "created_at": "2025-12-03T14:28:16Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      },
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771665/dfvfsqt8ddzlefsxms2h.mov",
+        "public_id": "dfvfsqt8ddzlefsxms2h",
+        "created_at": "2025-12-03T14:21:05Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      },
+      {
+        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771663/e5iqrdchyyqhdjdnu29a.mov",
+        "public_id": "e5iqrdchyyqhdjdnu29a",
+        "created_at": "2025-12-03T14:21:03Z",
+        "bytes": 18269740,
+        "duration": 5.573333,
+        "width": 2160,
+        "height": 3840,
+        "format": "mov"
+      }
+    ]
+  },
   "analysesByUser": {
     "170ac01e-d760-4dae-bdad-50fa3e9212d8": [
+      {
+        "id": "ffb45f37-f291-4aa4-aecf-e793f91e4437",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session focuses on basic dribbling skills, emphasizing control and coordination. The player is practicing moving the ball with the inside of the foot, ensuring close control while navigating around a cone. This foundational drill is essential for developing confidence and precision in ball handling.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates good initial control with the inside of the foot. However, there is room for improvement in maintaining consistent contact with the ball and ensuring the ball stays close to the body. The player's posture is upright, which is beneficial for maintaining balance, but they should focus on bending the knees slightly more to enhance agility.",
+        "improvementTips": [
+          "Keep the ball closer to the feet for better control.",
+          "Use both feet to improve ambidexterity.",
+          "Focus on soft touches to maintain ball proximity.",
+          "Practice with varied speeds to enhance adaptability."
+        ],
+        "practiceProgression": [
+          "Inside foot dribbling around cones",
+          "Figure-eight dribbling drill",
+          "Dribbling with both feet",
+          "Speed dribbling with quick changes of direction"
+        ],
+        "youtubeRecommendations": [
+          "Basic Dribbling Drills for Beginners",
+          "How to Improve Your Ball Control",
+          "Dribbling Techniques for Young Players"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770828137/zqdecvjydbc7ul9hfdg0.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic dribbling skills, emphasizing control and coordination. The player is practicing moving the ball with the inside of the foot, ensuring close control while navigating around a cone. This foundational drill is essential for developing confidence and precision in ball handling.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates good initial control with the inside of the foot. However, there is room for improvement in maintaining consistent contact with the ball and ensuring the ball stays close to the body. The player's posture is upright, which is beneficial for maintaining balance, but they should focus on bending the knees slightly more to enhance agility.",
+          "improvementTips": [
+            "Keep the ball closer to the feet for better control.",
+            "Use both feet to improve ambidexterity.",
+            "Focus on soft touches to maintain ball proximity.",
+            "Practice with varied speeds to enhance adaptability."
+          ],
+          "practiceProgression": [
+            "Inside foot dribbling around cones",
+            "Figure-eight dribbling drill",
+            "Dribbling with both feet",
+            "Speed dribbling with quick changes of direction"
+          ],
+          "youtubeRecommendations": [
+            "Basic Dribbling Drills for Beginners",
+            "How to Improve Your Ball Control",
+            "Dribbling Techniques for Young Players"
+          ]
+        },
+        "created_at": 1770828163380
+      },
+      {
+        "id": "6638bce4-64cc-4e43-b8a7-777aa3d664ed",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills, suitable for a young player. The player is practicing close ball control using both feet, which is essential for developing foundational soccer skills. The session appears to be well-structured, with the use of cones to guide the player and ensure proper spacing and movement. The player's focus and engagement are evident, indicating a positive learning environment.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates good basic control of the ball, using the inside of the foot to maneuver around the cones. The foot positioning is appropriate for maintaining balance and control. However, there is room for improvement in terms of speed and fluidity of movement. The player occasionally looks down at the ball, which is common at this stage but should be minimized over time to improve spatial awareness.",
+        "improvementTips": [
+          "Practice keeping the head up while dribbling to improve field awareness.",
+          "Increase the speed of dribbling gradually to build confidence and control.",
+          "Incorporate both feet equally to develop ambidextrous skills.",
+          "Focus on maintaining a low center of gravity for better balance."
+        ],
+        "practiceProgression": [
+          "Basic dribbling with cones",
+          "Figure-eight dribbling drill",
+          "1v1 dribbling challenges"
+        ],
+        "youtubeRecommendations": [
+          "Basic Dribbling Drills for Kids",
+          "How to Improve Your Ball Control",
+          "Fun Soccer Drills for Young Players"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770827599/zrtuyjwwyza0effyxbfy.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills, suitable for a young player. The player is practicing close ball control using both feet, which is essential for developing foundational soccer skills. The session appears to be well-structured, with the use of cones to guide the player and ensure proper spacing and movement. The player's focus and engagement are evident, indicating a positive learning environment.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates good basic control of the ball, using the inside of the foot to maneuver around the cones. The foot positioning is appropriate for maintaining balance and control. However, there is room for improvement in terms of speed and fluidity of movement. The player occasionally looks down at the ball, which is common at this stage but should be minimized over time to improve spatial awareness.",
+          "improvementTips": [
+            "Practice keeping the head up while dribbling to improve field awareness.",
+            "Increase the speed of dribbling gradually to build confidence and control.",
+            "Incorporate both feet equally to develop ambidextrous skills.",
+            "Focus on maintaining a low center of gravity for better balance."
+          ],
+          "practiceProgression": [
+            "Basic dribbling with cones",
+            "Figure-eight dribbling drill",
+            "1v1 dribbling challenges"
+          ],
+          "youtubeRecommendations": [
+            "Basic Dribbling Drills for Kids",
+            "How to Improve Your Ball Control",
+            "Fun Soccer Drills for Young Players"
+          ]
+        },
+        "created_at": 1770828011291
+      },
+      {
+        "id": "a149f0ad-40ac-42b9-bac9-ba8f188abb8f",
+        "skillFocus": "Ball Control",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills. The player is practicing close ball control in a stationary position, which is essential for developing foundational dribbling abilities. The use of cones indicates an emphasis on precision and spatial awareness. The player demonstrates enthusiasm and concentration, which are crucial for skill acquisition at this stage.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player shows good initial control of the ball with both feet, which is important for balanced development. However, there is room for improvement in maintaining consistent contact with the ball and using the inside and outside of the foot effectively. The player's posture is upright, which is good for visibility, but bending the knees slightly more could improve balance and agility.",
+        "improvementTips": [
+          "Practice dribbling with both feet to develop ambidexterity.",
+          "Focus on keeping the ball close to the feet to enhance control.",
+          "Incorporate more dynamic movements to simulate game situations.",
+          "Work on maintaining a low center of gravity for better balance."
+        ],
+        "practiceProgression": [
+          "Basic dribbling around cones",
+          "Figure-eight dribbling drill",
+          "1v1 dribbling against a partner"
+        ],
+        "youtubeRecommendations": [
+          "Basic Soccer Dribbling Drills for Kids",
+          "How to Improve Ball Control in Soccer",
+          "Top 5 Beginner Soccer Drills"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770827599/zrtuyjwwyza0effyxbfy.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills. The player is practicing close ball control in a stationary position, which is essential for developing foundational dribbling abilities. The use of cones indicates an emphasis on precision and spatial awareness. The player demonstrates enthusiasm and concentration, which are crucial for skill acquisition at this stage.",
+          "skillFocus": "Ball Control",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player shows good initial control of the ball with both feet, which is important for balanced development. However, there is room for improvement in maintaining consistent contact with the ball and using the inside and outside of the foot effectively. The player's posture is upright, which is good for visibility, but bending the knees slightly more could improve balance and agility.",
+          "improvementTips": [
+            "Practice dribbling with both feet to develop ambidexterity.",
+            "Focus on keeping the ball close to the feet to enhance control.",
+            "Incorporate more dynamic movements to simulate game situations.",
+            "Work on maintaining a low center of gravity for better balance."
+          ],
+          "practiceProgression": [
+            "Basic dribbling around cones",
+            "Figure-eight dribbling drill",
+            "1v1 dribbling against a partner"
+          ],
+          "youtubeRecommendations": [
+            "Basic Soccer Dribbling Drills for Kids",
+            "How to Improve Ball Control in Soccer",
+            "Top 5 Beginner Soccer Drills"
+          ]
+        },
+        "created_at": 1770827626348
+      },
+      {
+        "id": "f56da39d-1726-484d-b3f7-6dbd66447745",
+        "skillFocus": "Ball Control",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills, suitable for young players. The player is practicing close ball control with a series of touches using both feet. The session is set up in a simple environment with cones to guide the player's movement and focus. The player's engagement and enthusiasm are evident, which is crucial for skill development at this stage.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates basic ball control by using the inside of both feet to maneuver the ball. The touches are gentle and controlled, indicating a good understanding of maintaining proximity to the ball. However, the player's posture could be improved to enhance balance and agility. The head is often down, which can be adjusted to improve spatial awareness.",
+        "improvementTips": [
+          "Practice keeping the head up to improve field awareness.",
+          "Focus on using both feet equally to enhance ambidexterity.",
+          "Work on posture to improve balance and control.",
+          "Increase the speed of touches gradually to simulate game conditions."
+        ],
+        "practiceProgression": [
+          "Basic dribbling with cones",
+          "Figure-eight dribbling drill",
+          "1v1 dribbling challenge"
+        ],
+        "youtubeRecommendations": [
+          "Basic Soccer Dribbling Drills for Kids",
+          "How to Improve Ball Control in Soccer",
+          "Youth Soccer Drills for Beginners"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826992/lbr7fzbycasu9yycbgss.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills, suitable for young players. The player is practicing close ball control with a series of touches using both feet. The session is set up in a simple environment with cones to guide the player's movement and focus. The player's engagement and enthusiasm are evident, which is crucial for skill development at this stage.",
+          "skillFocus": "Ball Control",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates basic ball control by using the inside of both feet to maneuver the ball. The touches are gentle and controlled, indicating a good understanding of maintaining proximity to the ball. However, the player's posture could be improved to enhance balance and agility. The head is often down, which can be adjusted to improve spatial awareness.",
+          "improvementTips": [
+            "Practice keeping the head up to improve field awareness.",
+            "Focus on using both feet equally to enhance ambidexterity.",
+            "Work on posture to improve balance and control.",
+            "Increase the speed of touches gradually to simulate game conditions."
+          ],
+          "practiceProgression": [
+            "Basic dribbling with cones",
+            "Figure-eight dribbling drill",
+            "1v1 dribbling challenge"
+          ],
+          "youtubeRecommendations": [
+            "Basic Soccer Dribbling Drills for Kids",
+            "How to Improve Ball Control in Soccer",
+            "Youth Soccer Drills for Beginners"
+          ]
+        },
+        "created_at": 1770827247537
+      },
+      {
+        "id": "2ed431f9-3dd7-4c64-b227-af505c22d512",
+        "skillFocus": "Ball Control",
+        "sessionSummary": "The training session focuses on basic ball control skills, emphasizing the importance of maintaining close contact with the ball. The player is practicing dribbling in a confined space, which is crucial for developing control and precision. The use of cones suggests a structured approach to improving agility and spatial awareness.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates a fundamental understanding of ball control, keeping the ball close to her feet. However, there is room for improvement in terms of foot placement and body posture to enhance balance and control. The player occasionally looks down at the ball, which can be improved by practicing with her head up to increase spatial awareness.",
+        "improvementTips": [
+          "Focus on keeping the head up while dribbling to improve awareness.",
+          "Practice using both feet to enhance versatility.",
+          "Work on quick, small touches to maintain close control.",
+          "Incorporate more dynamic movements to simulate game scenarios."
+        ],
+        "practiceProgression": [
+          "Basic dribbling with cones",
+          "Figure-eight dribbling drill",
+          "1v1 dribbling challenge"
+        ],
+        "youtubeRecommendations": [
+          "How to Improve Your Ball Control - Soccer Drills",
+          "Beginner Soccer Dribbling Drills",
+          "Top 5 Soccer Drills for Kids"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826992/lbr7fzbycasu9yycbgss.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control skills, emphasizing the importance of maintaining close contact with the ball. The player is practicing dribbling in a confined space, which is crucial for developing control and precision. The use of cones suggests a structured approach to improving agility and spatial awareness.",
+          "skillFocus": "Ball Control",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates a fundamental understanding of ball control, keeping the ball close to her feet. However, there is room for improvement in terms of foot placement and body posture to enhance balance and control. The player occasionally looks down at the ball, which can be improved by practicing with her head up to increase spatial awareness.",
+          "improvementTips": [
+            "Focus on keeping the head up while dribbling to improve awareness.",
+            "Practice using both feet to enhance versatility.",
+            "Work on quick, small touches to maintain close control.",
+            "Incorporate more dynamic movements to simulate game scenarios."
+          ],
+          "practiceProgression": [
+            "Basic dribbling with cones",
+            "Figure-eight dribbling drill",
+            "1v1 dribbling challenge"
+          ],
+          "youtubeRecommendations": [
+            "How to Improve Your Ball Control - Soccer Drills",
+            "Beginner Soccer Dribbling Drills",
+            "Top 5 Soccer Drills for Kids"
+          ]
+        },
+        "created_at": 1770827062074
+      },
+      {
+        "id": "31a3872b-6b92-4b74-ad9e-441592eccecf",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills, ideal for young players. The player is practicing close control with the ball, using a small area marked by cones to enhance precision and footwork. The session is designed to build foundational skills, emphasizing repetition and familiarity with the ball.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates basic dribbling skills, maintaining close control of the ball. The use of both feet is encouraged, although there is a tendency to favor one foot. The player's posture is upright, and there is a good level of focus on the ball. However, there is room for improvement in terms of fluidity and speed.",
+        "improvementTips": [
+          "Practice using both feet equally to improve ambidexterity.",
+          "Focus on keeping the head up to improve awareness of surroundings.",
+          "Increase the speed of dribbling to enhance agility.",
+          "Incorporate more dynamic movements to simulate game-like scenarios."
+        ],
+        "practiceProgression": [
+          "Cone Dribbling Drill",
+          "Figure Eight Dribbling",
+          "Speed Dribbling with Cones"
+        ],
+        "youtubeRecommendations": [
+          "Basic Dribbling Drills for Beginners",
+          "How to Improve Ball Control",
+          "Youth Soccer Dribbling Techniques"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826681/bengtrvymnvxmnxteoah.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills, ideal for young players. The player is practicing close control with the ball, using a small area marked by cones to enhance precision and footwork. The session is designed to build foundational skills, emphasizing repetition and familiarity with the ball.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates basic dribbling skills, maintaining close control of the ball. The use of both feet is encouraged, although there is a tendency to favor one foot. The player's posture is upright, and there is a good level of focus on the ball. However, there is room for improvement in terms of fluidity and speed.",
+          "improvementTips": [
+            "Practice using both feet equally to improve ambidexterity.",
+            "Focus on keeping the head up to improve awareness of surroundings.",
+            "Increase the speed of dribbling to enhance agility.",
+            "Incorporate more dynamic movements to simulate game-like scenarios."
+          ],
+          "practiceProgression": [
+            "Cone Dribbling Drill",
+            "Figure Eight Dribbling",
+            "Speed Dribbling with Cones"
+          ],
+          "youtubeRecommendations": [
+            "Basic Dribbling Drills for Beginners",
+            "How to Improve Ball Control",
+            "Youth Soccer Dribbling Techniques"
+          ]
+        },
+        "created_at": 1770826986795
+      },
+      {
+        "id": "c4438c2c-1438-4341-a0fa-0cd2864f8012",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session focuses on basic ball control skills, with an emphasis on dribbling around cones. The player is practicing close control, which is essential for maneuvering in tight spaces during a game. The session is conducted on a well-maintained pitch, providing an ideal environment for skill development. The player's focus and determination are evident, indicating a strong willingness to improve.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates basic dribbling skills, maintaining close control of the ball. However, there is room for improvement in terms of footwork and body positioning. The player occasionally uses the inside of the foot to maneuver the ball, which is a good start, but should work on using both feet more effectively. The head position is often down, which can limit awareness of surroundings.",
+        "improvementTips": [
+          "Practice using both feet to improve ambidexterity.",
+          "Keep the head up more often to increase field awareness.",
+          "Focus on quick, small touches to enhance control.",
+          "Incorporate more dynamic movements to simulate game situations."
+        ],
+        "practiceProgression": [
+          "Basic cone dribbling",
+          "Figure-eight dribbling",
+          "Dribbling with directional changes"
+        ],
+        "youtubeRecommendations": [
+          "Basic Dribbling Drills for Beginners",
+          "How to Improve Your Ball Control",
+          "Dribbling Drills to Enhance Footwork"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826681/bengtrvymnvxmnxteoah.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control skills, with an emphasis on dribbling around cones. The player is practicing close control, which is essential for maneuvering in tight spaces during a game. The session is conducted on a well-maintained pitch, providing an ideal environment for skill development. The player's focus and determination are evident, indicating a strong willingness to improve.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates basic dribbling skills, maintaining close control of the ball. However, there is room for improvement in terms of footwork and body positioning. The player occasionally uses the inside of the foot to maneuver the ball, which is a good start, but should work on using both feet more effectively. The head position is often down, which can limit awareness of surroundings.",
+          "improvementTips": [
+            "Practice using both feet to improve ambidexterity.",
+            "Keep the head up more often to increase field awareness.",
+            "Focus on quick, small touches to enhance control.",
+            "Incorporate more dynamic movements to simulate game situations."
+          ],
+          "practiceProgression": [
+            "Basic cone dribbling",
+            "Figure-eight dribbling",
+            "Dribbling with directional changes"
+          ],
+          "youtubeRecommendations": [
+            "Basic Dribbling Drills for Beginners",
+            "How to Improve Your Ball Control",
+            "Dribbling Drills to Enhance Footwork"
+          ]
+        },
+        "created_at": 1770826875495
+      },
+      {
+        "id": "cc89de6a-3846-4010-9863-0b6edfdaba35",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session appears to focus on basic ball control and dribbling skills. The player is practicing close control of the ball using the inside of the foot, which is essential for developing foundational soccer skills. The environment is well-suited for individual practice, with cones set up to guide the player's movements.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player is using the inside of the foot to control the ball, which is a fundamental technique in soccer. The focus is on keeping the ball close while moving, which helps in developing dribbling skills. The player maintains a low center of gravity, which aids in balance and control.",
+        "improvementTips": [
+          "Focus on keeping the head up to improve spatial awareness.",
+          "Practice using both feet to enhance versatility.",
+          "Increase the speed of dribbling gradually to challenge control.",
+          "Incorporate changes of direction to simulate game scenarios."
+        ],
+        "practiceProgression": [
+          "Basic dribbling with cones",
+          "Figure-eight dribbling drill",
+          "Dribbling with changes of pace",
+          "1v1 dribbling against a defender"
+        ],
+        "youtubeRecommendations": [
+          "Basic Dribbling Drills for Beginners",
+          "How to Improve Your Ball Control",
+          "Soccer Dribbling Drills for Kids"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826681/bengtrvymnvxmnxteoah.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session appears to focus on basic ball control and dribbling skills. The player is practicing close control of the ball using the inside of the foot, which is essential for developing foundational soccer skills. The environment is well-suited for individual practice, with cones set up to guide the player's movements.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player is using the inside of the foot to control the ball, which is a fundamental technique in soccer. The focus is on keeping the ball close while moving, which helps in developing dribbling skills. The player maintains a low center of gravity, which aids in balance and control.",
+          "improvementTips": [
+            "Focus on keeping the head up to improve spatial awareness.",
+            "Practice using both feet to enhance versatility.",
+            "Increase the speed of dribbling gradually to challenge control.",
+            "Incorporate changes of direction to simulate game scenarios."
+          ],
+          "practiceProgression": [
+            "Basic dribbling with cones",
+            "Figure-eight dribbling drill",
+            "Dribbling with changes of pace",
+            "1v1 dribbling against a defender"
+          ],
+          "youtubeRecommendations": [
+            "Basic Dribbling Drills for Beginners",
+            "How to Improve Your Ball Control",
+            "Soccer Dribbling Drills for Kids"
+          ]
+        },
+        "created_at": 1770826719197
+      },
+      {
+        "id": "39397cc1-8386-417b-acc9-e67b3ab9fa55",
+        "skillFocus": "Ball Control",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills. The player is practicing close control with the ball, using both feet to maneuver around a stationary cone. The session is designed to build foundational skills in young players, emphasizing coordination and touch on the ball. The environment is supportive, with a clear focus on individual skill development.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates basic dribbling skills, using the inside of the foot to control the ball. The control is steady, but there is room for improvement in terms of fluidity and speed. The player's stance is balanced, but they could benefit from keeping their head up more to simulate game-like conditions.",
+        "improvementTips": [
+          "Practice keeping your head up while dribbling to improve awareness.",
+          "Work on using both feet equally to enhance versatility.",
+          "Increase the speed of dribbling gradually to improve control under pressure.",
+          "Incorporate more dynamic movements, such as quick turns, to simulate game scenarios."
+        ],
+        "practiceProgression": [
+          "Basic dribbling around cones",
+          "Figure-eight dribbling drill",
+          "Dribbling with speed variations"
+        ],
+        "youtubeRecommendations": [
+          "Beginner Soccer Dribbling Drills",
+          "How to Improve Ball Control in Soccer",
+          "Youth Soccer Drills for Ball Mastery"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826072/ijcp8yxsb0sfhyundwfw.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills. The player is practicing close control with the ball, using both feet to maneuver around a stationary cone. The session is designed to build foundational skills in young players, emphasizing coordination and touch on the ball. The environment is supportive, with a clear focus on individual skill development.",
+          "skillFocus": "Ball Control",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates basic dribbling skills, using the inside of the foot to control the ball. The control is steady, but there is room for improvement in terms of fluidity and speed. The player's stance is balanced, but they could benefit from keeping their head up more to simulate game-like conditions.",
+          "improvementTips": [
+            "Practice keeping your head up while dribbling to improve awareness.",
+            "Work on using both feet equally to enhance versatility.",
+            "Increase the speed of dribbling gradually to improve control under pressure.",
+            "Incorporate more dynamic movements, such as quick turns, to simulate game scenarios."
+          ],
+          "practiceProgression": [
+            "Basic dribbling around cones",
+            "Figure-eight dribbling drill",
+            "Dribbling with speed variations"
+          ],
+          "youtubeRecommendations": [
+            "Beginner Soccer Dribbling Drills",
+            "How to Improve Ball Control in Soccer",
+            "Youth Soccer Drills for Ball Mastery"
+          ]
+        },
+        "created_at": 1770826672840
+      },
+      {
+        "id": "29a77423-841c-4b21-a040-38bebef9f994",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills, suitable for young players. The player is practicing moving the ball with the inside of the foot, emphasizing control and precision. The session is set in a small area, encouraging close control and quick foot movements. The player shows enthusiasm and focus, which are crucial for skill development at this stage.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player is using the inside of the foot to move the ball, which is a fundamental technique in dribbling. The foot placement is generally correct, but there is room for improvement in maintaining consistent contact with the ball. The player's posture is upright, which is good for balance, but bending the knees slightly more could enhance agility and control.",
+        "improvementTips": [
+          "Focus on keeping the ball close to the feet while moving.",
+          "Practice using both feet to improve ambidexterity.",
+          "Work on maintaining a lower center of gravity by bending the knees.",
+          "Increase the speed of dribbling gradually as control improves."
+        ],
+        "practiceProgression": [
+          "Inside foot dribbling in a straight line",
+          "Zig-zag dribbling through cones",
+          "Dribbling with both feet in a small square"
+        ],
+        "youtubeRecommendations": [
+          "Basic Dribbling Drills for Kids",
+          "How to Improve Ball Control",
+          "Fun Soccer Drills for Young Players"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826072/ijcp8yxsb0sfhyundwfw.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills, suitable for young players. The player is practicing moving the ball with the inside of the foot, emphasizing control and precision. The session is set in a small area, encouraging close control and quick foot movements. The player shows enthusiasm and focus, which are crucial for skill development at this stage.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player is using the inside of the foot to move the ball, which is a fundamental technique in dribbling. The foot placement is generally correct, but there is room for improvement in maintaining consistent contact with the ball. The player's posture is upright, which is good for balance, but bending the knees slightly more could enhance agility and control.",
+          "improvementTips": [
+            "Focus on keeping the ball close to the feet while moving.",
+            "Practice using both feet to improve ambidexterity.",
+            "Work on maintaining a lower center of gravity by bending the knees.",
+            "Increase the speed of dribbling gradually as control improves."
+          ],
+          "practiceProgression": [
+            "Inside foot dribbling in a straight line",
+            "Zig-zag dribbling through cones",
+            "Dribbling with both feet in a small square"
+          ],
+          "youtubeRecommendations": [
+            "Basic Dribbling Drills for Kids",
+            "How to Improve Ball Control",
+            "Fun Soccer Drills for Young Players"
+          ]
+        },
+        "created_at": 1770826180727
+      },
+      {
+        "id": "0995915c-f5ae-4392-87d3-97641b0f8660",
+        "skillFocus": "Dribbling",
+        "sessionSummary": "The training session focuses on basic ball control and dribbling skills. The player is practicing close control with the ball using both feet, which is essential for developing confidence and agility on the field. The session is set up in a simple environment with cones to guide the player's movements, promoting spatial awareness and coordination.",
+        "currentLevel": "Beginner",
+        "technicalAnalysis": "The player demonstrates good initial control of the ball, maintaining close proximity to the feet. However, there is a tendency to use only one foot predominantly, which can limit versatility in game situations. The player's posture is upright, which is beneficial for maintaining balance but could be improved by bending the knees slightly to lower the center of gravity.",
+        "improvementTips": [
+          "Incorporate both feet equally to improve ambidexterity.",
+          "Focus on keeping the head up to increase field awareness.",
+          "Practice changing direction quickly to enhance agility.",
+          "Work on varying speed while dribbling to simulate game conditions."
+        ],
+        "practiceProgression": [
+          "Basic cone dribbling with both feet",
+          "Figure-eight dribbling around cones",
+          "Dribbling with sudden stops and starts",
+          "Incorporating simple feints and turns"
+        ],
+        "youtubeRecommendations": [
+          "Youth Soccer Dribbling Drills",
+          "Basic Ball Control for Beginners",
+          "How to Improve Your Dribbling Skills",
+          "Soccer Dribbling Techniques for Kids"
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770826072/ijcp8yxsb0sfhyundwfw.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "sessionSummary": "The training session focuses on basic ball control and dribbling skills. The player is practicing close control with the ball using both feet, which is essential for developing confidence and agility on the field. The session is set up in a simple environment with cones to guide the player's movements, promoting spatial awareness and coordination.",
+          "skillFocus": "Dribbling",
+          "currentLevel": "Beginner",
+          "technicalAnalysis": "The player demonstrates good initial control of the ball, maintaining close proximity to the feet. However, there is a tendency to use only one foot predominantly, which can limit versatility in game situations. The player's posture is upright, which is beneficial for maintaining balance but could be improved by bending the knees slightly to lower the center of gravity.",
+          "improvementTips": [
+            "Incorporate both feet equally to improve ambidexterity.",
+            "Focus on keeping the head up to increase field awareness.",
+            "Practice changing direction quickly to enhance agility.",
+            "Work on varying speed while dribbling to simulate game conditions."
+          ],
+          "practiceProgression": [
+            "Basic cone dribbling with both feet",
+            "Figure-eight dribbling around cones",
+            "Dribbling with sudden stops and starts",
+            "Incorporating simple feints and turns"
+          ],
+          "youtubeRecommendations": [
+            "Youth Soccer Dribbling Drills",
+            "Basic Ball Control for Beginners",
+            "How to Improve Your Dribbling Skills",
+            "Soccer Dribbling Techniques for Kids"
+          ]
+        },
+        "created_at": 1770826112647
+      },
+      {
+        "id": "06f7d859-8eda-4167-8c2a-7badaf40a3ab",
+        "activity": "Dribbling practice",
+        "summary": "The player is engaging in dribbling practice, using the inside of the foot to control the ball. The player demonstrates good focus and balance while maneuvering around the cone. However, there is room for improvement in maintaining a lower center of gravity to enhance stability and control.",
+        "focus": [
+          "Improve control with the inside of the foot",
+          "Enhance lower body strength for better balance",
+          "Increase awareness of surroundings while dribbling",
+          "Develop quick footwork to change direction swiftly"
+        ],
+        "drills": [
+          {
+            "title": "Cone Dribbling Drill",
+            "description": "Set up a line of cones and practice dribbling through them using both feet. This helps improve close control and agility.",
+            "url": "https://www.youtube.com/results?search_query=Cone%20Dribbling%20Drill%20soccer%20drill%20training"
+          },
+          {
+            "title": "Figure Eight Dribbling",
+            "description": "Dribble the ball in a figure-eight pattern around two cones. This drill enhances ball control and direction change.",
+            "url": "https://www.youtube.com/results?search_query=Figure%20Eight%20Dribbling%20soccer%20drill%20training"
+          }
+        ],
+        "improvements": [
+          "Actionable improvement 1: Focus on keeping the knees slightly bent to improve balance and control.",
+          "Actionable improvement 2: Use both feet to dribble to become more versatile in movement."
+        ],
+        "video_url": "https://res.cloudinary.com/dblconpx8/video/upload/v1770823666/tmxhpecc7faso4ijfkye.mov",
+        "public_id": null,
+        "skill": null,
+        "raw": {
+          "activity": "Dribbling practice",
+          "summary": "The player is engaging in dribbling practice, using the inside of the foot to control the ball. The player demonstrates good focus and balance while maneuvering around the cone. However, there is room for improvement in maintaining a lower center of gravity to enhance stability and control.",
+          "focus": [
+            "Improve control with the inside of the foot",
+            "Enhance lower body strength for better balance",
+            "Increase awareness of surroundings while dribbling",
+            "Develop quick footwork to change direction swiftly"
+          ],
+          "drills": [
+            {
+              "title": "Cone Dribbling Drill",
+              "description": "Set up a line of cones and practice dribbling through them using both feet. This helps improve close control and agility."
+            },
+            {
+              "title": "Figure Eight Dribbling",
+              "description": "Dribble the ball in a figure-eight pattern around two cones. This drill enhances ball control and direction change."
+            }
+          ],
+          "improvements": [
+            "Actionable improvement 1: Focus on keeping the knees slightly bent to improve balance and control.",
+            "Actionable improvement 2: Use both feet to dribble to become more versatile in movement."
+          ]
+        },
+        "created_at": 1770823700286
+      },
       {
         "id": "ece736cf-3d36-4fef-8f68-0680ef490667",
         "videoType": "training",
@@ -2014,61 +2691,6 @@
       }
     ]
   },
-  "profiles": {
-    "170ac01e-d760-4dae-bdad-50fa3e9212d8": {
-      "name": null,
-      "age": 28,
-      "dob": null,
-      "height": 66,
-      "weight": null,
-      "foot": "Right",
-      "position": "Attacking Mid",
-      "skill": "",
-      "updatedAt": 1764774119945
-    }
-  },
-  "clipsByUser": {
-    "170ac01e-d760-4dae-bdad-50fa3e9212d8": [
-      {
-        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772490/lt5t13frzuogmay9tgus.mov",
-        "public_id": "lt5t13frzuogmay9tgus",
-        "created_at": "2025-12-03T14:34:50Z",
-        "bytes": 18269740,
-        "duration": 5.573333,
-        "width": 2160,
-        "height": 3840,
-        "format": "mov"
-      },
-      {
-        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764772096/k0xitkulzxw5sanfzvbu.mov",
-        "public_id": "k0xitkulzxw5sanfzvbu",
-        "created_at": "2025-12-03T14:28:16Z",
-        "bytes": 18269740,
-        "duration": 5.573333,
-        "width": 2160,
-        "height": 3840,
-        "format": "mov"
-      },
-      {
-        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771665/dfvfsqt8ddzlefsxms2h.mov",
-        "public_id": "dfvfsqt8ddzlefsxms2h",
-        "created_at": "2025-12-03T14:21:05Z",
-        "bytes": 18269740,
-        "duration": 5.573333,
-        "width": 2160,
-        "height": 3840,
-        "format": "mov"
-      },
-      {
-        "url": "https://res.cloudinary.com/dblconpx8/video/upload/v1764771663/e5iqrdchyyqhdjdnu29a.mov",
-        "public_id": "e5iqrdchyyqhdjdnu29a",
-        "created_at": "2025-12-03T14:21:03Z",
-        "bytes": 18269740,
-        "duration": 5.573333,
-        "width": 2160,
-        "height": 3840,
-        "format": "mov"
-      }
-    ]
-  }
+  "coordinators": {},
+  "candidates": {}
 }

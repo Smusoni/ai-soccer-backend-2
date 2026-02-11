@@ -450,14 +450,47 @@ app.post('/api/clip', auth, (req, res) => {
 /* ==================================================================== */
 
 app.get('/api/analyses', auth, (req, res) => {
-  res.json({ ok: true, items: db.analysesByUser[req.userId] || [] });
+  const items = (db.analysesByUser[req.userId] || []).map(item => ({
+    id: item.id,
+    videoUrl: item.video_url,
+    publicId: item.public_id,
+    skill: item.skill,
+    createdAt: item.created_at,
+    analysis: item.raw,
+    // Flattened fields for frontend
+    skillFocus: item.skillFocus,
+    sessionSummary: item.sessionSummary,
+    currentLevel: item.currentLevel,
+    technicalAnalysis: item.technicalAnalysis,
+    improvementTips: item.improvementTips,
+    practiceProgression: item.practiceProgression,
+    youtubeRecommendations: item.youtubeRecommendations,
+  }));
+  res.json({ ok: true, items, analyses: items });
 });
 
 app.get('/api/analyses/:id', auth, (req, res) => {
   const list = db.analysesByUser[req.userId] || [];
   const item = list.find(x => x.id === req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: 'Not found' });
-  res.json({ ok: true, item });
+  
+  res.json({
+    ok: true,
+    id: item.id,
+    videoUrl: item.video_url,
+    publicId: item.public_id,
+    skill: item.skill,
+    createdAt: item.created_at,
+    analysis: item.raw,
+    // Flattened fields for frontend
+    skillFocus: item.skillFocus,
+    sessionSummary: item.sessionSummary,
+    currentLevel: item.currentLevel,
+    technicalAnalysis: item.technicalAnalysis,
+    improvementTips: item.improvementTips,
+    practiceProgression: item.practiceProgression,
+    youtubeRecommendations: item.youtubeRecommendations,
+  });
 });
 
 app.delete('/api/analyses/:id', auth, (req, res) => {
@@ -484,67 +517,55 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
   const heightIn = profile.height || null;
   const weightLb = profile.weight || null;
 
-  const sys = `You are an expert soccer coach analyzing a player's training video.
-
-CRITICAL INSTRUCTIONS:
-1. Your ONLY job is to analyze what you see in the video frames provided
-2. COMPLETELY IGNORE any text suggestions about what skill they're working on
-3. Identify the ACTUAL activity visible in the frames (juggling, passing, dribbling, shooting, etc.)
-4. Do NOT guess or assume - describe ONLY what you see
-
-IMPORTANT: If you see juggling, say "juggling". If you see passing drills, say "passing". Be specific and accurate about the activity.
-
-Provide DETAILED, ACTIONABLE coaching feedback that helps the player improve.
-
-Return analysis in STRICT JSON format:
-{
-  "activity": "The specific activity you observe (e.g., 'juggling', 'passing drills', 'dribbling practice')",
-  "summary": "Detailed assessment of what the player is doing, their form/technique, strengths observed, and immediate improvements needed. Reference the activity by name. 2-3 sentences minimum.",
-  "focus": [
-    "Specific technical point to improve based on what you see",
-    "Physical/fitness focus area",
-    "Decision-making or game sense point",
-    "Complementary skill to develop"
-  ],
-  "drills": [
-    {"title": "Specific drill name for this activity", "description": "How to perform this drill and why it helps"},
-    {"title": "Another related drill", "description": "What this develops"}
-  ],
-  "improvements": [
-    "Actionable improvement 1: What to focus on and how to fix it",
-    "Actionable improvement 2: Specific technique adjustment"
-  ]
-}
-
-Make the summary vivid and specific. Reference actual movements and the activity you see in the video.
-NEVER make assumptions - analyze ONLY what is visible in the frames.
-Base feedback ONLY on what you see in the video frames.`;
-
-  const context = {
-    name:          user?.name || null,
-    age,
-    isYouth,
-    position:      profile.position || 'Unknown',
-    dominantFoot:  profile.foot || 'Unknown',
-    heightIn,
-    weightLb,
-    skillWorkingOn: skill || profile.skill || null,
-    videoUrl,
-  };
-
-  const userText = `Player Profile:
-- Name: ${user?.name || 'Unknown'}
-- Age: ${age || 'Unknown'}  
-- Position: ${profile.position || 'Unknown'}
-- Dominant Foot: ${profile.foot || 'Unknown'}
-
-You are seeing video frames from a soccer training session. Analyze what the player is actually doing.
-Provide coaching feedback based ONLY on what you observe in the frames, not on any text suggestions.`;
+  const sys = `Return ONLY valid JSON. No markdown.`;
 
   const messageContent = [
     {
       type: 'text',
-      text: userText,
+      text: `You are an expert soccer training analyst. Analyze this training footage in detail.
+
+Return ONLY valid JSON (no markdown, no code blocks). Schema:
+{
+  "sessionSummary": "2-3 paragraph professional evaluation of the training session",
+  "skillFocus": "Primary skill being trained (e.g., 'Dribbling', 'Passing', 'Shooting')",
+  "secondarySkills": ["Secondary skill 1", "Secondary skill 2"],
+  "currentLevel": "Beginner | Intermediate | Advanced",
+  "technicalAnalysis": {
+    "footwork": "Analysis of foot placement and technique",
+    "bodyPosition": "Analysis of body posture and positioning",
+    "followThrough": "Analysis of follow-through mechanics",
+    "consistency": "Analysis of touch consistency and control",
+    "sessionProgression": "How the session progressed"
+  },
+  "improvementTips": [
+    {
+      "priority": 1,
+      "tip": "Main improvement tip",
+      "why": "Reason why this is important",
+      "how": "Specific instruction on how to improve"
+    }
+  ],
+  "commonMistakesForPosition": [
+    {
+      "mistake": "Common mistake description",
+      "observed": true,
+      "correction": "How to correct this mistake"
+    }
+  ],
+  "practiceProgression": [
+    {
+      "level": "Drill difficulty level",
+      "drill": "Detailed drill description"
+    }
+  ],
+  "youtubeRecommendations": [
+    {
+      "title": "Video title",
+      "coach": "Coach/Channel name",
+      "why": "Why this video is relevant"
+    }
+  ]
+}`,
     },
   ];
 
@@ -572,8 +593,8 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
   console.log(`[BK] Sending ${messageContent.length} items to OpenAI (${messageContent.length - 1} frames)`);
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o',
-    temperature: 0.4,
-    max_tokens: 2000,
+    temperature: 0.3,
+    max_tokens: 4000,
     messages: [
       { role: 'system', content: sys },
       { role: 'user',   content: messageContent },
@@ -610,25 +631,18 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
     }
   }
 
-  console.log(`[BK] Parsed analysis - Activity: ${data.activity}, Drills: ${data.drills?.length || 0}`);
-
-  // Normalize drills - create YouTube search URLs from descriptions
-  const normalizedDrills = Array.isArray(data.drills)
-    ? data.drills.slice(0, 5).map(d => {
-        const title = typeof d === 'string' ? d : (d.title || 'Soccer drill');
-        const description = d.description || '';
-        const url = 'https://www.youtube.com/results?search_query=' +
-          encodeURIComponent(`${title} soccer drill training`);
-        return { title, description, url };
-      })
-    : [];
+  console.log(`[BK] Parsed analysis - Skill: ${data.skillFocus || 'N/A'}, Level: ${data.currentLevel || 'N/A'}`);
 
   return {
-    activity: data.activity || 'Training session',
-    summary: data.summary || 'Training analysis complete.',
-    focus: Array.isArray(data.focus) ? data.focus.slice(0, 5) : [],
-    drills: normalizedDrills,
-    improvements: Array.isArray(data.improvements) ? data.improvements.slice(0, 4) : [],
+    skillFocus: data.skillFocus || 'Training session',
+    secondarySkills: Array.isArray(data.secondarySkills) ? data.secondarySkills : [],
+    sessionSummary: data.sessionSummary || 'Training analysis complete.',
+    currentLevel: data.currentLevel || 'Intermediate',
+    technicalAnalysis: data.technicalAnalysis || {},
+    improvementTips: Array.isArray(data.improvementTips) ? data.improvementTips : [],
+    commonMistakesForPosition: Array.isArray(data.commonMistakesForPosition) ? data.commonMistakesForPosition : [],
+    practiceProgression: Array.isArray(data.practiceProgression) ? data.practiceProgression : [],
+    youtubeRecommendations: Array.isArray(data.youtubeRecommendations) ? data.youtubeRecommendations : [],
     raw: data,
   };
 }
@@ -681,12 +695,15 @@ app.post('/api/analyze', auth, async (req, res) => {
 
     const item = {
       id: uuidv4(),
-      activity:  result.activity,
-      summary:   result.summary,
-      focus:     result.focus,
-      drills:    result.drills,
-      improvements: result.improvements || [],
-      comps:     result.comps,
+      skillFocus: result.skillFocus,
+      secondarySkills: result.secondarySkills,
+      sessionSummary: result.sessionSummary,
+      currentLevel: result.currentLevel,
+      technicalAnalysis: result.technicalAnalysis,
+      improvementTips: result.improvementTips,
+      commonMistakesForPosition: result.commonMistakesForPosition,
+      practiceProgression: result.practiceProgression,
+      youtubeRecommendations: result.youtubeRecommendations,
       video_url: videoUrl,
       public_id: publicId || null,
       skill:     skill || profile.skill || null,
@@ -697,20 +714,35 @@ app.post('/api/analyze', auth, async (req, res) => {
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
-    console.log(`[BK] Analysis complete for user ${req.userId} - Activity: ${item.activity}`);
+    console.log(`[BK] Analysis complete for user ${req.userId} - Skill: ${item.skillFocus}, Level: ${item.currentLevel}`);
+
+    // Convert currentLevel string to object format for frontend compatibility
+    const levelMap = {
+      'Beginner': { grade: '4-5', description: item.currentLevel },
+      'Intermediate': { grade: '6-7', description: item.currentLevel },
+      'Advanced': { grade: '8-9', description: item.currentLevel }
+    };
+    const currentLevelObj = levelMap[item.currentLevel] || { grade: '?', description: item.currentLevel };
 
     res.json({
       ok: true,
       id: item.id,
-      activity: item.activity,
-      summary: item.summary,
-      focus: item.focus,
-      drills: item.drills,
-      improvements: item.improvements,
-      comps: item.comps,
       videoUrl: item.video_url,
       publicId: item.public_id,
       skill: item.skill,
+      createdAt: item.created_at,
+      summary: item.sessionSummary,
+      analysis: result.raw,
+      // Flattened fields for easier frontend access
+      skillFocus: item.skillFocus,
+      secondarySkills: item.secondarySkills,
+      sessionSummary: item.sessionSummary,
+      currentLevel: currentLevelObj,  // Object with grade and description
+      technicalAnalysis: item.technicalAnalysis,
+      improvementTips: item.improvementTips,
+      commonMistakesForPosition: item.commonMistakesForPosition,
+      practiceProgression: item.practiceProgression,
+      youtubeRecommendations: item.youtubeRecommendations,
     });
   } catch (e) {
     console.error('[BK] Analysis error:', e);
