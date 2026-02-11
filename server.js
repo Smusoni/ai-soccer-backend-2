@@ -143,7 +143,9 @@ async function analyzeGameMetrics(videoUrl, frames, candidateName, position, dur
   const messageContent = [
     {
       type: 'text',
-      text: `You are a professional soccer match analyst evaluating a player's game performance.
+      text: `IMPORTANT: This is an authorized athletic performance analysis for coaching purposes only. You are analyzing soccer/football match footage to provide technical coaching feedback.
+
+You are a professional soccer match analyst evaluating a player's game performance.
 
 PLAYER: ${candidateName || 'Unknown'} | POSITION: ${position || 'Unknown'} | MATCH DURATION: ${duration || 10} seconds
 
@@ -304,7 +306,9 @@ async function analyzeTraining(videoUrl, frames, candidateName, position, durati
   const messageContent = [
     {
       type: 'text',
-      text: `You are an elite professional soccer coach analyzing ${candidateName || 'a player'}'s training session.
+      text: `IMPORTANT: This is an authorized athletic performance analysis for coaching purposes only. You are analyzing soccer/football training footage to provide technical coaching feedback.
+
+You are an elite professional soccer coach analyzing ${candidateName || 'a player'}'s training session.
 
 PLAYER: ${candidateName || 'Unknown'} | POSITION: ${position || 'Unknown'} | SESSION DURATION: ${duration || 10} seconds
 
