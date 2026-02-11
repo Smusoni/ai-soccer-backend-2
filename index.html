@@ -1312,8 +1312,8 @@
   </section>
 
   <script>
-  // Backend API URL - Railway backend
-  const BASE = location.protocol === 'file:' ? 'http://localhost:3001' : 'https://ai-soccer-backend-2-production.up.railway.app';
+  // Use relative paths when served from Railway, localhost when testing locally
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3001' : '';
 
   const $ = (id) => document.getElementById(id);
   const setToken   = (t) => localStorage.setItem('bk_token', t);
