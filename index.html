@@ -637,6 +637,10 @@
         <input id="su_name" type="text" placeholder="Full name" style="width:100%">
         <input id="su_email" type="email" placeholder="Email" style="width:100%">
         <input id="su_password" type="password" placeholder="Create password" style="width:100%">
+        <div style="width:100%">
+          <label for="su_dob" style="display:block;margin-bottom:6px;color:var(--muted);font-size:14px">Date of Birth</label>
+          <input id="su_dob" type="date" style="width:100%">
+        </div>
       </div>
       <button id="signupBtn" class="block-btn" style="margin-top:16px">Sign Up</button>
     </div>
@@ -720,16 +724,20 @@
       
       <!-- Upload Method Selector -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:rgba(0,255,149,0.05);min-height:44px">
-          <input type="radio" name="uploadMethod" value="file" checked style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">File</span>
-        </label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;min-height:44px">
-          <input type="radio" name="uploadMethod" value="url" style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">URL</span>
+          <input type="radio" name="uploadMethod" value="file" style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">File (Small)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:rgba(0,255,149,0.05);min-height:44px">
+          <input type="radio" name="uploadMethod" value="url" checked style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">URL (Recommended)</span>
         </label>
       </div>
+      
+      <p class="muted" style="margin-bottom:16px;font-size:13px;padding:10px;background:rgba(255,200,0,0.1);border-left:3px solid #ffc800;border-radius:4px">
+        📹 <strong>For best results:</strong> Upload your video to YouTube/Vimeo/Cloudinary and paste the URL. File uploads are limited to small videos (&lt;5MB).
+      </p>
 
       <!-- File Upload Section -->
-      <div id="fileUploadSection">
+      <div id="fileUploadSection" class="hide">
         <div id="dropZone" style="border:2px dashed var(--accent);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:all 0.3s;margin-bottom:14px;background:rgba(0,255,149,0.02);min-height:140px;display:flex;flex-direction:column;justify-content:center">
           <div style="font-size:40px;margin-bottom:10px">📱 📹</div>
           <p style="margin:0 0 6px 0;font-weight:600;color:var(--accent);font-size:16px">Select Video</p>
@@ -1304,9 +1312,8 @@
   </section>
 
   <script>
-  const BASE = location.hostname.endsWith('github.io')
-    ? 'https://ai-soccer-backend-2-1.vercel.app'
-    : (location.protocol === 'file:' ? 'http://localhost:3001' : '');
+  // Backend API URL
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3001' : 'https://ai-soccer-backend-2-production.up.railway.app';
 
   const $ = (id) => document.getElementById(id);
   const setToken   = (t) => localStorage.setItem('bk_token', t);
@@ -1422,14 +1429,21 @@
   }
 
   async function doSignup(){
-    const payload = {
-      name: $('su_name').value.trim(),
-      email: $('su_email').value.trim(),
-      password: $('su_password').value.trim()
-    };
-    if (!payload.name || !payload.email || !payload.password){
+    const name = $('su_name').value.trim();
+    const email = $('su_email').value.trim();
+    const password = $('su_password').value.trim();
+    const dob = $('su_dob').value.trim();
+    
+    if (!name || !email || !password || !dob){
       return setSignupMessage('Please fill all fields', false);
     }
+    
+    // Calculate age from date of birth
+    const birthDate = new Date(dob);
+    const today = new Date();
+    const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+    
+    const payload = { name, email, password, age, dob };
     setSignupMessage('Creating account…');
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
