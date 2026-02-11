@@ -227,7 +227,7 @@ Return STRICT JSON ONLY with no markdown or extra text:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       temperature: 0.5,
       max_completion_tokens: 8000,
       messages: [
@@ -542,7 +542,7 @@ Return STRICT JSON ONLY:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       temperature: 0.3,
       max_completion_tokens: 4000,
       messages: [
