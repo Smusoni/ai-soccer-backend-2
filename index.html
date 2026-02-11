@@ -724,16 +724,17 @@
       
       <!-- Upload Method Selector -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;min-height:44px">
-          <input type="radio" name="uploadMethod" value="file" style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">File (Small)</span>
-        </label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:rgba(0,255,149,0.05);min-height:44px">
-          <input type="radio" name="uploadMethod" value="url" checked style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">URL (Recommended)</span>
+          <input type="radio" name="uploadMethod" value="file" checked style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">📱 Upload Video</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;min-height:44px">
+          <input type="radio" name="uploadMethod" value="url" style="cursor:pointer;width:18px;height:18px;flex:none"> <span style="font-size:14px">🔗 Video URL</span>
         </label>
       </div>
       
-      <p class="muted" style="margin-bottom:16px;font-size:13px;padding:10px;background:rgba(255,200,0,0.1);border-left:3px solid #ffc800;border-radius:4px">
-        📹 <strong>For best results:</strong> Upload your video to YouTube/Vimeo/Cloudinary and paste the URL. File uploads are limited to small videos (&lt;5MB).
+      <p class="muted" style="margin-bottom:16px;font-size:13px;padding:10px;background:rgba(0,255,149,0.05);border-left:3px solid var(--accent);border-radius:4px">
+        📱 <strong>Upload Video:</strong> Training clips from your phone (uploads to cloud, max 100MB)<br>
+        🔗 <strong>Video URL:</strong> Paste Cloudinary, YouTube, or Vimeo link for game footage
       </p>
 
       <!-- File Upload Section -->
@@ -754,7 +755,7 @@
           </button>
         </div>
         <input id="videoLibraryInput" type="file" accept="video/*" style="display:none">
-        <input id="videoCameraInput" type="file" accept="video/*" style="display:none" capture="environment">
+        <input id="videoCameraInput" type="file" accept="video/*" capture="environment" style="display:none">
         <div id="fileInfo" class="muted" style="font-size:14px;margin:12px 0;padding:12px;border-radius:8px;background:rgba(0,0,0,0.3);line-height:1.5"></div>
       </div>
 
@@ -763,11 +764,11 @@
         <div style="display:grid;gap:14px;padding:8px 0">
           <div>
             <label class="field-label" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Video URL</label>
-            <input id="videoUrl" type="text" placeholder="Paste video URL" style="font-size:16px">
+            <input id="videoUrl" type="text" placeholder="Paste YouTube, Vimeo, or Cloudinary URL" style="font-size:16px">
           </div>
           <div>
             <label class="field-label" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Duration (seconds)</label>
-            <input id="videoDuration" type="number" placeholder="Duration" step="0.1" style="font-size:16px">
+            <input id="videoDuration" type="number" placeholder="Video duration" step="0.1" style="font-size:16px">
           </div>
         </div>
       </div>
@@ -1312,7 +1313,7 @@
   </section>
 
   <script>
-  // Use relative paths when served from Railway, localhost when testing locally
+  // Use relative paths - works on Vercel and local file://
   const BASE = location.protocol === 'file:' ? 'http://localhost:3001' : '';
 
   const $ = (id) => document.getElementById(id);
@@ -1512,21 +1513,27 @@
     let videoDuration = 0;
     const videoType = document.querySelector('input[name="videoType"]:checked').value;
 
-    // Determine video source and duration
+    // Check upload method
     if (uploadMethod === 'file') {
-      if (!uploadedFile) {
-        $('analyzeStatus').textContent = 'Please select a video file';
+      // File upload - check if Cloudinary upload completed
+      if (cloudinaryVideoUrl) {
+        videoUrl = cloudinaryVideoUrl;
+        videoDuration = cloudinaryVideoDuration || 30;
+      } else if (!uploadedFile) {
+        $('analyzeStatus').textContent = 'Please select a video file first';
+        $('analyzeStatus').className = 'err';
+        return;
+      } else {
+        $('analyzeStatus').textContent = 'Please wait for video to finish uploading';
         $('analyzeStatus').className = 'err';
         return;
       }
-      // For file uploads, we'll use the file object and let the backend handle it
-      videoUrl = 'file://' + uploadedFile.name;
-      videoDuration = 0; // Backend will determine from file
     } else {
+      // URL upload
       videoUrl = $('videoUrl').value.trim();
       videoDuration = Number($('videoDuration').value || 60);
-      if (!videoUrl){
-        $('analyzeStatus').textContent = 'Enter a video URL';
+      if (!videoUrl) {
+        $('analyzeStatus').textContent = 'Please enter a video URL';
         $('analyzeStatus').className = 'err';
         return;
       }
@@ -1565,42 +1572,15 @@
     $('analyzeStatus').className = 'muted';
 
     try{
-      let out;
-
-      // Handle file upload with FormData
-      if (uploadMethod === 'file') {
-        const formData = new FormData();
-        formData.append('file', uploadedFile);
-        formData.append('duration', videoDuration);
-        formData.append('videoType', videoType);
-        formData.append('candidateInfo', JSON.stringify(candInfo));
-        
-        const headers = {};
-        const t = getToken();
-        if (t) headers['Authorization'] = 'Bearer ' + t;
-        
-        const response = await fetch(`${BASE}/api/analyze`, {
-          method: 'POST',
-          headers: headers,
-          body: formData
-        });
-        
-        const resText = await response.text();
-        try {
-          out = JSON.parse(resText);
-        } catch(e) {
-          throw new Error('Server error: ' + resText);
-        }
-      } else {
-        // Handle URL submission
-        const payload = {
-          videoUrl,
-          duration: videoDuration,
-          videoType,
-          candidateInfo: candInfo
-        };
-        out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
-      }
+      // Prepare payload with video URL
+      const payload = {
+        videoUrl,
+        duration: videoDuration,
+        videoType,
+        candidateInfo: candInfo
+      };
+      
+      const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
 
       if (!out.ok){
         $('analyzeStatus').textContent = out.error || 'Analysis failed';
@@ -1983,19 +1963,8 @@
 
   /* Upload Handling */
   let uploadedFile = null;
-
-  // Upload method toggle
-  document.querySelectorAll('input[name="uploadMethod"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      if (e.target.value === 'file') {
-        show($('fileUploadSection'));
-        hide($('urlUploadSection'));
-      } else {
-        hide($('fileUploadSection'));
-        show($('urlUploadSection'));
-      }
-    });
-  });
+  let cloudinaryVideoUrl = null;
+  let cloudinaryVideoDuration = null;
 
   // File upload handling
   const dropZone = $('dropZone');
@@ -2005,17 +1974,51 @@
 
   dropZone.addEventListener('click', () => libraryInput.click());
 
+  // Auto-upload to Cloudinary when file is selected
+  async function uploadToCloudinary(file) {
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+    fileInfo.innerHTML = `⏳ Uploading ${file.name} (${sizeMB} MB)...<br><span class="muted">Please wait, this may take a moment</span>`;
+    $('uploadMsg').textContent = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'BallKnowledge');
+    formData.append('cloud_name', 'dblconpx8');
+
+    try {
+      const response = await fetch('https://api.cloudinary.com/v1_1/dblconpx8/video/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      cloudinaryVideoUrl = data.secure_url;
+      cloudinaryVideoDuration = data.duration || 30;
+      
+      fileInfo.innerHTML = `✅ <strong>${file.name}</strong> uploaded!<br><span style="color:var(--accent)">Size: ${sizeMB}MB | Duration: ${cloudinaryVideoDuration.toFixed(1)}s</span>`;
+      $('uploadMsg').textContent = '';
+    } catch (error) {
+      fileInfo.innerHTML = `❌ Upload failed. Please try again.`;
+      $('uploadMsg').textContent = error.message;
+      cloudinaryVideoUrl = null;
+    }
+  }
+
   libraryInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
-      handleFileSelected(file);
+      uploadedFile = file;
+      uploadToCloudinary(file);
     }
   });
 
   cameraInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
-      handleFileSelected(file);
+      uploadedFile = file;
+      uploadToCloudinary(file);
     }
   });
 
@@ -2037,16 +2040,30 @@
     dropZone.style.background = 'transparent';
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('video/')) {
-      handleFileSelected(file);
+      uploadedFile = file;
+      uploadToCloudinary(file);
     } else {
       alert('Please drop a video file');
     }
   });
 
-  function handleFileSelected(file) {
-    uploadedFile = file;
-    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-    fileInfo.innerHTML = `<span style="color:var(--success)">✓ ${file.name}</span><br><span class="muted">${sizeMB} MB</span>`;
+  // Upload method toggle
+  document.querySelectorAll('input[name="uploadMethod"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'file') {
+        show($('fileUploadSection'));
+        hide($('urlUploadSection'));
+      } else {
+        hide($('fileUploadSection'));
+        show($('urlUploadSection'));
+      }
+    });
+  });
+
+  // Trigger initial display
+  const checkedMethod = document.querySelector('input[name="uploadMethod"]:checked');
+  if (checkedMethod) {
+    checkedMethod.dispatchEvent(new Event('change'));
   }
 
   async function saveProfile(){
