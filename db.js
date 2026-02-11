@@ -44,10 +44,10 @@ if (isVercel) {
   });
   
   console.log('[PostgreSQL] Using AWS IAM authentication');
-} else if (process.env.POSTGRES_URL) {
-  // Local: Use connection string
+} else if (process.env.DATABASE_URL || process.env.POSTGRES_URL) {
+  // Railway/Local: Use connection string
   pool = new Pool({
-    connectionString: process.env.POSTGRES_URL,
+    connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
     ssl: { rejectUnauthorized: false },
     max: 20,
     idleTimeoutMillis: 30000,
