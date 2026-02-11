@@ -98,30 +98,79 @@ function auth(req, res, next) {
 
 /* ---------- OpenAI client ---------- */
 const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null;
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = openai; // Reuse same client instance
 
 /* ---------- Video Frame Extraction ---------- */
-async function downloadVideoFrames(videoUrl) {
+async function downloadVideoFrames(videoUrl, videoData = null) {
   try {
-    // For Cloudinary, we can directly get preview frames using transformations
-    // Extract multiple frames at different timestamps to get comprehensive view
     const frames = [];
     
-    if (videoUrl && videoUrl.includes('cloudinary')) {
-      // Get frames at 25%, 50%, and 75% of video using Cloudinary transformations
-      const timestamps = ['0.25', '0.50', '0.75'];
+    // Handle base64 video data from local photo library
+    if (videoData && (videoData.startsWith('data:video/') || videoData.startsWith('data:image/'))) {
+      console.log('[BK] Processing local video/image data');
+      // If it's already an image, use it directly
+      if (videoData.startsWith('data:image/')) {
+        frames.push(videoData);
+        console.log('[BK] Using provided image frame directly');
+      } else {
+        // For video data, we'd need a video processing library
+        // For now, log a warning - frontend should extract frames
+        console.warn('[BK] Base64 video data provided but frame extraction not implemented');
+        console.warn('[BK] Frontend should extract frames before sending to backend');
+      }
+    }
+    // Handle Cloudinary URLs
+    else if (videoUrl && videoUrl.includes('cloudinary')) {
+      console.log('[BK] Processing Cloudinary video URL');
+      // Extract 10 frames at different timestamps for comprehensive analysis
+      const timestamps = ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0'];
       
       for (const time of timestamps) {
         try {
-          // Cloudinary format: add so_(start_time) to get frame at specific time
-          const frameUrl = videoUrl.replace(/\/upload\//, `/upload/so_${time},w_800,c_scale,q_80,f_jpg/`);
-          frames.push(frameUrl);
+          // Cloudinary transformation to extract frame
+          const frameUrl = videoUrl.replace(/\/upload\//, 
+            `/upload/so_${time},w_800,c_scale,q_80,f_jpg/`);
+          
+          console.log(`[BK] Fetching frame at ${time}: ${frameUrl.substring(0, 80)}...`);
+          
+          // Download frame as buffer and convert to base64
+          const response = await fetch(frameUrl);
+          if (!response.ok) {
+            console.warn(`[BK] Failed to fetch frame at ${time}: ${response.status}`);
+            continue;
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const base64 = buffer.toString('base64');
+          
+          frames.push(`data:image/jpeg;base64,${base64}`);
+          console.log(`[BK] Successfully encoded frame at ${time} (${Math.round(buffer.length/1024)}KB)`);
+          
         } catch (e) {
-          console.log(`[BK] Could not create frame URL for time ${time}`);
+          console.error(`[BK] Error processing frame at ${time}:`, e.message);
         }
       }
     }
+    // Handle direct image URLs
+    else if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
+      console.log('[BK] Processing direct image/video URL');
+      try {
+        const response = await fetch(videoUrl);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const base64 = buffer.toString('base64');
+          const contentType = response.headers.get('content-type') || 'image/jpeg';
+          frames.push(`data:${contentType};base64,${base64}`);
+          console.log(`[BK] Successfully encoded direct URL (${Math.round(buffer.length/1024)}KB)`);
+        }
+      } catch (e) {
+        console.error('[BK] Error fetching direct URL:', e.message);
+      }
+    }
     
+    console.log(`[BK] Frame extraction complete: ${frames.length} frames extracted`);
     return frames.length > 0 ? frames : null;
   } catch (err) {
     console.error('[BK] Error extracting video frames:', err.message);
@@ -425,41 +474,9 @@ app.delete('/api/analyses/:id', auth, (req, res) => {
 /*                     PART 1: TRAINING CLIP ANALYSIS                    */
 /* ==================================================================== */
 
-async function runTextAnalysisForTraining({ profile, user, videoUrl, skill }) {
+async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, skill }) {
   if (!openai) {
-    // Fallback if API key missing
-    const genericSummary =
-      `Quick training analysis for ${profile.position || 'your role'}. ` +
-      'Continue focusing on your technique and decision making.';
-
-    const fallbackDrills = [
-      {
-        title: 'Wall passes with tight touch',
-        url: 'https://www.youtube.com/results?search_query=' +
-             encodeURIComponent('Wall passes with tight touch soccer drill'),
-      },
-      {
-        title: '1v1 change-of-direction drill',
-        url: 'https://www.youtube.com/results?search_query=' +
-             encodeURIComponent('1v1 change of direction soccer drill'),
-      },
-      {
-        title: 'First-touch receiving patterns',
-        url: 'https://www.youtube.com/results?search_query=' +
-             encodeURIComponent('first touch receiving patterns soccer drill'),
-      },
-    ];
-
-    return {
-      summary: genericSummary,
-      focus: [
-        'Technical repetition',
-        'Decision making under light pressure',
-        'Consistent body shape on the ball',
-      ],
-      drills: fallbackDrills,
-      comps: [],
-    };
+    throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
   }
 
   const age      = profile.age ?? user?.age ?? null;
@@ -531,48 +548,48 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
     },
   ];
 
-  // Extract video frames from Cloudinary
-  const frameUrls = await downloadVideoFrames(videoUrl);
-  console.log(`[BK] Video URL: ${videoUrl}`);
-  console.log(`[BK] Frame extraction result:`, frameUrls);
+  // Extract video frames from Cloudinary or local data
+  console.log(`[BK] Starting frame extraction - videoUrl: ${videoUrl ? videoUrl.substring(0, 100) : 'none'}`);
+  const frameUrls = await downloadVideoFrames(videoUrl, videoData);
   
   if (frameUrls && frameUrls.length > 0) {
-    console.log(`[BK] Adding ${frameUrls.length} video frames for analysis`);
-    for (const frameUrl of frameUrls) {
-      console.log(`[BK] Frame URL: ${frameUrl}`);
+    console.log(`[BK] Successfully extracted ${frameUrls.length} frames for vision analysis`);
+    for (let i = 0; i < frameUrls.length; i++) {
+      const framePreview = frameUrls[i].substring(0, 50);
+      console.log(`[BK] Adding frame ${i + 1}: ${framePreview}...`);
       messageContent.push({
         type: 'image_url',
         image_url: {
-          url: frameUrl,
+          url: frameUrls[i],
         },
       });
     }
   } else {
-    console.log('[BK] No video frames extracted - falling back to text only');
-    if (skill && skill.trim()) {
-      messageContent[0].text += `\n\nAdditional context: ${skill}`;
-    }
+    console.warn('[BK] WARNING: No video frames extracted - cannot perform video analysis');
+    throw new Error('Failed to extract video frames. Please ensure video is uploaded correctly or try a different video.');
   }
 
-  console.log(`[BK] Message content count: ${messageContent.length} items`);
+  console.log(`[BK] Sending ${messageContent.length} items to OpenAI (${messageContent.length - 1} frames)`);
   const resp = await openai.chat.completions.create({
-    model: 'gpt-5.1',
+    model: 'gpt-4o',
     temperature: 0.4,
-    max_tokens: 1500,
+    max_tokens: 2000,
     messages: [
       { role: 'system', content: sys },
       { role: 'user',   content: messageContent },
     ],
   }).catch(error => {
-    console.error('[BK] OpenAI error:', error.message);
-    throw error;
+    console.error('[BK] OpenAI API error:', error.message);
+    console.error('[BK] Error details:', error.response?.data || error);
+    throw new Error(`OpenAI API failed: ${error.message}`);
   });
 
+  console.log(`[BK] OpenAI response received - Model: ${resp.model}, Tokens: ${resp.usage?.total_tokens}`);
+  
   const rawContent = resp.choices?.[0]?.message?.content || '{}';
-  const jsonText   =
-    typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+  const jsonText = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
 
-  console.log(`[BK] Raw OpenAI response:`, rawContent);
+  console.log(`[BK] Raw OpenAI response (first 500 chars):`, rawContent.substring(0, 500));
 
   let data = {};
   try {
@@ -580,10 +597,20 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
   } catch {
     // Handle ```json blocks
     const m = jsonText.match(/\{[\s\S]*\}/);
-    if (m) data = JSON.parse(m[0]);
+    if (m) {
+      try {
+        data = JSON.parse(m[0]);
+      } catch (e) {
+        console.error('[BK] Failed to parse extracted JSON');
+        throw new Error('Could not analyze video. The AI did not recognize this as a soccer training video.');
+      }
+    } else {
+      console.error('[BK] No JSON found in response');
+      throw new Error('Could not analyze video. The AI response was: ' + rawContent.substring(0, 200));
+    }
   }
 
-  console.log(`[BK] Parsed analysis data:`, data);
+  console.log(`[BK] Parsed analysis - Activity: ${data.activity}, Drills: ${data.drills?.length || 0}`);
 
   // Normalize drills - create YouTube search URLs from descriptions
   const normalizedDrills = Array.isArray(data.drills)
@@ -597,6 +624,7 @@ Provide coaching feedback based ONLY on what you observe in the frames, not on a
     : [];
 
   return {
+    activity: data.activity || 'Training session',
     summary: data.summary || 'Training analysis complete.',
     focus: Array.isArray(data.focus) ? data.focus.slice(0, 5) : [],
     drills: normalizedDrills,
@@ -611,12 +639,13 @@ app.post('/api/analyze', auth, async (req, res) => {
       height, heightFeet, heightInches,
       weight, foot, position,
       videoUrl, publicId,
+      videoData,  // Base64 video/image data from local photo library
       skill,
     } = req.body || {};
 
-    console.log(`[BK] Analyze request - videoUrl: ${videoUrl}, skill: ${skill}`);
+    console.log(`[BK] Analyze request - videoUrl: ${videoUrl ? 'present' : 'none'}, videoData: ${videoData ? 'present' : 'none'}, skill: ${skill}`);
 
-    if (!videoUrl) {
+    if (!videoUrl && !videoData) {
       return res
         .status(400)
         .json({ ok: false, error: 'Upload a training clip before analyzing.' });
@@ -642,6 +671,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       profile,
       user,
       videoUrl,
+      videoData,
       skill: skill || profile.skill || null,
     });
 
@@ -651,9 +681,11 @@ app.post('/api/analyze', auth, async (req, res) => {
 
     const item = {
       id: uuidv4(),
+      activity:  result.activity,
       summary:   result.summary,
       focus:     result.focus,
       drills:    result.drills,
+      improvements: result.improvements || [],
       comps:     result.comps,
       video_url: videoUrl,
       public_id: publicId || null,
@@ -665,24 +697,28 @@ app.post('/api/analyze', auth, async (req, res) => {
     db.analysesByUser[req.userId].unshift(item);
     saveDB();
 
+    console.log(`[BK] Analysis complete for user ${req.userId} - Activity: ${item.activity}`);
+
     res.json({
       ok: true,
       id: item.id,
+      activity: item.activity,
       summary: item.summary,
       focus: item.focus,
       drills: item.drills,
+      improvements: item.improvements,
       comps: item.comps,
       videoUrl: item.video_url,
       publicId: item.public_id,
       skill: item.skill,
     });
   } catch (e) {
-    console.error('[BK] analyze', e);
+    console.error('[BK] Analysis error:', e);
+    console.error('[BK] Stack trace:', e.stack);
     // More specific error text for the frontend
     res.status(500).json({
       ok: false,
-      error:
-        'Analysis failed on the server. Try again with a shorter clip or try re-uploading.',
+      error: e.message || 'Analysis failed on the server. Try again with a shorter clip or try re-uploading.',
       detail: e.message || String(e),
     });
   }
@@ -696,6 +732,13 @@ app.post("/api/feedback", async (req, res) => {
       return res.status(400).json({
         ok: false,
         error: "Missing playerContext or clipsNotes"
+      });
+    }
+
+    if (!client) {
+      return res.status(400).json({
+        ok: false,
+        error: "OpenAI API key not configured"
       });
     }
 
@@ -758,7 +801,34 @@ Return VALID JSON ONLY with this structure:
   }
 });
 
-/* ---------- Start server ---------- */
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`BallKnowledge backend running on ${PORT}`);
+/* ---------- Global error handlers ---------- */
+process.on('uncaughtException', (error) => {
+  console.error('[BK] Uncaught Exception:', error);
+  console.error('[BK] Stack:', error.stack);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[BK] Unhandled Rejection at:', promise);
+  console.error('[BK] Reason:', reason);
+});
+
+/* ---------- Start server ---------- */
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[BK] ✅ Server running on http://localhost:${PORT}`);
+  console.log(`[BK] OpenAI configured: ${openai ? 'YES' : 'NO'}`);
+  console.log(`[BK] Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[BK] Server is listening and ready for requests`);
+});
+
+server.on('error', (error) => {
+  console.error('[BK] Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`[BK] Port ${PORT} is already in use`);
+    process.exit(1);
+  }
+});
+
+// Keep process alive
+setInterval(() => {
+  // This prevents the process from exiting
+}, 1000000);
