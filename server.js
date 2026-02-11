@@ -143,13 +143,11 @@ async function analyzeGameMetrics(videoUrl, frames, candidateName, position, dur
   const messageContent = [
     {
       type: 'text',
-      text: `IMPORTANT: This is an authorized athletic performance analysis for coaching purposes only. You are analyzing soccer/football match footage to provide technical coaching feedback.
+      text: `You are a professional soccer coach analyzing training footage.
 
-You are a professional soccer match analyst evaluating a player's game performance.
+PLAYER: ${candidateName || 'Unknown'} | POSITION: ${position || 'Unknown'} | DURATION: ${duration || 10} seconds
 
-PLAYER: ${candidateName || 'Unknown'} | POSITION: ${position || 'Unknown'} | MATCH DURATION: ${duration || 10} seconds
-
-CRITICAL: Focus on STATISTICAL METRICS and QUANTIFIABLE ACTIONS.
+Analyze the video frames and provide detailed performance metrics.
 
 ${frames && frames.length > 0 ? 'Analyze the provided video frames and provide detailed performance metrics:' : 'IMPORTANT: No video frames available. Provide a TEMPLATE analysis showing typical metrics for a ' + (position || 'player') + ' in a game situation. Use realistic example numbers and make it clear this is a general assessment template.'}
 
@@ -227,7 +225,7 @@ Return STRICT JSON ONLY with no markdown or extra text:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       temperature: 0.5,
       max_completion_tokens: 8000,
       messages: [
@@ -306,11 +304,11 @@ async function analyzeTraining(videoUrl, frames, candidateName, position, durati
   const messageContent = [
     {
       type: 'text',
-      text: `IMPORTANT: This is an authorized athletic performance analysis for coaching purposes only. You are analyzing soccer/football training footage to provide technical coaching feedback.
+      text: `You are a professional soccer coach analyzing training footage.
 
-You are an elite professional soccer coach analyzing ${candidateName || 'a player'}'s training session.
+PLAYER: ${candidateName || 'Unknown'} | POSITION: ${position || 'Unknown'} | DURATION: ${duration || 10} seconds
 
-PLAYER: ${candidateName || 'Unknown'} | POSITION: ${position || 'Unknown'} | SESSION DURATION: ${duration || 10} seconds
+Analyze the training session and provide detailed technical feedback.
 
 ${frames && frames.length > 0 ? 'CRITICAL ANALYSIS REQUIREMENTS:\nYou are analyzing video frames captured throughout this training session. Study ALL frames sequentially to understand:' : 'IMPORTANT: No video frames available. Provide a COMPREHENSIVE training analysis template with typical skills, improvements, and progressions for a ' + (position || 'player') + '. Make it detailed and actionable even without specific video evidence.'}
 
@@ -542,7 +540,7 @@ Return STRICT JSON ONLY:
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       temperature: 0.3,
       max_completion_tokens: 4000,
       messages: [
