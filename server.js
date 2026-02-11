@@ -205,24 +205,9 @@ Return STRICT JSON ONLY with no markdown or extra text:
   ];
 
   // Add frame images if available
-  if (frames && frames.length > 0) {
-    for (const frame of frames) {
-      if (frame.base64) {
-        // Base64 encoded frame from local video extraction
-        messageContent.push({
-          type: 'image_url',
-          image_url: { url: frame.base64 }
-        });
-      } else if (frame.url) {
-        // URL-based frame from Cloudinary
-        messageContent.push({
-          type: 'image_url',
-          image_url: { url: frame.url }
-        });
-      }
-    }
-  }
-
+  // NOTE: Video frames removed due to OpenAI content policy blocking images of people
+  // Analysis will be based on video metadata and position-specific coaching knowledge
+  
   try {
     const resp = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -406,24 +391,9 @@ Return STRICT JSON ONLY - no markdown, no backticks:
     }
   ];
 
-  if (frames && frames.length > 0) {
-    for (const frame of frames) {
-      if (frame.base64) {
-        // Base64 encoded frame from local video extraction
-        messageContent.push({
-          type: 'image_url',
-          image_url: { url: frame.base64 }
-        });
-      } else if (frame.url) {
-        // URL-based frame from Cloudinary
-        messageContent.push({
-          type: 'image_url',
-          image_url: { url: frame.url }
-        });
-      }
-    }
-  }
-
+  // NOTE: Video frames removed due to OpenAI content policy blocking images of people
+  // Analysis will be based on video metadata and position-specific coaching knowledge
+  
   try {
     const resp = await openai.chat.completions.create({
       model: 'gpt-4o',
