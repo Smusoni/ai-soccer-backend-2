@@ -1120,7 +1120,7 @@
         <!-- Improvement Tips -->
         <div class="card" style="margin:24px 0">
           <h4>💡 Top 4 Improvements (Priority Order)</h4>
-          <ul id="viewImprovementTips" style="line-height:1.8">
+          <ul id="viewImprovementTips" style="padding-left:20px;color:var(--text);margin:0">
             <li>No tips available</li>
           </ul>
         </div>
@@ -1128,7 +1128,7 @@
         <!-- Common Mistakes -->
         <div class="card" style="margin:24px 0">
           <h4>⚠️ Common Mistakes for Your Position</h4>
-          <ul id="viewCommonMistakes" style="line-height:1.8">
+          <ul id="viewCommonMistakes" style="padding-left:20px;color:var(--text);margin:0">
             <li>No mistakes data</li>
           </ul>
         </div>
@@ -1136,17 +1136,13 @@
         <!-- Practice Progression -->
         <div class="card" style="margin:24px 0">
           <h4>📈 Practice Progression</h4>
-          <div id="viewProgressionList" style="display:grid;gap:12px;margin-top:12px">
-            <p>No progression data</p>
-          </div>
+          <div id="viewProgressionList" style="display:flex;flex-direction:column;gap:14px"></div>
         </div>
 
         <!-- YouTube Recommendations -->
         <div class="card" style="margin:24px 0">
-          <h4>📺 YouTube Recommendations</h4>
-          <div id="viewYoutubeList" style="display:grid;gap:12px;margin-top:12px">
-            <p>No video recommendations</p>
-          </div>
+          <h4>🎬 YouTube Videos to Watch</h4>
+          <div id="viewYoutubeList" style="display:flex;flex-direction:column;gap:12px"></div>
         </div>
       </div>
 
@@ -1851,7 +1847,12 @@
         // Practice Progression
         const progression = item.practiceProgression || [];
         $('viewProgressionList').innerHTML = progression.length
-          ? progression.map(p => `<div style="padding:12px;background:rgba(0,255,149,0.05);border-left:3px solid var(--accent);border-radius:8px"><strong>${p.level}</strong><p style="margin:8px 0 0 0;color:var(--text)">${p.drill}</p></div>`).join('')
+          ? progression.map(p => `
+            <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:16px;border-radius:12px">
+              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${p.level}</div>
+              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p.drill}</p>
+            </div>
+          `).join('')
           : '<p>No progression data</p>';
         
         // YouTube Recommendations
