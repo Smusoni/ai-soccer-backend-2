@@ -549,12 +549,14 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
       type: 'text',
       text: `You are an expert soccer training analyst. Analyze this training footage showing a ${age} year old ${position} training.
 
-Analyze whatever soccer training activity is visible in the frames provided. Even if the player appears distant or partially visible, provide your professional analysis based on what you can observe.
+CRITICAL: First, carefully observe and identify the EXACT activity being performed in the frames (e.g., juggling, dribbling through cones, passing drills, shooting practice, etc.). Base your entire analysis on what you ACTUALLY SEE, not what you assume should be there.
+
+Do not make assumptions about equipment or setup that you cannot clearly see. If the player is juggling, analyze juggling. If they're dribbling, analyze dribbling. Accurately identify the activity before analyzing it.
 
 Return ONLY valid JSON (no markdown, no code blocks). Schema:
 {
-  "sessionSummary": "2-3 paragraph professional evaluation",
-  "skillFocus": "Primary skill being trained",
+  "sessionSummary": "2-3 paragraph professional evaluation of what is ACTUALLY being performed",
+  "skillFocus": "Primary skill being trained (accurate to what you observe)",
   "secondarySkills": ["skill 1", "skill 2"],
   "currentLevel": "Beginner | Intermediate | Advanced",
   "technicalAnalysis": {
