@@ -78,6 +78,9 @@ function saveDB(immediate = false) {
 
 loadDB();
 
+/* ---------- Token Blacklist ---------- */
+const tokenBlacklist = new Set();
+
 /* ---------- Helpers ---------- */
 const findUser     = email =>
   db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
@@ -88,8 +91,15 @@ function auth(req, res, next) {
     const h = req.headers.authorization || '';
     const token = h.startsWith('Bearer ') ? h.slice(7) : null;
     if (!token) return res.status(401).json({ ok: false, error: 'Missing token' });
+    
+    // Check if token is blacklisted
+    if (tokenBlacklist.has(token)) {
+      return res.status(401).json({ ok: false, error: 'Token has been invalidated' });
+    }
+    
     const payload = jwt.verify(token, JWT_SECRET);
     req.userId = payload.sub;
+    req.token = token; // Store token for logout
     next();
   } catch {
     res.status(401).json({ ok: false, error: 'Invalid token' });
@@ -309,6 +319,20 @@ app.get('/api/me', auth, (req, res) => {
   const u = findUserById(req.userId);
   if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
   res.json({ ok: true, user: { id: u.id, name: u.name, email: u.email } });
+});
+
+app.post('/api/logout', auth, (req, res) => {
+  try {
+    // Add token to blacklist
+    if (req.token) {
+      tokenBlacklist.add(req.token);
+      console.log('[BK] Token blacklisted for user:', req.userId);
+    }
+    res.json({ ok: true, message: 'Logged out successfully' });
+  } catch (e) {
+    console.error('[BK] logout', e);
+    res.status(500).json({ ok: false, error: 'Server error (logout)' });
+  }
 });
 
 /* ==================================================================== */

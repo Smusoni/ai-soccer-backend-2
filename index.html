@@ -1517,7 +1517,13 @@
     $('splash').style.display='none';
   }
 
-  function doLogout(){
+  async function doLogout(){
+    try {
+      // Call logout endpoint to invalidate token on server
+      await api('/api/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     clearToken();
     try { menuPanel.classList.remove('active'); } catch {}
     document.querySelector('.menu-container').style.display='none';
