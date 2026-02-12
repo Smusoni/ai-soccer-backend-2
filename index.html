@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>Ball Knowledge</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -508,6 +510,7 @@
       h3{font-size:24px}
       .card{padding:24px}
       section.card{margin:20px 0}
+      input, select, textarea{font-size:16px !important}
     }
     
     @media (max-width:480px){
@@ -515,6 +518,19 @@
       h3{font-size:20px}
       .card{padding:20px}
       button{padding:12px 20px;font-size:14px}
+      input, select, textarea{font-size:16px !important}
+    }
+    
+    /* iOS Safari specific fixes */
+    @supports (-webkit-touch-callout: none) {
+      body{-webkit-text-size-adjust:100%}
+      input, select, textarea{-webkit-appearance:none;border-radius:8px}
+      button{-webkit-tap-highlight-color:rgba(0,217,255,0.2)}
+    }
+    
+    /* Prevent zoom on input focus for iPhone */
+    @media screen and (max-width: 768px) {
+      input:focus, select:focus, textarea:focus{font-size:16px !important}
     }
   </style>
 </head>
