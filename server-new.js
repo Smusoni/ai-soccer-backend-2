@@ -1,5 +1,5 @@
 /**
- * SOTA Soccer Coordinator Analysis Platform - PostgreSQL Version
+ * Ball Knowledge Soccer Coordinator Analysis Platform - PostgreSQL Version
  * 
  * AI-powered video analysis tool for soccer talent evaluation.
  * Analyzes game and training footage to generate quantified metrics.
@@ -93,7 +93,7 @@ function auth(req, res, next) {
     req.userId = payload.sub;
     next();
   } catch (e) {
-    console.error('[SOTA] auth error:', e.message);
+    console.error('[Ball Knowledge] auth error:', e.message);
     res.status(401).json({ ok: false, error: 'Invalid token' });
   }
 }
@@ -209,7 +209,7 @@ Return ONLY valid JSON (no markdown, no code blocks). Schema:
 
     return data;
   } catch (error) {
-    console.error('[SOTA] analyzeGameMetrics error:', error.message);
+    console.error('[Ball Knowledge] analyzeGameMetrics error:', error.message);
     throw error;
   }
 }
@@ -287,7 +287,7 @@ Return ONLY valid JSON (no markdown, no code blocks). Schema:
 
     return data;
   } catch (error) {
-    console.error('[SOTA] analyzeTraining error:', error.message);
+    console.error('[Ball Knowledge] analyzeTraining error:', error.message);
     throw error;
   }
 }
@@ -364,7 +364,7 @@ Return ONLY valid JSON (no markdown, no code blocks). Schema:
 
     return data.highlights || [];
   } catch (error) {
-    console.error('[SOTA] Highlight extraction error:', error.message);
+    console.error('[Ball Knowledge] Highlight extraction error:', error.message);
     throw error;
   }
 }
@@ -400,7 +400,7 @@ app.post('/api/test-openai', async (req, res) => {
     const message = resp.choices?.[0]?.message?.content || 'No response';
     res.json({ ok: true, message: message, model: resp.model, usage: resp.usage });
   } catch (error) {
-    console.error('[SOTA] test-openai error:', error.message);
+    console.error('[Ball Knowledge] test-openai error:', error.message);
     res.status(500).json({ ok: false, error: error.message });
   }
 });
@@ -442,7 +442,7 @@ app.post('/api/signup', async (req, res) => {
       user: { id, name: String(name).trim(), email: String(email).trim().toLowerCase() },
     });
   } catch (e) {
-    console.error('[SOTA] signup', e);
+    console.error('[Ball Knowledge] signup', e);
     res.status(500).json({ ok: false, error: 'Server error (signup)' });
   }
 });
@@ -472,7 +472,7 @@ app.post('/api/login', async (req, res) => {
       user: { id: user.id, name: user.email, email: user.email },
     });
   } catch (e) {
-    console.error('[SOTA] login', e);
+    console.error('[Ball Knowledge] login', e);
     res.status(500).json({ ok: false, error: 'Server error (login)' });
   }
 });
@@ -483,7 +483,7 @@ app.get('/api/me', auth, async (req, res) => {
     if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
     res.json({ ok: true, user: { id: u.id, name: u.email, email: u.email } });
   } catch (e) {
-    console.error('[SOTA] /api/me error:', e);
+    console.error('[Ball Knowledge] /api/me error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -513,7 +513,7 @@ app.post('/api/coordinator', auth, async (req, res) => {
       profile: { coordinatorName, organization, role, updatedAt: Date.now() }
     });
   } catch (e) {
-    console.error('[SOTA] coordinator profile error:', e);
+    console.error('[Ball Knowledge] coordinator profile error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -528,7 +528,7 @@ app.get('/api/coordinator', auth, async (req, res) => {
     const profile = result.rows[0] || {};
     res.json({ ok: true, profile });
   } catch (e) {
-    console.error('[SOTA] get coordinator error:', e);
+    console.error('[Ball Knowledge] get coordinator error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -567,7 +567,7 @@ app.post('/api/candidate', auth, async (req, res) => {
       candidate: { candidateName, position, age, height, weight, foot, jerseyNumber, updatedAt: Date.now() }
     });
   } catch (e) {
-    console.error('[SOTA] candidate profile error:', e);
+    console.error('[Ball Knowledge] candidate profile error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -582,7 +582,7 @@ app.get('/api/candidate', auth, async (req, res) => {
     const candidate = result.rows[0] || {};
     res.json({ ok: true, candidate });
   } catch (e) {
-    console.error('[SOTA] get candidate error:', e);
+    console.error('[Ball Knowledge] get candidate error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -611,7 +611,7 @@ app.get('/api/profile', auth, async (req, res) => {
       candidate: candidateResult.rows[0] || {}
     });
   } catch (e) {
-    console.error('[SOTA] get profile error:', e);
+    console.error('[Ball Knowledge] get profile error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -679,7 +679,7 @@ app.post('/api/profile', auth, async (req, res) => {
       candidate: candidateResult.rows[0] || {}
     });
   } catch (e) {
-    console.error('[SOTA] update profile error:', e);
+    console.error('[Ball Knowledge] update profile error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -800,7 +800,7 @@ app.get('/api/analyses', auth, async (req, res) => {
     
     res.json({ ok: true, analyses, items: analyses });
   } catch (e) {
-    console.error('[SOTA] get analyses error:', e);
+    console.error('[Ball Knowledge] get analyses error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -848,7 +848,7 @@ app.get('/api/analyses/:id', auth, async (req, res) => {
       playerGrade: item.analysis?.playerGrade
     });
   } catch (e) {
-    console.error('[SOTA] get analysis by id error:', e);
+    console.error('[Ball Knowledge] get analysis by id error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -866,7 +866,7 @@ app.delete('/api/analyses/:id', auth, async (req, res) => {
     
     res.json({ ok: true });
   } catch (e) {
-    console.error('[SOTA] delete analysis error:', e);
+    console.error('[Ball Knowledge] delete analysis error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -929,7 +929,7 @@ app.get('/api/analytics/dashboard', async (req, res) => {
       }
     });
   } catch (e) {
-    console.error('[SOTA] dashboard analytics error:', e);
+    console.error('[Ball Knowledge] dashboard analytics error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -1030,7 +1030,7 @@ app.get('/api/analytics/user', async (req, res) => {
       recentAnalyses
     });
   } catch (e) {
-    console.error('[SOTA] user analytics error:', e);
+    console.error('[Ball Knowledge] user analytics error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
@@ -1057,7 +1057,7 @@ app.post('/api/analytics/event', async (req, res) => {
     
     res.json({ ok: true });
   } catch (e) {
-    console.error('[SOTA] analytics event error:', e);
+    console.error('[Ball Knowledge] analytics event error:', e);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

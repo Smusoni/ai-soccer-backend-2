@@ -1,4 +1,4 @@
-# 🎯 SOTA Y Combinator Package Complete
+# 🎯 Ball Knowledge Y Combinator Package Complete
 
 **Status**: ✅ Ready for Y Combinator Application
 
@@ -18,7 +18,7 @@
    - Traction & social proof section
    - 18-month financial projections
    - Team composition and the ask
-   - Why invest in SOTA section
+   - Why invest in Ball Knowledge section
    - Demo walkthrough
 
 3. **[PITCH.md](PITCH.md)** (3-Minute Investor Pitch)
@@ -27,7 +27,7 @@
    - Problem → Solution → Market → Timing
    - Go-to-market strategy (3 phases)
    - Unit economics table
-   - Why SOTA wins
+   - Why Ball Knowledge wins
 
 4. **[INVESTOR_SUMMARY.md](INVESTOR_SUMMARY.md)** (One-Page Overview)
    - Concise for busy investors
@@ -84,7 +84,7 @@ The following are pre-prepared for use:
 - Logo files (ball-knowledge-high-resolution-logo.png, favicon)
 - PWA manifest (site.webmanifest)
 - .env.example (configuration template)
-- server.js (SOTA backend, deployed ✅)
+- server.js (Ball Knowledge backend, deployed ✅)
 - index.html (frontend UI, in progress ⏳)
 
 ---
@@ -118,7 +118,7 @@ The following are pre-prepared for use:
 ### 📊 For Fundraising (Use These)
 
 - **Investor meeting**: [INVESTOR_SUMMARY.md](INVESTOR_SUMMARY.md) + demo
-- **Financial deep-dive**: [YC_APPLICATION.md](YC_APPLICATION.md#why-invest-in-sota)
+- **Financial deep-dive**: [YC_APPLICATION.md](YC_APPLICATION.md#why-invest-in-ball-knowledge)
 - **Market analysis**: [PITCH.md](PITCH.md#market-opportunity) + [YC_APPLICATION.md](YC_APPLICATION.md#market-opportunity)
 - **Unit economics**: [PITCH.md](PITCH.md#unit-economics) + [INVESTOR_SUMMARY.md](INVESTOR_SUMMARY.md#business-model)
 - **Go-to-market**: [PITCH.md](PITCH.md#go-to-market) + [YC_APPLICATION.md](YC_APPLICATION.md#go-to-market)
@@ -201,7 +201,7 @@ The following are pre-prepared for use:
 ### Code Files (3 files)
 | File | Status | Ready? |
 |------|--------|--------|
-| server.js | SOTA backend deployed | ✅ Yes |
+| server.js | Ball Knowledge backend deployed | ✅ Yes |
 | index.html | Frontend UI | ⏳ In progress |
 | package.json | Dependencies | ✅ Yes |
 
@@ -291,7 +291,7 @@ The following are pre-prepared for use:
 
 ### TL;DR
 
-**Company**: SOTA (AI-powered soccer talent evaluation)
+**Company**: Ball Knowledge (AI-powered soccer talent evaluation)
 **Problem**: Coordinators spend 30+ hours per candidate; existing solutions cost $5K-15K/month
 **Solution**: Upload video → 90-second AI analysis with quantified metrics (game & training modes)
 **Market**: $500M TAM, 1,200+ professional clubs
@@ -348,13 +348,13 @@ The following are pre-prepared for use:
 
 ---
 
-## The Philosophy Behind SOTA
+## The Philosophy Behind Ball Knowledge
 
 Soccer is the world's most popular sport. Yet talent evaluation—a $500M annual market—is completely subjective. No data. No benchmarks. Just gut feeling.
 
 We're fixing that with AI.
 
-In 5 years, SOTA is the standard. Every club evaluates talent with data. The game becomes more meritocratic. Better players get opportunities. That's the vision.
+In 5 years, Ball Knowledge is the standard. Every club evaluates talent with data. The game becomes more meritocratic. Better players get opportunities. That's the vision.
 
 But first, we need to raise $500K, land 50 customers, and prove this is a $1B+ company.
 

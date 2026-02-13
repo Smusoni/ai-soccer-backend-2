@@ -1,4 +1,4 @@
-# SOTA Deployment Guide
+# Ball Knowledge Deployment Guide
 
 Quick start for evaluators, investors, and judges.
 
@@ -220,7 +220,7 @@ heroku logs --tail
 # Use PM2 process manager
 npm install -g pm2
 
-pm2 start server.js --name "sota-api"
+pm2 start server.js --name "ball-knowledge-api"
 pm2 save
 pm2 startup
 
@@ -320,4 +320,4 @@ For issues or questions:
 
 ---
 
-**Deploy and demo SOTA in 5 minutes.** ✨
+**Deploy and demo Ball Knowledge in 5 minutes.** ✨

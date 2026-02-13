@@ -1,6 +1,6 @@
 # Y Combinator Readiness Checklist
 
-Use this checklist to ensure SOTA is fully prepared for YC application and demo.
+Use this checklist to ensure Ball Knowledge is fully prepared for YC application and demo.
 
 ## Documentation ✅
 
@@ -110,7 +110,7 @@ Use this checklist to ensure SOTA is fully prepared for YC application and demo.
 - [ ] Code repository clean and organized
 - [ ] No third-party IP violations
 - [ ] Proprietary metric framework documented
-- [ ] Trademark "SOTA" availability checked
+- [ ] Trademark "Ball Knowledge" availability checked
 - [ ] GitHub public if open source
 
 ### Compliance
@@ -149,8 +149,8 @@ Use this checklist to ensure SOTA is fully prepared for YC application and demo.
 - [ ] **Founder Bio**: 1 paragraph per founder
 - [ ] **Company Description**: 1-2 paragraphs (problem + solution)
 - [ ] **Product Demo**: Link to working MVP (or video)
-- [ ] **Why YC?**: Why YC is right for SOTA
-- [ ] **Competition**: How SOTA wins vs. Wyscout, InStat, etc.
+- [ ] **Why YC?**: Why YC is right for Ball Knowledge
+- [ ] **Competition**: How Ball Knowledge wins vs. Wyscout, InStat, etc.
 - [ ] **Ask**: Exactly what you need ($500K seed)
 
 ### Interview Prep

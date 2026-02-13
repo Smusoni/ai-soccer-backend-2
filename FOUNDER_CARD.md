@@ -1,4 +1,4 @@
-# SOTA Founder Quick Reference
+# Ball Knowledge Founder Quick Reference
 
 **Keep this card handy during YC interviews, demos, and investor meetings.**
 
@@ -6,13 +6,13 @@
 
 ## The Pitch (30 Seconds)
 
-> SOTA uses AI to replace 30+ hours of manual soccer talent evaluation with 90-second quantified metrics. Upload a game or training video, get instant analysis on passing, first touch, game awareness, and defensive play. We're building Moneyball-for-soccer for the 1,200+ professional clubs globally who spend $500M annually on talent decisions.
+> Ball Knowledge uses AI to replace 30+ hours of manual soccer talent evaluation with 90-second quantified metrics. Upload a game or training video, get instant analysis on passing, first touch, game awareness, and defensive play. We're building Moneyball-for-soccer for the 1,200+ professional clubs globally who spend $500M annually on talent decisions.
 
 ---
 
 ## The Problem (60 Seconds)
 
-**Before SOTA:**
+**Before Ball Knowledge:**
 - Scouts spend 30-60 hours per candidate reviewing footage manually
 - Talent decisions are made on gut feeling, not data
 - Existing solutions cost $5K-15K/month (only elite clubs)
@@ -113,7 +113,7 @@
 
 **"Isn't Wyscout/Hudl already doing this?"**
 
-> Wyscout and Hudl are expensive manual tools designed for coaches, not scouts. They don't use AI for analysis, they require manual tagging, and they cost $5-15K/month. SOTA is AI-first, coordinator-focused, and 10x cheaper. We're different category.
+> Wyscout and Hudl are expensive manual tools designed for coaches, not scouts. They don't use AI for analysis, they require manual tagging, and they cost $5-15K/month. Ball Knowledge is AI-first, coordinator-focused, and 10x cheaper. We're different category.
 
 **"Why will coordinators switch from Wyscout?"**
 
@@ -132,7 +132,7 @@
 ## Demo Script (2 Minutes)
 
 **Setup (30 seconds):**
-> "I'm going to show you SOTA's core flow. We have a coordinator signed up here. She already has a candidate profile set up—Alex Johnson, midfielder at an academy."
+> "I'm going to show you Ball Knowledge's core flow. We have a coordinator signed up here. She already has a candidate profile set up—Alex Johnson, midfielder at an academy."
 
 **Demo (90 seconds):**
 1. "I'm uploading a 2-minute training video"
@@ -143,7 +143,7 @@
 6. "That's the full product. From upload to results in 90 seconds."
 
 **Close (30 seconds):**
-> "What takes a scout 30 hours to do manually, SOTA does in 90 seconds with perfect objectivity. At $299/month, we're 20x cheaper than Wyscout. And 1,200+ professional clubs all need this. That's our market."
+> "What takes a scout 30 hours to do manually, Ball Knowledge does in 90 seconds with perfect objectivity. At $299/month, we're 20x cheaper than Wyscout. And 1,200+ professional clubs all need this. That's our market."
 
 ---
 
@@ -153,7 +153,7 @@
 
 1. "Have you seen other AI-first sports analysis companies? What happened to them?"
 2. "Do you think the international markets (Europe, Latin America) are realistic for expansion?"
-3. "What would success look like for SOTA in Year 1 from your perspective?"
+3. "What would success look like for Ball Knowledge in Year 1 from your perspective?"
 4. "Are there other portfolio companies we could partner with?"
 5. "What's your experience with sports tech investments?"
 
@@ -213,7 +213,7 @@
 
 ## The Big Vision (If Asked)
 
-> "In 5 years, SOTA is the standard for talent evaluation globally. Every club from professional to semi-pro uses us. We've expanded to other sports—basketball, American football, etc. Maybe we're acquired by a major sports media company or become an IPO. But first, we dominate soccer."
+> "In 5 years, Ball Knowledge is the standard for talent evaluation globally. Every club from professional to semi-pro uses us. We've expanded to other sports—basketball, American football, etc. Maybe we're acquired by a major sports media company or become an IPO. But first, we dominate soccer."
 
 ---
 
