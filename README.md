@@ -1,4 +1,4 @@
-# SOTA: AI-Powered Soccer Video Analysis Platform
+# Ball Knowledge: AI-Powered Soccer Video Analysis Platform
 
 *For Y Combinator*
 
@@ -16,7 +16,7 @@ Current solutions:
 
 ## The Solution
 
-**SOTA** delivers AI-powered candidate evaluation in 90 seconds, with quantified metrics that replace hours of manual work.
+**Ball Knowledge** delivers AI-powered candidate evaluation in 90 seconds, with quantified metrics that replace hours of manual work.
 
 One coordinator. One candidate. Deep dive analysis with GPT-4o vision.
 
@@ -182,7 +182,7 @@ Stored in Coordinator's Library
 
 #### Per-Analysis (Secondary)
 - $5-15 per analysis for trial users
-- $0.10 cost to SOTA per analysis (95% margin)
+- $0.10 cost to Ball Knowledge per analysis (95% margin)
 
 ### Unit Economics
 
@@ -272,7 +272,7 @@ export PORT=3001
 export NODE_ENV=production
 
 # Start with process manager (PM2)
-pm2 start server.js --name "sota-api"
+pm2 start server.js --name "ball-knowledge-api"
 ```
 
 ### Scaling Considerations
