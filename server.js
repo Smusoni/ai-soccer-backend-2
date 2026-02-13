@@ -476,6 +476,7 @@ app.post('/api/clip', auth, (req, res) => {
 app.get('/api/analyses', auth, (req, res) => {
   const items = (db.analysesByUser[req.userId] || []).map(item => ({
     id: item.id,
+    candidateName: item.candidateName || db.profiles[req.userId]?.name || findUserById(req.userId)?.name || "Player",
     videoUrl: item.video_url,
     publicId: item.public_id,
     skill: item.skill,
@@ -501,6 +502,7 @@ app.get('/api/analyses/:id', auth, (req, res) => {
   res.json({
     ok: true,
     id: item.id,
+    candidateName: item.candidateName || db.profiles[req.userId]?.name || findUserById(req.userId)?.name || "Player",
     videoUrl: item.video_url,
     publicId: item.public_id,
     skill: item.skill,
@@ -698,8 +700,10 @@ app.post('/api/analyze', auth, async (req, res) => {
       db.analysesByUser[req.userId] = [];
     }
 
+    const candidateName = profile.name?.trim() || user?.name?.trim() || "Player";
     const item = {
       id: uuidv4(),
+      candidateName,
       skillFocus: result.skillFocus,
       secondarySkills: result.secondarySkills,
       sessionSummary: result.sessionSummary,
