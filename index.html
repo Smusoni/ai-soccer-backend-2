@@ -680,12 +680,12 @@
     <div class="card">
       <h4>What are you analyzing?</h4>
       <div class="row" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="radio" id="videoType_game" name="videoType" value="game" checked style="width:auto;flex:none" onchange="updateFormFields()">
-          <span><strong>Game Video</strong> - Official match footage</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;opacity:0.5;pointer-events:none">
+          <input type="radio" id="videoType_game" name="videoType" value="game" disabled style="width:auto;flex:none" onchange="updateFormFields()">
+          <span><strong>Game Video</strong> - Official match footage <span style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px">COMING SOON</span></span>
         </label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="radio" id="videoType_training" name="videoType" value="training" style="width:auto;flex:none" onchange="updateFormFields()">
+          <input type="radio" id="videoType_training" name="videoType" value="training" checked style="width:auto;flex:none" onchange="updateFormFields()">
           <span><strong>Training Video</strong> - Drills & skill work</span>
         </label>
       </div>
