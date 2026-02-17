@@ -23,6 +23,7 @@
     "multer": "^2.0.2",
     "pg": "^8.11.3",
     "resend": "^6.9.2",
+    "stripe": "^20.3.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

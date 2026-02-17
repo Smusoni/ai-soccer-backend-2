@@ -818,6 +818,11 @@
     </div>
 
     <!-- Analyze Button -->
+    <div id="freeCounter" class="hide" style="margin-top:12px;text-align:center">
+      <span style="background:linear-gradient(135deg,rgba(0,255,149,0.1),rgba(25,211,255,0.1));border:1px solid var(--line);padding:6px 14px;border-radius:8px;font-size:13px;color:var(--muted)">
+        <span id="freeCounterText">2 of 2 free analyses remaining</span>
+      </span>
+    </div>
     <div class="row" style="margin-top:16px">
       <button id="analyzeBtn" class="block-btn" style="flex:1">Get Feedback</button>
       <span id="analyzeStatus" class="muted" style="flex:1;margin-left:12px"></span>
@@ -1519,6 +1524,7 @@
     setHash('analysis');
     goTo('analysis');
     $('splash').style.display='none';
+    loadSubscriptionStatus();
   }
 
   async function doLogout(){
@@ -1554,6 +1560,52 @@
       hide(gameFields);
       show(trainingFields);
     }
+  }
+
+  async function loadSubscriptionStatus() {
+    try {
+      const res = await api('/api/subscription-status');
+      if (!res.ok) return;
+      const counter = $('freeCounter');
+      const text = $('freeCounterText');
+      if (res.plan === 'pro') {
+        counter.classList.add('hide');
+      } else {
+        counter.classList.remove('hide');
+        text.textContent = res.remaining > 0 
+          ? `${res.remaining} of ${res.limit} free analyses remaining`
+          : 'No free analyses remaining — upgrade to continue';
+      }
+    } catch(e) { /* ignore */ }
+  }
+
+  async function startCheckout() {
+    const btn = $('upgradeBtn');
+    btn.textContent = 'Redirecting to Stripe…';
+    btn.disabled = true;
+    try {
+      const res = await api('/api/create-checkout-session', { method: 'POST' });
+      if (res.ok && res.url) {
+        window.location.href = res.url;
+      } else {
+        alert(res.error || 'Failed to start checkout');
+        btn.textContent = 'Upgrade Now';
+        btn.disabled = false;
+      }
+    } catch(e) {
+      alert('Error: ' + e.message);
+      btn.textContent = 'Upgrade Now';
+      btn.disabled = false;
+    }
+  }
+
+  // Check for upgrade success from Stripe redirect
+  if (window.location.search.includes('upgrade=success')) {
+    setTimeout(() => {
+      alert('Welcome to Ball Knowledge Pro! You now have unlimited analyses.');
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+      loadSubscriptionStatus();
+    }, 500);
   }
 
   async function doAnalyze(){
@@ -1633,6 +1685,11 @@
       const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
 
       if (!out.ok){
+        if (out.error === 'limit_reached') {
+          $('analyzeStatus').textContent = '';
+          $('paywallModal').style.display = 'flex';
+          return;
+        }
         $('analyzeStatus').textContent = out.error || 'Analysis failed';
         $('analyzeStatus').className = 'err';
         return;
@@ -1761,6 +1818,7 @@
       $('analyzeStatus').textContent = 'Done ✅';
       $('analyzeStatus').className = 'ok';
       $('results').scrollIntoView({behavior:'smooth',block:'start'});
+      loadSubscriptionStatus();
     }catch(e){
       console.error(e);
       $('analyzeStatus').textContent = 'Error: ' + e.message;
@@ -2223,5 +2281,28 @@
     }
   });
   </script>
+
+  <!-- Paywall Modal -->
+  <div id="paywallModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:none;align-items:center;justify-content:center">
+    <div style="background:var(--card);border:1.5px solid var(--line);border-radius:20px;max-width:440px;width:90%;padding:40px;text-align:center;position:relative">
+      <button onclick="$('paywallModal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">&times;</button>
+      <div style="font-size:48px;margin-bottom:16px">⚡</div>
+      <h2 style="margin:0 0 8px;color:var(--text)">Upgrade to Pro</h2>
+      <p style="color:var(--muted);margin:0 0 20px;font-size:15px">You've used your <strong style="color:var(--accent)">2 free analyses</strong></p>
+      <div style="background:linear-gradient(135deg,rgba(0,255,149,0.1),rgba(25,211,255,0.1));border:1.5px solid var(--accent);border-radius:14px;padding:20px;margin-bottom:24px">
+        <div style="font-size:32px;font-weight:800;color:var(--accent)">$10<span style="font-size:16px;font-weight:400;color:var(--muted)">/month</span></div>
+        <p style="margin:12px 0 0;color:var(--text);font-size:14px;line-height:1.6">
+          Unlimited AI training analysis<br>
+          Full video coaching reports<br>
+          Priority processing
+        </p>
+      </div>
+      <button id="upgradeBtn" onclick="startCheckout()" style="width:100%;padding:14px;font-size:16px;font-weight:700;background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;border:none;border-radius:12px;cursor:pointer">
+        Upgrade Now
+      </button>
+      <p style="color:var(--muted);font-size:12px;margin:12px 0 0">Cancel anytime. Powered by Stripe.</p>
+    </div>
+  </div>
+
 </body>
 </html>

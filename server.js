@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Resend } from 'resend';
+import Stripe from 'stripe';
 import { GoogleAIFileManager } from '@google/generative-ai/server';
 import os from 'os';
 import https from 'https';
@@ -21,6 +22,12 @@ const JWT_SECRET  = process.env.JWT_SECRET || 'dev_secret_change_me';
 const GEMINI_KEY  = process.env.GEMINI_API_KEY || '';
 const RESEND_KEY  = process.env.RESEND_API_KEY || '';
 const resend      = RESEND_KEY ? new Resend(RESEND_KEY) : null;
+const STRIPE_SECRET    = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_PUB_KEY   = process.env.STRIPE_PUBLISHABLE_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const STRIPE_LOOKUP_KEY = 'Training_Video_Analysis_-293c440';
+const FREE_ANALYSIS_LIMIT = 2;
+const stripe = STRIPE_SECRET ? new Stripe(STRIPE_SECRET) : null;
 const APP_ORIGINS = (process.env.APP_ORIGINS ||
   'https://smusoni.github.io,http://localhost:8080')
   .split(',')
@@ -36,6 +43,55 @@ const __dirname  = path.dirname(__filename);
 const app = express();
 
 app.use(cors({ origin: APP_ORIGINS }));
+
+// Stripe webhook needs raw body - must be before express.json()
+app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) return res.status(400).send('Stripe not configured');
+  
+  let event;
+  try {
+    if (STRIPE_WEBHOOK_SECRET) {
+      const sig = req.headers['stripe-signature'];
+      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    } else {
+      event = JSON.parse(req.body.toString());
+    }
+  } catch (err) {
+    console.error('[BK] Stripe webhook signature failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  console.log(`[BK] Stripe event: ${event.type}`);
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const userId = session.metadata?.userId;
+    const customerId = session.customer;
+    if (userId) {
+      const user = db.users.find(u => u.id === userId);
+      if (user) {
+        user.subscriptionStatus = 'active';
+        user.stripeCustomerId = customerId;
+        saveDB();
+        console.log(`[BK] User ${userId} subscription activated`);
+      }
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    const customerId = sub.customer;
+    const user = db.users.find(u => u.stripeCustomerId === customerId);
+    if (user) {
+      user.subscriptionStatus = 'cancelled';
+      saveDB();
+      console.log(`[BK] User ${user.id} subscription cancelled`);
+    }
+  }
+
+  res.json({ received: true });
+});
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static('.'));
 
@@ -656,8 +712,100 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
   };
 }
 
+/* ==================================================================== */
+/*                          SUBSCRIPTION / PAYWALL                      */
+/* ==================================================================== */
+
+app.get('/api/subscription-status', auth, (req, res) => {
+  const currentUser = db.users.find(u => u.id === req.userId);
+  const analysisCount = (db.analysesByUser[req.userId] || []).length;
+  const subStatus = currentUser?.subscriptionStatus || 'free';
+  const canAnalyze = analysisCount < FREE_ANALYSIS_LIMIT || subStatus === 'active';
+
+  res.json({
+    ok: true,
+    plan: subStatus === 'active' ? 'pro' : 'free',
+    analysisCount,
+    limit: FREE_ANALYSIS_LIMIT,
+    remaining: subStatus === 'active' ? 'unlimited' : Math.max(0, FREE_ANALYSIS_LIMIT - analysisCount),
+    canAnalyze,
+  });
+});
+
+app.post('/api/create-checkout-session', auth, async (req, res) => {
+  if (!stripe) {
+    return res.status(400).json({ ok: false, error: 'Stripe not configured' });
+  }
+  try {
+    const currentUser = db.users.find(u => u.id === req.userId);
+    const appUrl = `${req.protocol}://${req.get('host')}`;
+
+    // Look up the price by lookup key
+    const prices = await stripe.prices.list({ lookup_keys: [STRIPE_LOOKUP_KEY], limit: 1 });
+    if (!prices.data.length) {
+      return res.status(400).json({ ok: false, error: 'Price not found in Stripe' });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: prices.data[0].id, quantity: 1 }],
+      metadata: { userId: req.userId },
+      customer_email: currentUser?.email,
+      success_url: `${appUrl}?session_id={CHECKOUT_SESSION_ID}&upgrade=success#/analyze`,
+      cancel_url: `${appUrl}?upgrade=cancelled#/analyze`,
+    });
+
+    res.json({ ok: true, url: session.url });
+  } catch (e) {
+    console.error('[BK] Stripe checkout error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to create checkout session' });
+  }
+});
+
+app.post('/api/manage-subscription', auth, async (req, res) => {
+  if (!stripe) {
+    return res.status(400).json({ ok: false, error: 'Stripe not configured' });
+  }
+  try {
+    const currentUser = db.users.find(u => u.id === req.userId);
+    if (!currentUser?.stripeCustomerId) {
+      return res.status(400).json({ ok: false, error: 'No active subscription' });
+    }
+    const appUrl = `${req.protocol}://${req.get('host')}`;
+    const session = await stripe.billingPortal.sessions.create({
+      customer: currentUser.stripeCustomerId,
+      return_url: `${appUrl}#/account`,
+    });
+    res.json({ ok: true, url: session.url });
+  } catch (e) {
+    console.error('[BK] Stripe portal error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to open billing portal' });
+  }
+});
+
+/* ==================================================================== */
+/*                     TRAINING ANALYSIS                                */
+/* ==================================================================== */
+
 app.post('/api/analyze', auth, async (req, res) => {
   try {
+    // --- Paywall check ---
+    const currentUser = db.users.find(u => u.id === req.userId);
+    const analysisCount = (db.analysesByUser[req.userId] || []).length;
+    const subStatus = currentUser?.subscriptionStatus || 'free';
+    
+    if (analysisCount >= FREE_ANALYSIS_LIMIT && subStatus !== 'active') {
+      return res.status(403).json({ 
+        ok: false, 
+        error: 'limit_reached',
+        analysisCount,
+        limit: FREE_ANALYSIS_LIMIT,
+        message: `You've used your ${FREE_ANALYSIS_LIMIT} free analyses. Upgrade to Ball Knowledge Pro for unlimited analysis.`
+      });
+    }
+    // --- End paywall check ---
+
     const {
       height, heightFeet, heightInches,
       weight, foot, position,
