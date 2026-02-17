@@ -7,7 +7,9 @@ import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleAIFileManager } from '@google/generative-ai/server';
+import os from 'os';
 import https from 'https';
 import dotenv from 'dotenv';
 
@@ -15,7 +17,7 @@ dotenv.config();
 
 /* ---------- ENV + constants ---------- */
 const JWT_SECRET  = process.env.JWT_SECRET || 'dev_secret_change_me';
-const OPENAI_KEY  = process.env.OPENAI_API_KEY || '';
+const GEMINI_KEY  = process.env.GEMINI_API_KEY || '';
 const APP_ORIGINS = (process.env.APP_ORIGINS ||
   'https://smusoni.github.io,http://localhost:8080')
   .split(',')
@@ -106,85 +108,67 @@ function auth(req, res, next) {
   }
 }
 
-/* ---------- OpenAI client ---------- */
-const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null;
-const client = openai; // Reuse same client instance
+/* ---------- Gemini AI client ---------- */
+const genAI       = GEMINI_KEY ? new GoogleGenerativeAI(GEMINI_KEY) : null;
+const fileManager = GEMINI_KEY ? new GoogleAIFileManager(GEMINI_KEY) : null;
 
-/* ---------- Video Frame Extraction ---------- */
-async function downloadVideoFrames(videoUrl, videoData = null) {
+/* ---------- Video helpers for Gemini ---------- */
+function detectMimeType(url) {
+  if (url.match(/\.mov(\?|$)/i))  return 'video/mov';
+  if (url.match(/\.webm(\?|$)/i)) return 'video/webm';
+  if (url.match(/\.avi(\?|$)/i))  return 'video/avi';
+  return 'video/mp4';
+}
+
+async function uploadVideoToGemini(videoUrl, videoData) {
+  const tmpPath = path.join(os.tmpdir(), `bk-${Date.now()}.mp4`);
+  let mimeType = 'video/mp4';
+
   try {
-    const frames = [];
-    
-    // Handle base64 video data from local photo library
-    if (videoData && (videoData.startsWith('data:video/') || videoData.startsWith('data:image/'))) {
-      console.log('[BK] Processing local video/image data');
-      // If it's already an image, use it directly
-      if (videoData.startsWith('data:image/')) {
-        frames.push(videoData);
-        console.log('[BK] Using provided image frame directly');
-      } else {
-        // For video data, we'd need a video processing library
-        // For now, log a warning - frontend should extract frames
-        console.warn('[BK] Base64 video data provided but frame extraction not implemented');
-        console.warn('[BK] Frontend should extract frames before sending to backend');
-      }
+    if (videoData && videoData.startsWith('data:video/')) {
+      // Base64 video from local upload
+      const match = videoData.match(/^data:(video\/[^;]+);base64,(.+)$/);
+      if (!match) throw new Error('Invalid base64 video data');
+      mimeType = match[1];
+      fs.writeFileSync(tmpPath, Buffer.from(match[2], 'base64'));
+      console.log(`[BK] Wrote local video to temp file (${mimeType})`);
+    } else if (videoUrl) {
+      // Download from URL (Cloudinary or direct)
+      mimeType = detectMimeType(videoUrl);
+      console.log(`[BK] Downloading video from URL (${mimeType})...`);
+      const resp = await fetch(videoUrl);
+      if (!resp.ok) throw new Error(`Failed to download video: ${resp.status}`);
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      fs.writeFileSync(tmpPath, buffer);
+      console.log(`[BK] Downloaded video: ${Math.round(buffer.length / 1024)}KB`);
+    } else {
+      throw new Error('No video URL or data provided');
     }
-    // Handle Cloudinary URLs
-    else if (videoUrl && videoUrl.includes('cloudinary')) {
-      console.log('[BK] Processing Cloudinary video URL');
-      // Extract 10 frames at different timestamps for comprehensive analysis
-      const timestamps = ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0'];
-      
-      for (const time of timestamps) {
-        try {
-          // Cloudinary transformation to extract frame
-          const frameUrl = videoUrl.replace(/\/upload\//, 
-            `/upload/so_${time},w_800,c_scale,q_80,f_jpg/`);
-          
-          console.log(`[BK] Fetching frame at ${time}: ${frameUrl.substring(0, 80)}...`);
-          
-          // Download frame as buffer and convert to base64
-          const response = await fetch(frameUrl);
-          if (!response.ok) {
-            console.warn(`[BK] Failed to fetch frame at ${time}: ${response.status}`);
-            continue;
-          }
-          
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const base64 = buffer.toString('base64');
-          
-          frames.push(`data:image/jpeg;base64,${base64}`);
-          console.log(`[BK] Successfully encoded frame at ${time} (${Math.round(buffer.length/1024)}KB)`);
-          
-        } catch (e) {
-          console.error(`[BK] Error processing frame at ${time}:`, e.message);
-        }
-      }
+
+    // Upload to Gemini File API
+    console.log('[BK] Uploading video to Gemini...');
+    const uploadResult = await fileManager.uploadFile(tmpPath, {
+      mimeType,
+      displayName: `training-${Date.now()}`,
+    });
+
+    // Wait for Gemini to finish processing the video
+    let file = uploadResult.file;
+    console.log(`[BK] Gemini file state: ${file.state}`);
+    while (file.state === 'PROCESSING') {
+      await new Promise(r => setTimeout(r, 2000));
+      file = await fileManager.getFile(file.name);
+      console.log(`[BK] Gemini file state: ${file.state}`);
     }
-    // Handle direct image URLs
-    else if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
-      console.log('[BK] Processing direct image/video URL');
-      try {
-        const response = await fetch(videoUrl);
-        if (response.ok) {
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const base64 = buffer.toString('base64');
-          const contentType = response.headers.get('content-type') || 'image/jpeg';
-          frames.push(`data:${contentType};base64,${base64}`);
-          console.log(`[BK] Successfully encoded direct URL (${Math.round(buffer.length/1024)}KB)`);
-        }
-      } catch (e) {
-        console.error('[BK] Error fetching direct URL:', e.message);
-      }
+    if (file.state === 'FAILED') {
+      throw new Error('Gemini could not process the video file.');
     }
-    
-    console.log(`[BK] Frame extraction complete: ${frames.length} frames extracted`);
-    return frames.length > 0 ? frames : null;
-  } catch (err) {
-    console.error('[BK] Error extracting video frames:', err.message);
-    return null;
+
+    console.log(`[BK] Video ready: ${file.uri}`);
+    return file;
+  } finally {
+    // Clean up temp file
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
   }
 }
 
@@ -197,44 +181,18 @@ app.get('/api/test', (_req, res) =>
   res.json({ ok: true, message: 'Test route working!', timestamp: new Date().toISOString() }),
 );
 
-app.post('/api/test-openai', async (req, res) => {
+app.post('/api/test-ai', async (req, res) => {
   try {
-    if (!openai) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'OpenAI API key not configured' 
-      });
+    if (!genAI) {
+      return res.status(400).json({ ok: false, error: 'Gemini API key not configured' });
     }
-
-    const resp = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.7,
-      max_tokens: 200,
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are a helpful soccer coach.' 
-        },
-        { 
-          role: 'user', 
-          content: 'Give me one quick soccer training tip in 2 sentences.' 
-        },
-      ],
-    });
-
-    const message = resp.choices?.[0]?.message?.content || 'No response';
-    res.json({ 
-      ok: true, 
-      message: message,
-      model: resp.model,
-      usage: resp.usage 
-    });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await model.generateContent('Give me one quick soccer training tip in 2 sentences.');
+    const message = result.response.text();
+    res.json({ ok: true, message, model: 'gemini-2.0-flash' });
   } catch (error) {
-    console.error('[BK] test-openai error:', error.message);
-    res.status(500).json({ 
-      ok: false, 
-      error: error.message 
-    });
+    console.error('[BK] test-ai error:', error.message);
+    res.status(500).json({ ok: false, error: error.message });
   }
 });
 
@@ -477,12 +435,12 @@ app.get('/api/analyses', auth, (req, res) => {
   const items = (db.analysesByUser[req.userId] || []).map(item => ({
     id: item.id,
     candidateName: item.candidateName || db.profiles[req.userId]?.name || findUserById(req.userId)?.name || "Player",
+    videoType: item.videoType || 'training',
     videoUrl: item.video_url,
     publicId: item.public_id,
     skill: item.skill,
     createdAt: item.created_at,
     analysis: item.raw,
-    // Flattened fields for frontend
     skillFocus: item.skillFocus,
     sessionSummary: item.sessionSummary,
     currentLevel: item.currentLevel,
@@ -499,21 +457,29 @@ app.get('/api/analyses/:id', auth, (req, res) => {
   const item = list.find(x => x.id === req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: 'Not found' });
   
+  const levelMap = {
+    'Beginner': { grade: '4-5', description: 'Beginner' },
+    'Intermediate': { grade: '6-7', description: 'Intermediate' },
+    'Advanced': { grade: '8-9', description: 'Advanced' }
+  };
+  const currentLevelObj = levelMap[item.currentLevel] || { grade: '?', description: item.currentLevel };
+
   res.json({
     ok: true,
     id: item.id,
     candidateName: item.candidateName || db.profiles[req.userId]?.name || findUserById(req.userId)?.name || "Player",
+    videoType: item.videoType || 'training',
     videoUrl: item.video_url,
     publicId: item.public_id,
     skill: item.skill,
     createdAt: item.created_at,
     analysis: item.raw,
-    // Flattened fields for frontend
     skillFocus: item.skillFocus,
     sessionSummary: item.sessionSummary,
-    currentLevel: item.currentLevel,
+    currentLevel: currentLevelObj,
     technicalAnalysis: item.technicalAnalysis,
     improvementTips: item.improvementTips,
+    commonMistakesForPosition: item.commonMistakesForPosition,
     practiceProgression: item.practiceProgression,
     youtubeRecommendations: item.youtubeRecommendations,
   });
@@ -534,103 +500,86 @@ app.delete('/api/analyses/:id', auth, (req, res) => {
 /* ==================================================================== */
 
 async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, skill }) {
-  if (!openai) {
-    throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
+  if (!genAI || !fileManager) {
+    throw new Error('Gemini API key not configured. Please set GEMINI_API_KEY environment variable.');
   }
 
-  const age      = profile.age ?? user?.age ?? null;
   const position = profile.position || user?.position || 'player';
-  const isYouth  = age != null ? Number(age) < 18 : false;
-  const heightIn = profile.height || null;
-  const weightLb = profile.weight || null;
 
-  const sys = `Return ONLY valid JSON. No markdown.`;
+  // Upload the actual video to Gemini (native video understanding)
+  console.log(`[BK] Uploading video for Gemini analysis...`);
+  const file = await uploadVideoToGemini(videoUrl, videoData);
 
-  const messageContent = [
-    {
-      type: 'text',
-      text: `You are an expert soccer training analyst. Analyze this training footage showing a ${age} year old ${position} training.
+  const prompt = `You are a certified soccer / football coach reviewing a training session video. The player's position is ${position}.
 
-CRITICAL: First, carefully observe and identify the EXACT activity being performed in the frames (e.g., juggling, dribbling through cones, passing drills, shooting practice, etc.). Base your entire analysis on what you ACTUALLY SEE, not what you assume should be there.
+Watch the full video and provide honest, constructive coaching feedback.
 
-Do not make assumptions about equipment or setup that you cannot clearly see. If the player is juggling, analyze juggling. If they're dribbling, analyze dribbling. Accurately identify the activity before analyzing it.
+Instructions:
+1. Identify the drill or activity shown (e.g. juggling, dribbling, passing, shooting).
+2. Only comment on what is clearly visible. If the camera angle is poor or details are unclear, say so.
+3. Do not guess statistics, counts, or measurements you cannot directly observe.
+4. Analyze the actual movement, technique, body positioning, and rhythm you see in the video.
+5. Give specific, actionable improvement tips based on what you observe.
 
-Return ONLY valid JSON (no markdown, no code blocks). Schema:
+Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact schema:
 {
-  "sessionSummary": "2-3 paragraph professional evaluation of what is ACTUALLY being performed",
-  "skillFocus": "Primary skill being trained (accurate to what you observe)",
+  "sessionSummary": "2-3 paragraph evaluation of the technique shown",
+  "skillFocus": "Primary skill being trained",
   "secondarySkills": ["skill 1", "skill 2"],
   "currentLevel": "Beginner | Intermediate | Advanced",
   "technicalAnalysis": {
-    "footwork": "detailed analysis",
-    "bodyPosition": "detailed analysis", 
-    "followThrough": "detailed analysis",
-    "consistency": "detailed analysis",
-    "sessionProgression": "detailed analysis"
+    "footwork": "analysis",
+    "bodyPosition": "analysis",
+    "followThrough": "analysis",
+    "consistency": "analysis",
+    "sessionProgression": "analysis"
   },
-  "improvementTips": [{"priority": 1, "tip": "tip text", "why": "reason", "how": "instruction"}],
-  "commonMistakesForPosition": [{"mistake": "mistake text", "observed": true, "correction": "correction text"}],
-  "practiceProgression": [{"level": "level name", "drill": "drill description"}],
-  "youtubeRecommendations": [{"title": "video title", "coach": "channel name", "why": "relevance"}]
-}`,
-    },
+  "improvementTips": [{"priority": 1, "tip": "text", "why": "reason", "how": "instruction"}],
+  "commonMistakesForPosition": [{"mistake": "text", "observed": true, "correction": "text"}],
+  "practiceProgression": [{"level": "name", "drill": "description"}],
+  "youtubeRecommendations": [{"title": "video title", "coach": "channel", "why": "relevance"}]
+}`;
+
+  console.log('[BK] Sending video to Gemini 2.0 Flash...');
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+  const contentParts = [
+    { fileData: { mimeType: file.mimeType, fileUri: file.uri } },
+    { text: prompt },
   ];
 
-  // Extract video frames from Cloudinary or local data
-  console.log(`[BK] Starting frame extraction - videoUrl: ${videoUrl ? videoUrl.substring(0, 100) : 'none'}`);
-  const frameUrls = await downloadVideoFrames(videoUrl, videoData);
-  
-  if (frameUrls && frameUrls.length > 0) {
-    console.log(`[BK] Successfully extracted ${frameUrls.length} frames for vision analysis`);
-    for (let i = 0; i < frameUrls.length; i++) {
-      const framePreview = frameUrls[i].substring(0, 50);
-      console.log(`[BK] Adding frame ${i + 1}: ${framePreview}...`);
-      messageContent.push({
-        type: 'image_url',
-        image_url: {
-          url: frameUrls[i],
-        },
-      });
+  // Retry with backoff for 429 rate-limit errors
+  let result;
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      result = await model.generateContent(contentParts);
+      break;
+    } catch (err) {
+      if (err.status === 429 && attempt < maxRetries) {
+        const waitSec = attempt * 10;
+        console.log(`[BK] Rate limited (429). Retry ${attempt}/${maxRetries} in ${waitSec}s...`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+      } else {
+        throw err;
+      }
     }
-  } else {
-    console.warn('[BK] WARNING: No video frames extracted - cannot perform video analysis');
-    throw new Error('Failed to extract video frames. Please ensure video is uploaded correctly or try a different video.');
   }
 
-  console.log(`[BK] Sending ${messageContent.length} items to OpenAI (${messageContent.length - 1} frames)`);
-  const resp = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    temperature: 0.3,
-    max_tokens: 4000,
-    messages: [
-      { role: 'system', content: sys },
-      { role: 'user',   content: messageContent },
-    ],
-  }).catch(error => {
-    console.error('[BK] OpenAI API error:', error.message);
-    console.error('[BK] Error details:', error.response?.data || error);
-    throw new Error(`OpenAI API failed: ${error.message}`);
-  });
-
-  console.log(`[BK] OpenAI response received - Model: ${resp.model}, Tokens: ${resp.usage?.total_tokens}`);
-  
-  const rawContent = resp.choices?.[0]?.message?.content || '{}';
-  const jsonText = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
-
-  console.log(`[BK] Raw OpenAI response (first 500 chars):`, rawContent.substring(0, 500));
+  const rawContent = result.response.text();
+  console.log(`[BK] Gemini response (first 500 chars):`, rawContent.substring(0, 500));
 
   let data = {};
   try {
-    data = JSON.parse(jsonText);
+    data = JSON.parse(rawContent);
   } catch {
-    // Handle ```json blocks
-    const m = jsonText.match(/\{[\s\S]*\}/);
+    const m = rawContent.match(/\{[\s\S]*\}/);
     if (m) {
       try {
         data = JSON.parse(m[0]);
       } catch (e) {
         console.error('[BK] Failed to parse extracted JSON');
-        throw new Error('Could not analyze video. The AI did not recognize this as a soccer training video.');
+        throw new Error('Could not analyze video. The AI did not return valid JSON.');
       }
     } else {
       console.error('[BK] No JSON found in response');
@@ -704,6 +653,7 @@ app.post('/api/analyze', auth, async (req, res) => {
     const item = {
       id: uuidv4(),
       candidateName,
+      videoType: 'training',
       skillFocus: result.skillFocus,
       secondarySkills: result.secondarySkills,
       sessionSummary: result.sessionSummary,
@@ -736,17 +686,17 @@ app.post('/api/analyze', auth, async (req, res) => {
     res.json({
       ok: true,
       id: item.id,
+      videoType: 'training',
       videoUrl: item.video_url,
       publicId: item.public_id,
       skill: item.skill,
       createdAt: item.created_at,
       summary: item.sessionSummary,
       analysis: result.raw,
-      // Flattened fields for easier frontend access
       skillFocus: item.skillFocus,
       secondarySkills: item.secondarySkills,
       sessionSummary: item.sessionSummary,
-      currentLevel: currentLevelObj,  // Object with grade and description
+      currentLevel: currentLevelObj,
       technicalAnalysis: item.technicalAnalysis,
       improvementTips: item.improvementTips,
       commonMistakesForPosition: item.commonMistakesForPosition,
@@ -776,15 +726,11 @@ app.post("/api/feedback", async (req, res) => {
       });
     }
 
-    if (!client) {
-      return res.status(400).json({
-        ok: false,
-        error: "OpenAI API key not configured"
-      });
+    if (!genAI) {
+      return res.status(400).json({ ok: false, error: "Gemini API key not configured" });
     }
 
-    const prompt = `
-You are a professional soccer coach and performance analyst.
+    const prompt = `You are a professional soccer coach and performance analyst. Output ONLY valid JSON, no markdown, no extra text.
 
 PLAYER CONTEXT:
 ${JSON.stringify(playerContext, null, 2)}
@@ -797,39 +743,23 @@ Return VALID JSON ONLY with this structure:
   "strengths": [],
   "improvements": [],
   "coachingCues": [],
-  "drills": [
-    {
-      "name": "",
-      "setup": "",
-      "reps": "",
-      "coachingPoints": []
-    }
-  ],
-  "twoWeekPlan": [
-    {
-      "day": "",
-      "focus": "",
-      "drills": []
-    }
-  ]
-}
-`;
+  "drills": [{ "name": "", "setup": "", "reps": "", "coachingPoints": [] }],
+  "twoWeekPlan": [{ "day": "", "focus": "", "drills": [] }]
+}`;
 
-    const out = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "Output only valid JSON. No markdown. No extra text." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.4
-    });
-
-    const raw = out.choices?.[0]?.message?.content || "{}";
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text();
     let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      return res.json({ ok: true, report: { raw } }); // fallback so it never crashes
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) {
+        try { parsed = JSON.parse(m[0]); } catch { parsed = { raw }; }
+      } else {
+        parsed = { raw };
+      }
     }
     return res.json({ ok: true, report: parsed });
 
@@ -856,7 +786,7 @@ process.on('unhandledRejection', (reason, promise) => {
 /* ---------- Start server ---------- */
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`[BK] ✅ Server running on http://localhost:${PORT}`);
-  console.log(`[BK] OpenAI configured: ${openai ? 'YES' : 'NO'}`);
+  console.log(`[BK] Gemini AI configured: ${genAI ? 'YES' : 'NO'}`);
   console.log(`[BK] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[BK] Server is listening and ready for requests`);
 });

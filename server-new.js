@@ -224,15 +224,29 @@ async function analyzeTraining(videoUrl, frames, candidateName, position, durati
     type: 'text',
     text: `You are an expert soccer training analyst. Analyze this ${durationMin}-minute training footage of ${candidateName}, a ${position}.
 
-Return ONLY valid JSON (no markdown, no code blocks). Schema:
+CRITICAL RULES – FOLLOW ALL OF THESE:
+- Base EVERY comment ONLY on what you can clearly see in the actual frames.
+- Do NOT assume cones, defenders, distances, or patterns that are not obviously visible.
+- Do NOT invent statistics (counts, percentages, speeds, distances) that you cannot directly observe.
+- If you cannot reliably see some detail (e.g., weak camera angle, obstruction, frame quality), explicitly say that you cannot see it instead of guessing.
+- Do NOT output generic “template” feedback that could apply to any player; make your feedback specific to the visible actions and quality in this session.
+- If the video does NOT clearly show an actual soccer training drill, say that directly and keep the rest of the response minimal and honest.
+
+Return ONLY valid JSON (no markdown, no code blocks). Schema (keep exactly these keys and types):
 {
-  "sessionSummary": "2-3 paragraph professional evaluation of training session",
-  "skillFocus": "Primary skill being trained (e.g., 'Dribbling', 'Passing', 'Shooting')",
-  "currentLevel": "Beginner | Intermediate | Advanced",
-  "technicalAnalysis": "Detailed analysis of technical execution",
-  "improvementTips": ["tip 1", "tip 2", "tip 3", "tip 4"],
-  "practiceProgression": ["drill 1", "drill 2", "drill 3"],
-  "youtubeRecommendations": ["video title 1", "video title 2", "video title 3"]
+  "sessionSummary": "2-3 paragraph professional evaluation of what is ACTUALLY visible in the training session",
+  "skillFocus": "Primary skill being trained (e.g., 'Dribbling', 'Passing', 'Shooting'). If unclear, say 'Unclear from video'.",
+  "currentLevel": "One of: 'Beginner', 'Intermediate', 'Advanced' (based ONLY on the visible execution, not on age or level assumptions).",
+  "technicalAnalysis": "1-2 paragraphs describing concrete visible technical details (touch, body shape, timing, rhythm, balance, etc.). Do NOT describe things you cannot see.",
+  "improvementTips": [
+    "Each string is a single, specific, concrete improvement, directly tied to something you SEE in the video."
+  ],
+  "practiceProgression": [
+    "Each string is one drill or progression that logically follows from the visible weaknesses in this exact session."
+  ],
+  "youtubeRecommendations": [
+    "Each string is a YouTube search query (video title or topic) that would help THIS player with what you observed."
+  ]
 }`
   });
 
@@ -1112,23 +1126,17 @@ app.get('/api/analytics/engagement', async (req, res) => {
 /*                          START SERVER                                */
 /* ==================================================================== */
 
-if (process.env.VERCEL !== '1') {
-  // Only listen on a port in local development, not on Vercel
-  app.listen(PORT, '0.0.0.0', () => {
-    const interfaces = os.networkInterfaces();
-    const ipv4Addresses = [];
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          ipv4Addresses.push(iface.address);
-        }
+app.listen(PORT, '0.0.0.0', () => {
+  const interfaces = os.networkInterfaces();
+  const ipv4Addresses = [];
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        ipv4Addresses.push(iface.address);
       }
     }
-    const ipUrl = ipv4Addresses.length > 0 ? ipv4Addresses[0] : 'localhost';
-    console.log(`🎯 Ball Knowledge (PostgreSQL) running on http://${ipUrl}:${PORT}`);
-    console.log(`   On this device: http://127.0.0.1:${PORT}`);
-  });
-}
-
-// Export for Vercel serverless
-export default app;
+  }
+  const ipUrl = ipv4Addresses.length > 0 ? ipv4Addresses[0] : 'localhost';
+  console.log(`🎯 Ball Knowledge (PostgreSQL) running on http://${ipUrl}:${PORT}`);
+  console.log(`   On this device: http://127.0.0.1:${PORT}`);
+});

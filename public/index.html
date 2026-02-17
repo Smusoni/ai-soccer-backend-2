@@ -1313,7 +1313,7 @@
   </section>
 
   <script>
-  // Use relative paths - works on Vercel and local file://
+  // Use relative paths - works on Railway backend and local file://
   const BASE = location.protocol === 'file:' ? 'http://localhost:3001' : '';
 
   const $ = (id) => document.getElementById(id);
@@ -1587,7 +1587,6 @@
         $('analyzeStatus').className = 'err';
         return;
       }
-
       $('summary').textContent = out.summary || 'Analysis complete';
 
       if (videoType === 'training') {
@@ -1596,24 +1595,27 @@
         show($('trainingResults'));
 
         $('skillFocus').textContent = out.skillFocus || 'Skill assessment';
-        $('skillRecognition').textContent = (out.secondarySkills || []).join(', ') || 'Training session analysis';
-        $('skillGrade').textContent = out.currentLevel?.grade || '?';
-        $('skillLevelDesc').textContent = out.currentLevel?.description || 'Keep practicing';
+        // Use currentLevel string directly from AI
+        $('skillRecognition').textContent = out.currentLevel 
+          ? `Current level: ${out.currentLevel}` 
+          : 'Current level not specified';
+        $('skillGrade').textContent = out.currentLevel || '—';
+        $('skillLevelDesc').textContent = out.currentLevel
+          ? `AI-assessed level for this session: ${out.currentLevel}`
+          : 'AI did not provide a level label for this session.';
 
         // Technical Analysis
-        const tech = out.technicalAnalysis || {};
-        $('techFootwork').textContent = tech.footwork || '—';
-        $('techBodyPosition').textContent = tech.bodyPosition || '—';
-        $('techFollowThrough').textContent = tech.followThrough || '—';
-        $('techConsistency').textContent = tech.consistency || '—';
-        $('techProgression').textContent = tech.sessionProgression || '—';
+        const techText = typeof out.technicalAnalysis === 'string' ? out.technicalAnalysis : '';
+        $('techFootwork').textContent = techText || '—';
+        $('techBodyPosition').textContent = '—';
+        $('techFollowThrough').textContent = '—';
+        $('techConsistency').textContent = '—';
+        $('techProgression').textContent = '—';
 
-        // Improvement Tips (with priority structure)
-        if (out.improvementTips && out.improvementTips.length){
+        // Improvement Tips (array of strings)
+        if (Array.isArray(out.improvementTips) && out.improvementTips.length){
           $('improvementTips').innerHTML = out.improvementTips.map(t => `
-            <li><strong>Priority ${t.priority}:</strong> ${t.tip}<br>
-            <span class="muted">Why: ${t.why}</span><br>
-            <span class="muted">How: ${t.how}</span></li>
+            <li>${t}</li>
           `).join('');
         } else {
           $('improvementTips').innerHTML = '<li>No tips available</li>';
@@ -1629,22 +1631,20 @@
           $('commonMistakes').innerHTML = '<li>No mistakes data</li>';
         }
 
-        if (out.practiceProgression && out.practiceProgression.length){
+        if (Array.isArray(out.practiceProgression) && out.practiceProgression.length){
           $('progressionList').innerHTML = out.practiceProgression.map(p=>`
             <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:16px;border-radius:12px">
-              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${p.level}</div>
-              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p.drill}</p>
+              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p}</p>
             </div>
           `).join('');
         }
 
-        if (out.youtubeRecommendations && out.youtubeRecommendations.length){
-          $('youtubeList').innerHTML = out.youtubeRecommendations.map(y=>`
-            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
+        if (Array.isArray(out.youtubeRecommendations) && out.youtubeRecommendations.length){
+          $('youtubeList').innerHTML = out.youtubeRecommendations.map(title=>`
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(title)}" target="_blank" style="text-decoration:none">
               <div style="background:linear-gradient(135deg,rgba(25,211,255,0.08),rgba(0,255,149,0.04));border:1.5px solid var(--line);padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
-                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${y.title}</div>
-                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${y.coach}</p>
-                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${y.why}</p>
+                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${title}</div>
+                <p class="muted" style="margin:4px 0;font-size:13px">YouTube search recommendation</p>
               </div>
             </a>
           `).join('');
@@ -1726,15 +1726,19 @@
       const items = res.items || [];
       goTo('library');
       $('libraryList').innerHTML = items.length
-        ? items.map(i => `
+        ? items.map(i => {
+            const analysis = i.analysis || {};
+            const summary = i.summary || analysis.summary || analysis.sessionSummary || 'Analysis saved';
+            return `
             <div class="card">
               <strong>${i.candidateName || 'Candidate'}</strong><br>
               <span class="muted">${new Date(i.createdAt).toLocaleString()}</span><br>
-              <span>${i.summary || 'Analysis saved'}</span><br>
+              <span>${summary}</span><br>
               <button style="margin-top:8px;padding:6px 12px;font-size:13px" onclick="viewAnalysis('${i.id}')">View</button>
               <button style="margin-top:8px;padding:6px 12px;font-size:13px;background:#ff6b6b;box-shadow:0 2px 8px rgba(255,107,107,0.2)" onclick="deleteAnalysis('${i.id}')">Delete</button>
             </div>
-          `).join('')
+          `;
+          }).join('')
         : '<p class="muted">No analyses saved yet</p>';
     }catch(e){
       alert(e.message);
@@ -1778,45 +1782,49 @@
         
         // Use flattened fields from API response
         $('viewSkillFocus').textContent = item.skillFocus || '—';
-        $('viewSkillRecognition').textContent = item.secondarySkills?.join(', ') || '—';
-        $('viewSkillGrade').textContent = item.currentLevel?.grade || '—';
-        $('viewSkillLevelDesc').textContent = item.currentLevel?.description || '—';
+        $('viewSkillRecognition').textContent = item.currentLevel 
+          ? `Current level: ${item.currentLevel}` 
+          : 'Current level not specified';
+        $('viewSkillGrade').textContent = item.currentLevel || '—';
+        $('viewSkillLevelDesc').textContent = item.currentLevel
+          ? `AI-assessed level for this session: ${item.currentLevel}`
+          : 'AI did not provide a level label for this session.';
         
-        // Technical Analysis
-        const tech = item.technicalAnalysis || {};
-        $('viewTechFootwork').textContent = tech.footwork || '—';
-        $('viewTechBodyPosition').textContent = tech.bodyPosition || '—';
-        $('viewTechFollowThrough').textContent = tech.followThrough || '—';
-        $('viewTechConsistency').textContent = tech.consistency || '—';
-        $('viewTechProgression').textContent = tech.sessionProgression || '—';
+        // Technical Analysis (single paragraph string)
+        const techText = typeof item.technicalAnalysis === 'string' ? item.technicalAnalysis : '';
+        $('viewTechFootwork').textContent = techText || '—';
+        $('viewTechBodyPosition').textContent = '—';
+        $('viewTechFollowThrough').textContent = '—';
+        $('viewTechConsistency').textContent = '—';
+        $('viewTechProgression').textContent = '—';
         
-        // Improvement Tips
-        const tips = item.improvementTips || [];
+        // Improvement Tips (array of strings)
+        const tips = Array.isArray(item.improvementTips) ? item.improvementTips : [];
         $('viewImprovementTips').innerHTML = tips.length 
-          ? tips.map(t => `<li><strong>Priority ${t.priority}:</strong> ${t.tip}<br><span class="muted">Why: ${t.why}</span><br><span class="muted">How: ${t.how}</span></li>`).join('')
+          ? tips.map(t => `<li>${t}</li>`).join('')
           : '<li>No tips available</li>';
         
-        // Common Mistakes
-        const mistakes = item.commonMistakesForPosition || [];
-        $('viewCommonMistakes').innerHTML = mistakes.length
-          ? mistakes.map(m => `<li><strong>${m.mistake}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br><span class="muted">Correction: ${m.correction}</span></li>`).join('')
-          : '<li>No mistakes data</li>';
+        // Common Mistakes (not provided in current schema)
+        $('viewCommonMistakes').innerHTML = '<li>No mistakes data</li>';
         
-        // Practice Progression
-        const progression = item.practiceProgression || [];
+        // Practice Progression (array of strings)
+        const progression = Array.isArray(item.practiceProgression) ? item.practiceProgression : [];
         $('viewProgressionList').innerHTML = progression.length
-          ? progression.map(p => `<div style="padding:12px;background:rgba(0,255,149,0.05);border-left:3px solid var(--accent);border-radius:8px"><strong>${p.level}</strong><p style="margin:8px 0 0 0;color:var(--text)">${p.drill}</p></div>`).join('')
+          ? progression.map(p => `
+            <div style="padding:12px;background:rgba(0,255,149,0.05);border-left:3px solid var(--accent);border-radius:8px">
+              <p style="margin:8px 0 0 0;color:var(--text)">${p}</p>
+            </div>
+          `).join('')
           : '<p>No progression data</p>';
         
-        // YouTube Recommendations
-        const youtube = item.youtubeRecommendations || [];
+        // YouTube Recommendations (array of strings)
+        const youtube = Array.isArray(item.youtubeRecommendations) ? item.youtubeRecommendations : [];
         $('viewYoutubeList').innerHTML = youtube.length
-          ? youtube.map(y => `
-            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
+          ? youtube.map(title => `
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(title)}" target="_blank" style="text-decoration:none">
               <div style="background:linear-gradient(135deg,rgba(25,211,255,0.08),rgba(0,255,149,0.04));border:1.5px solid var(--line);padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
-                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${y.title}</div>
-                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${y.coach}</p>
-                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${y.why}</p>
+                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${title}</div>
+                <p class="muted" style="margin:4px 0;font-size:13px">YouTube search recommendation</p>
               </div>
             </a>
           `).join('')

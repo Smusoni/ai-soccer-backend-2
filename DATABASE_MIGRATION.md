@@ -111,20 +111,21 @@ npm start
 - Login to your account
 - Check library - should show your 2 coaching reports (Gee and Sweeny)
 
-### Step 5: Deploy to Vercel
+### Step 5: Deploy to Railway
 
-**Add environment variables in Vercel dashboard:**
-1. Go to https://vercel.com/smusoni/ai-soccer-backend-2-1/settings/environment-variables
+**Add environment variables in Railway dashboard:**
+1. Go to your Railway project → Variables (or https://railway.app/dashboard)
 2. Add the following:
 
 ```
-POSTGRES_URL=postgres://postgres:Sydthekid10!@aws-apg-green-notebook.cluster-cgdyieucsxlg.us-east-1.rds.amazonaws.com:5432/postgres?sslmode=require
+DATABASE_URL=postgres://postgres:PASSWORD@HOST:5432/postgres?sslmode=require
+# Or use POSTGRES_URL if your Railway Postgres plugin sets it
 JWT_SECRET=supersecretlocaldevkey123
 OPENAI_API_KEY=(your existing key)
 APP_ORIGINS=https://smusoni.github.io,http://localhost:8080
 ```
 
-3. Deploy:
+3. Deploy (Railway deploys from git push, or use Railway CLI):
 ```powershell
 git add .
 git commit -m "Migrate to PostgreSQL (AWS Aurora)"
@@ -151,7 +152,7 @@ Your existing data will be migrated:
 
 ## Benefits of PostgreSQL Migration
 
-1. **✅ Persistent Storage** - Data survives Vercel redeployments (no more /tmp data loss)
+1. **✅ Persistent Storage** - Data survives Railway redeployments (no more /tmp data loss)
 2. **✅ Scalability** - AWS Aurora can handle thousands of concurrent users
 3. **✅ Data Integrity** - Foreign keys, constraints, transactions
 4. **✅ Better Queries** - Efficient JOINs, indexes, aggregations

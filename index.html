@@ -1349,7 +1349,7 @@
   </section>
 
   <script>
-  // Use relative paths - works on Vercel and local file://
+  // Use relative paths - works on Railway backend and local file://
   const BASE = location.protocol === 'file:' ? 'http://localhost:3001' : '';
 
   const $ = (id) => document.getElementById(id);
@@ -1772,7 +1772,7 @@
             <div class="card">
               <strong>${i.candidateName || 'Candidate'}</strong><br>
               <span class="muted">${new Date(i.createdAt).toLocaleString()}</span><br>
-              <span>${i.summary || 'Analysis saved'}</span><br>
+              <span>${i.sessionSummary ? i.sessionSummary.substring(0, 120) + '…' : 'Analysis saved'}</span><br>
               <button style="margin-top:8px;padding:6px 12px;font-size:13px" onclick="viewAnalysis('${i.id}')">View</button>
               <button style="margin-top:8px;padding:6px 12px;font-size:13px;background:#ff6b6b;box-shadow:0 2px 8px rgba(255,107,107,0.2)" onclick="deleteAnalysis('${i.id}')">Delete</button>
             </div>
