@@ -653,6 +653,7 @@
         <input id="su_name" type="text" placeholder="Full name" style="width:100%">
         <input id="su_email" type="email" placeholder="Email" style="width:100%">
         <input id="su_password" type="password" placeholder="Create password" style="width:100%">
+        <input id="su_password2" type="password" placeholder="Confirm password" style="width:100%">
         <div style="width:100%">
           <label for="su_dob" style="display:block;margin-bottom:6px;color:var(--muted);font-size:14px">Date of Birth</label>
           <input id="su_dob" type="date" style="width:100%">
@@ -1469,10 +1470,17 @@
     const name = $('su_name').value.trim();
     const email = $('su_email').value.trim();
     const password = $('su_password').value.trim();
+    const password2 = $('su_password2').value.trim();
     const dob = $('su_dob').value.trim();
     
-    if (!name || !email || !password || !dob){
+    if (!name || !email || !password || !password2 || !dob){
       return setSignupMessage('Please fill all fields', false);
+    }
+    if (password !== password2){
+      return setSignupMessage('Passwords do not match', false);
+    }
+    if (password.length < 6){
+      return setSignupMessage('Password must be at least 6 characters', false);
     }
     
     // Calculate age from date of birth
