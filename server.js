@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Resend } from 'resend';
 import { GoogleAIFileManager } from '@google/generative-ai/server';
 import os from 'os';
 import https from 'https';
@@ -18,6 +19,8 @@ dotenv.config();
 /* ---------- ENV + constants ---------- */
 const JWT_SECRET  = process.env.JWT_SECRET || 'dev_secret_change_me';
 const GEMINI_KEY  = process.env.GEMINI_API_KEY || '';
+const RESEND_KEY  = process.env.RESEND_API_KEY || '';
+const resend      = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 const APP_ORIGINS = (process.env.APP_ORIGINS ||
   'https://smusoni.github.io,http://localhost:8080')
   .split(',')
@@ -200,6 +203,48 @@ app.post('/api/test-ai', async (req, res) => {
 /*                               AUTH                                   */
 /* ==================================================================== */
 
+async function sendWelcomeEmail(userName, userEmail) {
+  if (!resend) {
+    console.log('[BK] Resend not configured, skipping welcome email');
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: 'Ball Knowledge <onboarding@resend.dev>',
+      to: userEmail,
+      subject: 'Welcome to Ball Knowledge!',
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#ffffff;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#00ff95,#19d3ff);padding:40px 32px;text-align:center">
+            <h1 style="margin:0;font-size:28px;color:#0a0a0a">⚽ Ball Knowledge</h1>
+            <p style="margin:8px 0 0;color:#0a0a0a;font-size:16px;opacity:0.8">Personal Soccer Training Analysis</p>
+          </div>
+          <div style="padding:32px">
+            <h2 style="margin:0 0 16px;color:#00ff95;font-size:22px">Welcome, ${userName}!</h2>
+            <p style="color:#cccccc;font-size:16px;line-height:1.7;margin:0 0 24px">
+              Thank you for joining Ball Knowledge. You're all set to start analyzing your soccer training with AI-powered coaching feedback.
+            </p>
+            <p style="color:#cccccc;font-size:16px;line-height:1.7;margin:0 0 24px">
+              Upload a training video and our Gemini AI will watch the full clip, break down your technique, and give you personalized tips to improve your game.
+            </p>
+            <div style="text-align:center;margin:32px 0">
+              <a href="https://ai-soccer-backend-2-production.up.railway.app" style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;text-decoration:none;padding:14px 40px;border-radius:12px;font-weight:700;font-size:16px;display:inline-block">
+                Start Analyzing
+              </a>
+            </div>
+            <p style="color:#666666;font-size:13px;text-align:center;margin:24px 0 0;border-top:1px solid #222;padding-top:20px">
+              Analyze. Improve. Dominate.
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[BK] Welcome email sent to ${userEmail}`);
+  } catch (err) {
+    console.error('[BK] Failed to send welcome email:', err.message);
+  }
+}
+
 app.post('/api/signup', async (req, res) => {
   try {
     const { name, email, password, age, dob } = req.body || {};
@@ -225,6 +270,9 @@ app.post('/api/signup', async (req, res) => {
 
     db.users.push(user);
     saveDB();
+
+    // Send welcome email (fire-and-forget, don't block signup)
+    sendWelcomeEmail(user.name, user.email);
 
     const token = jwt.sign(
       { sub: id, email: user.email, name: user.name },
