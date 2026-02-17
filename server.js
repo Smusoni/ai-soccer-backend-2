@@ -515,11 +515,16 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
 Watch the full video and provide honest, constructive coaching feedback.
 
 Instructions:
-1. Identify the drill or activity shown (e.g. juggling, dribbling, passing, shooting).
+1. Identify the drill or activity shown (e.g. juggling, dribbling, passing, shooting, freestyle tricks).
 2. Only comment on what is clearly visible. If the camera angle is poor or details are unclear, say so.
 3. Do not guess statistics, counts, or measurements you cannot directly observe.
 4. Analyze the actual movement, technique, body positioning, and rhythm you see in the video.
 5. Give specific, actionable improvement tips based on what you observe.
+6. Assess the skill level based on WHAT the player is doing AND how well they execute it:
+   - "Beginner": Basic touches, struggling to maintain control, frequent mistakes, simple drills only.
+   - "Intermediate": Comfortable with fundamentals, can perform tricks like around-the-world or rainbow flicks, good but inconsistent control, moderate rhythm.
+   - "Advanced": Executes complex tricks and skills cleanly (around-the-world, crossovers, akkas, etc.), strong body control, fluid transitions, high consistency, could play at a competitive or semi-pro level.
+   If a player is performing freestyle tricks or advanced juggling moves, they are AT LEAST Intermediate. If they do them consistently and fluidly, they are Advanced.
 
 Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact schema:
 {
