@@ -616,19 +616,21 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
 
   const prompt = `You are a certified soccer / football coach reviewing a training session video. The player's position is ${position}.
 
-Watch the full video and provide honest, constructive coaching feedback.
+Watch the ENTIRE video carefully from start to finish before writing your analysis.
 
-Instructions:
-1. Identify the drill or activity shown (e.g. juggling, dribbling, passing, shooting, freestyle tricks).
-2. Only comment on what is clearly visible. If the camera angle is poor or details are unclear, say so.
-3. Do not guess statistics, counts, or measurements you cannot directly observe.
-4. Analyze the actual movement, technique, body positioning, and rhythm you see in the video.
-5. Give specific, actionable improvement tips based on what you observe.
-6. Assess the skill level based on WHAT the player is doing AND how well they execute it:
-   - "Beginner": Basic touches, struggling to maintain control, frequent mistakes, simple drills only.
-   - "Intermediate": Comfortable with fundamentals, can perform tricks like around-the-world or rainbow flicks, good but inconsistent control, moderate rhythm.
-   - "Advanced": Executes complex tricks and skills cleanly (around-the-world, crossovers, akkas, etc.), strong body control, fluid transitions, high consistency, could play at a competitive or semi-pro level.
-   If a player is performing freestyle tricks or advanced juggling moves, they are AT LEAST Intermediate. If they do them consistently and fluidly, they are Advanced.
+ACCURACY RULES (CRITICAL — follow these strictly):
+- Describe ONLY what you can actually see happening in the video. Do NOT hallucinate or guess.
+- Pay close attention to WHICH body parts the player uses (feet, thighs, head, chest). If the player juggles with their feet only, do NOT say they used their thighs. If you are unsure which body part was used, say you are unsure rather than guessing.
+- Watch the full video multiple times mentally before concluding what technique is being used.
+- Do NOT describe actions, equipment, or movements that are not clearly visible.
+- If the camera angle makes something hard to see, explicitly say so instead of assuming.
+- Be specific: mention left foot vs right foot if visible, count approximate touches only if you can clearly see them, describe the actual rhythm and flow you observe.
+
+SKILL LEVEL ASSESSMENT:
+- "Beginner": Basic touches, struggling to maintain control, frequent mistakes, simple drills only.
+- "Intermediate": Comfortable with fundamentals, can perform tricks like around-the-world or rainbow flicks, good but inconsistent control, moderate rhythm.
+- "Advanced": Executes complex tricks and skills cleanly (around-the-world, crossovers, akkas, etc.), strong body control, fluid transitions, high consistency.
+- If a player is performing freestyle tricks or advanced juggling moves, they are AT LEAST Intermediate. If they do them consistently and fluidly, they are Advanced.
 
 Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact schema:
 {
