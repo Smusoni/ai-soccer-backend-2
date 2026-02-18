@@ -1068,6 +1068,8 @@ process.on('unhandledRejection', (reason, promise) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`[BK] ✅ Server running on http://localhost:${PORT}`);
   console.log(`[BK] Gemini AI configured: ${genAI ? 'YES' : 'NO'}`);
+  console.log(`[BK] Stripe configured: ${stripe ? 'YES' : 'NO'} (key starts with: ${STRIPE_SECRET ? STRIPE_SECRET.substring(0, 7) + '...' : 'EMPTY'})`);
+  console.log(`[BK] Resend configured: ${resend ? 'YES' : 'NO'}`);
   console.log(`[BK] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[BK] Server is listening and ready for requests`);
 });
