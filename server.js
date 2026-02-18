@@ -27,6 +27,7 @@ const STRIPE_PUB_KEY   = process.env.STRIPE_PUBLISHABLE_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_LOOKUP_KEY = 'Training_Video_Analysis_-293c440';
 const FREE_ANALYSIS_LIMIT = 2;
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const stripe = STRIPE_SECRET ? new Stripe(STRIPE_SECRET) : null;
 const APP_ORIGINS = (process.env.APP_ORIGINS ||
   'https://smusoni.github.io,http://localhost:8080')
@@ -800,14 +801,15 @@ app.get('/api/subscription-status', auth, (req, res) => {
   const currentUser = db.users.find(u => u.id === req.userId);
   const analysisCount = (db.analysesByUser[req.userId] || []).length;
   const subStatus = currentUser?.subscriptionStatus || 'free';
-  const canAnalyze = analysisCount < FREE_ANALYSIS_LIMIT || subStatus === 'active';
+  const isAdmin = ADMIN_EMAILS.includes(currentUser?.email?.toLowerCase());
+  const canAnalyze = isAdmin || analysisCount < FREE_ANALYSIS_LIMIT || subStatus === 'active';
 
   res.json({
     ok: true,
-    plan: subStatus === 'active' ? 'pro' : 'free',
+    plan: isAdmin ? 'admin' : (subStatus === 'active' ? 'pro' : 'free'),
     analysisCount,
     limit: FREE_ANALYSIS_LIMIT,
-    remaining: subStatus === 'active' ? 'unlimited' : Math.max(0, FREE_ANALYSIS_LIMIT - analysisCount),
+    remaining: (isAdmin || subStatus === 'active') ? 'unlimited' : Math.max(0, FREE_ANALYSIS_LIMIT - analysisCount),
     canAnalyze,
   });
 });
@@ -874,8 +876,9 @@ app.post('/api/analyze', auth, async (req, res) => {
     const currentUser = db.users.find(u => u.id === req.userId);
     const analysisCount = (db.analysesByUser[req.userId] || []).length;
     const subStatus = currentUser?.subscriptionStatus || 'free';
+    const isAdmin = ADMIN_EMAILS.includes(currentUser?.email?.toLowerCase());
     
-    if (analysisCount >= FREE_ANALYSIS_LIMIT && subStatus !== 'active') {
+    if (!isAdmin && analysisCount >= FREE_ANALYSIS_LIMIT && subStatus !== 'active') {
       return res.status(403).json({ 
         ok: false, 
         error: 'limit_reached',
