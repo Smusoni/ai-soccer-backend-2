@@ -545,6 +545,9 @@
       <a href="#" id="library" role="menuitem">Library</a>
       <a href="#" id="upgradeLink" role="menuitem" style="color:var(--accent)">⚡ Upgrade to Pro</a>
       <a href="#" id="manageSubLink" role="menuitem" style="display:none;color:var(--accent2)">Manage Subscription</a>
+      <div style="border-top:1px solid var(--line);margin:8px 0"></div>
+      <a href="#/terms" id="termsLink" role="menuitem" style="font-size:13px;color:var(--muted)">Terms of Service</a>
+      <a href="#/privacy" id="privacyLink" role="menuitem" style="font-size:13px;color:var(--muted)">Privacy Policy</a>
       <a href="#" id="logout" role="menuitem">Logout</a>
     </div>
   </div>
@@ -620,6 +623,16 @@
         Get Started Free →
       </button>
     </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:32px 20px 48px;border-top:1px solid var(--line)">
+      <p style="color:var(--muted);font-size:13px;margin:0 0 8px">
+        <a href="#/terms" onclick="event.preventDefault();setHash('terms');goTo('terms')" style="color:var(--muted);text-decoration:none;margin:0 12px">Terms of Service</a>
+        |
+        <a href="#/privacy" onclick="event.preventDefault();setHash('privacy');goTo('privacy')" style="color:var(--muted);text-decoration:none;margin:0 12px">Privacy Policy</a>
+      </p>
+      <p style="color:var(--muted);font-size:12px;margin:0">&copy; 2026 Ball Knowledge. All rights reserved.</p>
+    </div>
   </section>
 
   <!-- =========== LOGIN PAGE =========== -->
@@ -633,6 +646,9 @@
         <input id="li_password" type="password" placeholder="Password" style="width:100%">
       </div>
       <button id="loginBtn" class="block-btn" style="margin-top:16px">Login</button>
+      <div style="text-align:right;margin-top:10px">
+        <a href="#" onclick="event.preventDefault();setHash('forgot');goTo('forgot')" style="color:var(--accent);font-size:13px;text-decoration:none">Forgot password?</a>
+      </div>
     </div>
 
     <p id="loginMsg" class="muted" style="margin:16px 0"></p>
@@ -662,6 +678,12 @@
         </div>
       </div>
       <button id="signupBtn" class="block-btn" style="margin-top:16px">Sign Up</button>
+      <p style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center">
+        By signing up, you agree to our
+        <a href="#/terms" onclick="event.preventDefault();setHash('terms');goTo('terms')" style="color:var(--accent);text-decoration:none">Terms of Service</a>
+        and
+        <a href="#/privacy" onclick="event.preventDefault();setHash('privacy');goTo('privacy')" style="color:var(--accent);text-decoration:none">Privacy Policy</a>.
+      </p>
     </div>
 
     <p id="signupMsg" class="muted" style="margin:16px 0"></p>
@@ -671,6 +693,143 @@
       <button onclick="setHash('login'); goTo('login')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
         Login
       </button>
+    </div>
+  </section>
+
+  <!-- =========== FORGOT PASSWORD =========== -->
+  <section class="card container hide" id="forgotCard" style="max-width:500px">
+    <h3>Reset Password</h3>
+    <p class="muted">Enter your email and we'll send you a 6-digit code</p>
+    
+    <div style="margin:24px 0">
+      <div class="row" style="flex-direction:column;gap:12px">
+        <input id="fp_email" type="email" placeholder="Email address" style="width:100%">
+      </div>
+      <button id="forgotBtn" class="block-btn" style="margin-top:16px">Send Reset Code</button>
+    </div>
+
+    <p id="forgotMsg" class="muted" style="margin:16px 0"></p>
+    
+    <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)">
+      <button onclick="setHash('login'); goTo('login')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
+        Back to Login
+      </button>
+    </div>
+  </section>
+
+  <!-- =========== RESET PASSWORD (enter code + new password) =========== -->
+  <section class="card container hide" id="resetCard" style="max-width:500px">
+    <h3>Enter Reset Code</h3>
+    <p class="muted">Check your email for the 6-digit code</p>
+    
+    <div style="margin:24px 0">
+      <div class="row" style="flex-direction:column;gap:12px">
+        <input id="rp_email" type="email" placeholder="Email address" style="width:100%" readonly>
+        <input id="rp_code" type="text" placeholder="6-digit code" maxlength="6" style="width:100%;text-align:center;font-size:24px;letter-spacing:8px;font-weight:700">
+        <input id="rp_password" type="password" placeholder="New password" style="width:100%">
+        <input id="rp_password2" type="password" placeholder="Confirm new password" style="width:100%">
+      </div>
+      <button id="resetBtn" class="block-btn" style="margin-top:16px">Reset Password</button>
+    </div>
+
+    <p id="resetMsg" class="muted" style="margin:16px 0"></p>
+    
+    <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)">
+      <button onclick="setHash('forgot'); goTo('forgot')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
+        Resend Code
+      </button>
+    </div>
+  </section>
+
+  <!-- =========== TERMS OF SERVICE =========== -->
+  <section class="card container hide" id="termsPage" style="max-width:700px">
+    <h3>Terms of Service</h3>
+    <p class="muted" style="margin-bottom:8px">Last updated: February 16, 2026</p>
+    <div style="color:var(--text);font-size:14px;line-height:1.8;max-height:70vh;overflow-y:auto;padding-right:8px">
+      <h4>1. Acceptance of Terms</h4>
+      <p>By accessing or using Ball Knowledge ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.</p>
+      
+      <h4>2. Description of Service</h4>
+      <p>Ball Knowledge provides AI-powered soccer/football training video analysis. Users can upload training videos and receive automated coaching feedback generated by artificial intelligence.</p>
+      
+      <h4>3. User Accounts</h4>
+      <p>You must provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account.</p>
+      
+      <h4>4. Subscriptions & Payments</h4>
+      <p>Ball Knowledge offers a limited number of free analyses. Additional analyses require a paid subscription at $10/month, processed through Stripe. Subscriptions renew automatically. You may cancel at any time through the billing portal; cancellation takes effect at the end of the current billing period.</p>
+      
+      <h4>5. User Content</h4>
+      <p>You retain ownership of videos you upload. By uploading, you grant Ball Knowledge a limited license to process and analyze the video for the purpose of delivering the Service. Videos are processed by third-party AI services (Google Gemini) and video hosting (Cloudinary).</p>
+      
+      <h4>6. Acceptable Use</h4>
+      <p>You agree not to: upload content that violates any law; attempt to reverse-engineer the Service; use the Service for any illegal purpose; or interfere with other users' access to the Service.</p>
+      
+      <h4>7. AI Disclaimer</h4>
+      <p>Analysis and feedback are generated by artificial intelligence and should be treated as supplementary guidance, not professional coaching advice. Ball Knowledge does not guarantee the accuracy of AI-generated assessments.</p>
+      
+      <h4>8. Limitation of Liability</h4>
+      <p>Ball Knowledge is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the Service.</p>
+      
+      <h4>9. Termination</h4>
+      <p>We reserve the right to suspend or terminate accounts that violate these terms or engage in abusive behavior.</p>
+      
+      <h4>10. Changes to Terms</h4>
+      <p>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance of the updated Terms.</p>
+      
+      <h4>11. Contact</h4>
+      <p>For questions about these Terms, contact us at <a href="mailto:sydnyjr@gmail.com" style="color:var(--accent)">sydnyjr@gmail.com</a>.</p>
+    </div>
+    <div style="text-align:center;margin-top:24px">
+      <button onclick="history.back()" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">Go Back</button>
+    </div>
+  </section>
+
+  <!-- =========== PRIVACY POLICY =========== -->
+  <section class="card container hide" id="privacyPage" style="max-width:700px">
+    <h3>Privacy Policy</h3>
+    <p class="muted" style="margin-bottom:8px">Last updated: February 16, 2026</p>
+    <div style="color:var(--text);font-size:14px;line-height:1.8;max-height:70vh;overflow-y:auto;padding-right:8px">
+      <h4>1. Information We Collect</h4>
+      <p><strong>Account Information:</strong> Name, email address, date of birth, and encrypted password when you create an account.</p>
+      <p><strong>Video Data:</strong> Training videos you upload for analysis. Videos are temporarily processed via Cloudinary and Google Gemini AI.</p>
+      <p><strong>Payment Information:</strong> Payment processing is handled by Stripe. We do not store your credit card details.</p>
+      <p><strong>Usage Data:</strong> We collect basic usage data such as analysis history and subscription status.</p>
+      
+      <h4>2. How We Use Your Information</h4>
+      <p>We use your information to: provide and improve the Service; process AI video analysis; manage your account and subscription; send transactional emails (welcome, password reset); and communicate important updates.</p>
+      
+      <h4>3. Third-Party Services</h4>
+      <p>We use the following third-party services that may process your data:</p>
+      <ul style="padding-left:20px">
+        <li><strong>Google Gemini AI</strong> — Video analysis and feedback generation</li>
+        <li><strong>Cloudinary</strong> — Video hosting and delivery</li>
+        <li><strong>Stripe</strong> — Payment processing</li>
+        <li><strong>Resend</strong> — Transactional email delivery</li>
+      </ul>
+      
+      <h4>4. Data Retention</h4>
+      <p>Your account data is retained as long as your account is active. You may request deletion of your account and associated data by contacting us.</p>
+      
+      <h4>5. Data Security</h4>
+      <p>We use industry-standard security measures including password hashing (bcrypt) and secure token-based authentication (JWT). However, no method of transmission over the internet is 100% secure.</p>
+      
+      <h4>6. Children's Privacy</h4>
+      <p>Ball Knowledge is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>
+      
+      <h4>7. Your Rights</h4>
+      <p>You have the right to: access your personal data; correct inaccurate data; request deletion of your data; and withdraw consent for email communications.</p>
+      
+      <h4>8. Cookies</h4>
+      <p>We use localStorage for session management (authentication tokens and theme preferences). We do not use third-party tracking cookies.</p>
+      
+      <h4>9. Changes to This Policy</h4>
+      <p>We may update this Privacy Policy from time to time. We will notify users of significant changes via email or in-app notice.</p>
+      
+      <h4>10. Contact</h4>
+      <p>For privacy inquiries, contact us at <a href="mailto:sydnyjr@gmail.com" style="color:var(--accent)">sydnyjr@gmail.com</a>.</p>
+    </div>
+    <div style="text-align:center;margin-top:24px">
+      <button onclick="history.back()" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">Go Back</button>
     </div>
   </section>
 
@@ -1388,7 +1547,8 @@
   function goTo(screen){
     hide($('homePage')); hide($('loginCard')); hide($('signupCard'));
     hide($('analysisCard')); hide($('libraryPage')); hide($('profilePage'));
-    hide($('reportViewPage'));
+    hide($('reportViewPage')); hide($('forgotCard')); hide($('resetCard'));
+    hide($('termsPage')); hide($('privacyPage'));
 
     const menuContainer = document.querySelector('.menu-container');
     
@@ -1404,6 +1564,22 @@
       show($('signupCard'));
       if ($('pageTag')) $('pageTag').textContent = 'Sign Up';
       if (menuContainer) menuContainer.style.display = 'none';
+    } else if (screen === 'forgot') {
+      show($('forgotCard'));
+      if ($('pageTag')) $('pageTag').textContent = 'Reset Password';
+      if (menuContainer) menuContainer.style.display = 'none';
+    } else if (screen === 'reset') {
+      show($('resetCard'));
+      if ($('pageTag')) $('pageTag').textContent = 'Reset Password';
+      if (menuContainer) menuContainer.style.display = 'none';
+    } else if (screen === 'terms') {
+      show($('termsPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Terms of Service';
+      if (menuContainer) menuContainer.style.display = getToken() ? 'block' : 'none';
+    } else if (screen === 'privacy') {
+      show($('privacyPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Privacy Policy';
+      if (menuContainer) menuContainer.style.display = getToken() ? 'block' : 'none';
     } else if (screen === 'profile') {
       show($('profilePage'));
       if ($('pageTag')) $('pageTag').textContent = 'Profile';
@@ -1433,9 +1609,13 @@
 
   window.addEventListener('hashchange', () => {
     const page = currentHash();
+    if (page === 'terms') { goTo('terms'); return; }
+    if (page === 'privacy') { goTo('privacy'); return; }
     if (!getToken()) {
       if (page === 'signup') { goTo('signup'); }
       else if (page === 'login') { goTo('login'); }
+      else if (page === 'forgot') { goTo('forgot'); }
+      else if (page === 'reset') { goTo('reset'); }
       else { goTo('home'); }
       return;
     }
@@ -1522,6 +1702,53 @@
     }
   }
 
+  /* ---------- Forgot / Reset Password ---------- */
+  function setForgotMessage(msg, ok){
+    const el = $('forgotMsg');
+    if(!el) return;
+    el.textContent = msg;
+    el.style.color = ok ? 'var(--accent)' : '#ff6b6b';
+  }
+  function setResetMessage(msg, ok){
+    const el = $('resetMsg');
+    if(!el) return;
+    el.textContent = msg;
+    el.style.color = ok ? 'var(--accent)' : '#ff6b6b';
+  }
+
+  async function doForgotPassword(){
+    const email = $('fp_email').value.trim();
+    if (!email) return setForgotMessage('Please enter your email', false);
+    setForgotMessage('Sending reset code...');
+    const out = await api('/api/forgot-password', { method:'POST', body: JSON.stringify({ email }) });
+    if (out.ok) {
+      setForgotMessage('Code sent! Check your email.', true);
+      $('rp_email').value = email;
+      setTimeout(() => { setHash('reset'); goTo('reset'); }, 1200);
+    } else {
+      setForgotMessage(out.error || 'Something went wrong', false);
+    }
+  }
+
+  async function doResetPassword(){
+    const email = $('rp_email').value.trim();
+    const code = $('rp_code').value.trim();
+    const pw = $('rp_password').value;
+    const pw2 = $('rp_password2').value;
+    if (!email || !code || !pw) return setResetMessage('All fields are required', false);
+    if (pw.length < 6) return setResetMessage('Password must be at least 6 characters', false);
+    if (pw !== pw2) return setResetMessage('Passwords do not match', false);
+
+    setResetMessage('Resetting password...');
+    const out = await api('/api/reset-password', { method:'POST', body: JSON.stringify({ email, code, newPassword: pw }) });
+    if (out.ok) {
+      setResetMessage('Password reset! Redirecting to login...', true);
+      setTimeout(() => { setHash('login'); goTo('login'); }, 1500);
+    } else {
+      setResetMessage(out.error || 'Reset failed', false);
+    }
+  }
+
   function proceedToAnalysis(){
     setHash('analysis');
     goTo('analysis');
@@ -1554,6 +1781,8 @@
     if(res.ok && res.url) window.location.href = res.url;
     else alert(res.error||'Could not open billing portal');
   });
+  $('termsLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('terms');goTo('terms')});
+  $('privacyLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('privacy');goTo('privacy')});
   $('logout')?.addEventListener('click',e=>{e.preventDefault();doLogout()});
 
   /* Analyze */
@@ -2260,6 +2489,8 @@
   /* Wire up */
   $('signupBtn')?.addEventListener('click', doSignup);
   $('loginBtn')?.addEventListener('click', doLogin);
+  $('forgotBtn')?.addEventListener('click', doForgotPassword);
+  $('resetBtn')?.addEventListener('click', doResetPassword);
   $('analyzeBtn')?.addEventListener('click', doAnalyze);
   $('newAnalysisBtn')?.addEventListener('click', () => { hide($('results')); $('videoUrl').value=''; $('videoDuration').value=''; });
   $('saveAnalysisBtn')?.addEventListener('click', async () => {
@@ -2280,15 +2511,18 @@
   /* Bootstrap */
   document.addEventListener('DOMContentLoaded', () => {
     try{
+      const page = currentHash();
+      if (page === 'terms') { goTo('terms'); return; }
+      if (page === 'privacy') { goTo('privacy'); return; }
       if (getToken()) {
-        const page = currentHash();
         if (page === 'library') { loadLibrary(); }
         else if (page === 'profile') { goTo('profile'); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
-        const page = currentHash();
         if (page === 'login') { goTo('login'); }
         else if (page === 'signup') { goTo('signup'); }
+        else if (page === 'forgot') { goTo('forgot'); }
+        else if (page === 'reset') { goTo('reset'); }
         else { goTo('home'); }
       }
     } finally {

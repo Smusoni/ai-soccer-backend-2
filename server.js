@@ -377,6 +377,84 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+/* ---------- Password Reset ---------- */
+const pendingResets = new Map(); // email -> { code, expiresAt }
+
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ ok: false, error: 'Email required' });
+
+    const user = findUser(email);
+    // Always return success to avoid revealing if email exists
+    if (!user) return res.json({ ok: true, message: 'If that email is registered, a reset code has been sent.' });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    pendingResets.set(user.email, { code, expiresAt: Date.now() + 15 * 60 * 1000 });
+
+    if (resend) {
+      await resend.emails.send({
+        from: 'Ball Knowledge <onboarding@resend.dev>',
+        to: user.email,
+        subject: 'Your Ball Knowledge Password Reset Code',
+        html: `
+          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#ffffff;border-radius:16px;overflow:hidden">
+            <div style="background:linear-gradient(135deg,#00ff95,#19d3ff);padding:32px;text-align:center">
+              <h1 style="margin:0;font-size:24px;color:#0a0a0a">⚽ Ball Knowledge</h1>
+            </div>
+            <div style="padding:32px;text-align:center">
+              <h2 style="margin:0 0 12px;color:#ffffff">Password Reset</h2>
+              <p style="color:#cccccc;font-size:15px;line-height:1.6">Use this code to reset your password. It expires in 15 minutes.</p>
+              <div style="background:#141B2D;border:2px solid #00ff95;border-radius:12px;padding:20px;margin:24px 0;font-size:36px;font-weight:800;letter-spacing:8px;color:#00ff95">${code}</div>
+              <p style="color:#666;font-size:13px">If you didn't request this, you can ignore this email.</p>
+            </div>
+          </div>
+        `,
+      });
+      console.log(`[BK] Password reset code sent to ${user.email}`);
+    }
+
+    res.json({ ok: true, message: 'If that email is registered, a reset code has been sent.' });
+  } catch (e) {
+    console.error('[BK] forgot-password error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body || {};
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ ok: false, error: 'Email, code, and new password required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ ok: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const user = findUser(email);
+    if (!user) return res.status(400).json({ ok: false, error: 'Invalid email or code' });
+
+    const reset = pendingResets.get(user.email);
+    if (!reset || reset.code !== code) {
+      return res.status(400).json({ ok: false, error: 'Invalid or expired code' });
+    }
+    if (Date.now() > reset.expiresAt) {
+      pendingResets.delete(user.email);
+      return res.status(400).json({ ok: false, error: 'Code has expired. Request a new one.' });
+    }
+
+    user.passHash = await bcrypt.hash(String(newPassword), 10);
+    pendingResets.delete(user.email);
+    saveDB();
+
+    console.log(`[BK] Password reset for ${user.email}`);
+    res.json({ ok: true, message: 'Password reset successfully. You can now log in.' });
+  } catch (e) {
+    console.error('[BK] reset-password error:', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
 app.get('/api/me', auth, (req, res) => {
   const u = findUserById(req.userId);
   if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
