@@ -543,6 +543,8 @@
       <a href="#" id="profileLink" role="menuitem">Profile</a>
       <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
       <a href="#" id="library" role="menuitem">Library</a>
+      <a href="#" id="upgradeLink" role="menuitem" style="color:var(--accent)">⚡ Upgrade to Pro</a>
+      <a href="#" id="manageSubLink" role="menuitem" style="display:none;color:var(--accent2)">Manage Subscription</a>
       <a href="#" id="logout" role="menuitem">Logout</a>
     </div>
   </div>
@@ -1545,6 +1547,13 @@
   $('profileLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('profile')});
   $('newAnalysis')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('analysis');hide($('results'))});
   $('library')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('library')});
+  $('upgradeLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');startCheckout()});
+  $('manageSubLink')?.addEventListener('click',async(e)=>{
+    e.preventDefault();menuPanel.classList.remove('active');
+    const res = await api('/api/manage-subscription',{method:'POST'});
+    if(res.ok && res.url) window.location.href = res.url;
+    else alert(res.error||'Could not open billing portal');
+  });
   $('logout')?.addEventListener('click',e=>{e.preventDefault();doLogout()});
 
   /* Analyze */
@@ -1568,13 +1577,19 @@
       if (!res.ok) return;
       const counter = $('freeCounter');
       const text = $('freeCounterText');
+      const upgradeLink = $('upgradeLink');
+      const manageLink = $('manageSubLink');
       if (res.plan === 'pro') {
         counter.classList.add('hide');
+        if (upgradeLink) upgradeLink.style.display = 'none';
+        if (manageLink) manageLink.style.display = '';
       } else {
         counter.classList.remove('hide');
         text.textContent = res.remaining > 0 
           ? `${res.remaining} of ${res.limit} free analyses remaining`
           : 'No free analyses remaining — upgrade to continue';
+        if (upgradeLink) upgradeLink.style.display = '';
+        if (manageLink) manageLink.style.display = 'none';
       }
     } catch(e) { /* ignore */ }
   }
