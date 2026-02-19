@@ -212,10 +212,13 @@ async function initDB() {
     await dropNotNull('analyses', 'user_id');
     await dropNotNull('users', 'name');
     await dropNotNull('users', 'pass_hash');
+    await dropNotNull('users', 'password_hash');
 
-    // Set a default for analysis_data if it exists so old NOT NULL columns don't block inserts
-    try { await client.query(`ALTER TABLE analyses ALTER COLUMN analysis_data SET DEFAULT '{}'::jsonb`); }
-    catch (e) { /* column may not exist */ }
+    // Set defaults on legacy columns so inserts don't fail
+    try { await client.query(`ALTER TABLE analyses ALTER COLUMN analysis_data SET DEFAULT '{}'::jsonb`); } catch {}
+    try { await client.query(`ALTER TABLE users ALTER COLUMN password_hash SET DEFAULT ''`); } catch {}
+    try { await client.query(`ALTER TABLE analyses ALTER COLUMN video_type DROP NOT NULL`); } catch {}
+    try { await client.query(`ALTER TABLE analyses ALTER COLUMN video_type SET DEFAULT 'training'`); } catch {}
 
     // Migrate password_hash -> pass_hash if old schema exists
     try {
@@ -251,9 +254,9 @@ async function findUserById(id) {
 
 async function createUser({ id, name, email, passHash, age, dob }) {
   await pool.query(
-    `INSERT INTO users (id, name, email, pass_hash, age, dob, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [id, name, email, passHash, age, dob, Date.now()]
+    `INSERT INTO users (id, name, email, pass_hash, password_hash, age, dob, created_at)
+     VALUES ($1::uuid, $2, $3, $4, $4, $5, $6, NOW())`,
+    [id, name, email, passHash, age, dob]
   );
 }
 
@@ -354,13 +357,13 @@ async function insertAnalysis(userId, item) {
     `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
        session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
        practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW())`,
-    [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
+     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())`,
+    [item.id, userId, item.candidateName, item.videoType || 'training', item.skillFocus,
      JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
      JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
      JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
-     JSON.stringify(item.youtubeRecommendations || []), item.video_url, item.public_id,
-     item.skill, JSON.stringify(item.raw || {})]
+     JSON.stringify(item.youtubeRecommendations || []), item.video_url || null, item.public_id || null,
+     item.skill || null, JSON.stringify(item.raw || {})]
   );
 
   try {
