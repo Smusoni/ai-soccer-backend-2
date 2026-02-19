@@ -312,7 +312,7 @@ async function getAnalysesByUser(userId) {
     commonMistakesForPosition: r.common_mistakes, practiceProgression: r.practice_progression,
     youtubeRecommendations: r.youtube_recommendations,
     video_url: r.video_url, public_id: r.public_id, skill: r.skill,
-    raw: r.raw, created_at: Number(r.created_at),
+    raw: r.raw, created_at: r.created_at instanceof Date ? r.created_at.getTime() : Number(r.created_at) || Date.now(),
   }));
 }
 
@@ -330,7 +330,7 @@ async function getAnalysisById(userId, analysisId) {
     commonMistakesForPosition: r.common_mistakes, practiceProgression: r.practice_progression,
     youtubeRecommendations: r.youtube_recommendations,
     video_url: r.video_url, public_id: r.public_id, skill: r.skill,
-    raw: r.raw, created_at: Number(r.created_at),
+    raw: r.raw, created_at: r.created_at instanceof Date ? r.created_at.getTime() : Number(r.created_at) || Date.now(),
   };
 }
 
@@ -339,13 +339,13 @@ async function insertAnalysis(userId, item) {
     `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
        session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
        practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW())`,
     [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
      JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
      JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
      JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
      JSON.stringify(item.youtubeRecommendations || []), item.video_url, item.public_id,
-     item.skill, JSON.stringify(item.raw || {}), item.created_at]
+     item.skill, JSON.stringify(item.raw || {})]
   );
 
   try {
