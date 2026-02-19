@@ -557,7 +557,7 @@
 
   <!-- Header -->
   <header class="container app-header">
-    <div class="brand">
+    <div class="brand" onclick="var p=getToken()?'analyze':'home';goTo(p);setHash(p)" style="cursor:pointer">
       <h1 class="logo" style="font-size:42px">⚽ BALL KNOWLEDGE</h1>
       <p class="muted" style="margin:0;font-size:12px">Personal Soccer Training Analysis</p>
     </div>
@@ -893,6 +893,7 @@
       <button onclick="setHash('signup'); goTo('signup')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
         Create Account
       </button>
+      <p style="margin-top:16px"><a href="#" onclick="event.preventDefault();setHash('home');goTo('home')" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Home</a></p>
     </div>
   </section>
 
@@ -928,6 +929,7 @@
       <button onclick="setHash('login'); goTo('login')" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:12px 32px">
         Login
       </button>
+      <p style="margin-top:16px"><a href="#" onclick="event.preventDefault();setHash('home');goTo('home')" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Home</a></p>
     </div>
   </section>
 
