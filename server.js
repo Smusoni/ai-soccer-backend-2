@@ -113,8 +113,8 @@ async function initDB() {
   }
   const client = await pool.connect();
   try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
+    const tables = [
+      `CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         name TEXT,
         email TEXT UNIQUE NOT NULL,
@@ -124,8 +124,8 @@ async function initDB() {
         subscription_status TEXT DEFAULT 'free',
         stripe_customer_id TEXT,
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
-      );
-      CREATE TABLE IF NOT EXISTS profiles (
+      )`,
+      `CREATE TABLE IF NOT EXISTS profiles (
         user_id TEXT PRIMARY KEY,
         name TEXT,
         age INTEGER,
@@ -136,8 +136,8 @@ async function initDB() {
         position TEXT,
         skill TEXT,
         updated_at BIGINT
-      );
-      CREATE TABLE IF NOT EXISTS clips (
+      )`,
+      `CREATE TABLE IF NOT EXISTS clips (
         id SERIAL PRIMARY KEY,
         user_id TEXT NOT NULL,
         url TEXT,
@@ -148,8 +148,8 @@ async function initDB() {
         width INTEGER,
         height INTEGER,
         format TEXT
-      );
-      CREATE TABLE IF NOT EXISTS analyses (
+      )`,
+      `CREATE TABLE IF NOT EXISTS analyses (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         candidate_name TEXT,
@@ -168,8 +168,13 @@ async function initDB() {
         skill TEXT,
         raw JSONB DEFAULT '{}',
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
-      );
-    `);
+      )`,
+    ];
+
+    for (const sql of tables) {
+      try { await client.query(sql); }
+      catch (e) { console.error(`[BK] Table creation note: ${e.message}`); }
+    }
 
     const addCol = async (table, col, type) => {
       try { await client.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${col} ${type}`); }
@@ -181,6 +186,21 @@ async function initDB() {
     await addCol('users', 'dob', 'TEXT');
     await addCol('users', 'subscription_status', "TEXT DEFAULT 'free'");
     await addCol('users', 'stripe_customer_id', 'TEXT');
+    await addCol('analyses', 'candidate_name', 'TEXT');
+    await addCol('analyses', 'video_type', "TEXT DEFAULT 'training'");
+    await addCol('analyses', 'skill_focus', 'TEXT');
+    await addCol('analyses', 'secondary_skills', "JSONB DEFAULT '[]'");
+    await addCol('analyses', 'session_summary', 'TEXT');
+    await addCol('analyses', 'current_level', 'TEXT');
+    await addCol('analyses', 'technical_analysis', "JSONB DEFAULT '{}'");
+    await addCol('analyses', 'improvement_tips', "JSONB DEFAULT '[]'");
+    await addCol('analyses', 'common_mistakes', "JSONB DEFAULT '[]'");
+    await addCol('analyses', 'practice_progression', "JSONB DEFAULT '[]'");
+    await addCol('analyses', 'youtube_recommendations', "JSONB DEFAULT '[]'");
+    await addCol('analyses', 'video_url', 'TEXT');
+    await addCol('analyses', 'public_id', 'TEXT');
+    await addCol('analyses', 'skill', 'TEXT');
+    await addCol('analyses', 'raw', "JSONB DEFAULT '{}'");
 
     // Migrate password_hash -> pass_hash if old schema exists
     try {
