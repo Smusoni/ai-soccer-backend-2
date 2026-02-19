@@ -9,7 +9,7 @@
     "dev": "nodemon server.js"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=18"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

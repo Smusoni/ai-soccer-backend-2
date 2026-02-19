@@ -107,6 +107,10 @@ const pool = new pg.Pool({
 });
 
 async function initDB() {
+  if (!process.env.POSTGRES_URL && !process.env.DATABASE_URL) {
+    console.error('[BK] WARNING: No POSTGRES_URL or DATABASE_URL env var found. Database will not work.');
+    return;
+  }
   const client = await pool.connect();
   try {
     await client.query(`
@@ -1133,7 +1137,12 @@ process.on('unhandledRejection', (reason, promise) => {
 
 /* ---------- Start server ---------- */
 async function start() {
-  await initDB();
+  try {
+    await initDB();
+  } catch (e) {
+    console.error('[BK] CRITICAL: Could not initialise database:', e.message);
+    console.error('[BK] Server will start but DB operations will fail.');
+  }
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[BK] Server running on http://localhost:${PORT}`);
     console.log(`[BK] PostgreSQL: connected`);
