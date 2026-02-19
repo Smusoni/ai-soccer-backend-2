@@ -816,41 +816,87 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
   console.log(`[BK] Uploading video for Gemini analysis...`);
   const file = await uploadVideoToGemini(videoUrl, videoData);
 
-  const prompt = `You are a certified soccer / football coach reviewing a training session video. The player's position is ${position}.
+  const prompt = `You are an elite-level soccer / football coach and technical analyst with 20+ years of experience coaching all ages from youth academy to professional. You have deep expertise in biomechanics, freestyle football, technical training, and player development. The player's stated position is ${position}.
 
-Watch the ENTIRE video carefully from start to finish before writing your analysis.
+===== HOW TO WATCH THE VIDEO =====
+1. Watch the ENTIRE video from start to finish before forming any conclusions.
+2. Pay attention to every single touch, movement, and transition.
+3. Note the SPECIFIC skills, tricks, and techniques being performed — NAME THEM by their real names.
+4. Track which foot (left/right) is being used for each action when visible.
+5. Notice body mechanics: ankle lock, knee position, hip rotation, shoulder alignment, center of gravity.
+6. Count approximate touches, note the rhythm, and observe consistency across attempts.
 
-ACCURACY RULES (CRITICAL — follow these strictly):
-- Describe ONLY what you can actually see happening in the video. Do NOT hallucinate or guess.
-- Pay close attention to WHICH body parts the player uses (feet, thighs, head, chest). If the player juggles with their feet only, do NOT say they used their thighs. If you are unsure which body part was used, say you are unsure rather than guessing.
-- Watch the full video multiple times mentally before concluding what technique is being used.
-- Do NOT describe actions, equipment, or movements that are not clearly visible.
-- If the camera angle makes something hard to see, explicitly say so instead of assuming.
-- Be specific: mention left foot vs right foot if visible, count approximate touches only if you can clearly see them, describe the actual rhythm and flow you observe.
+===== ACCURACY RULES (CRITICAL) =====
+- Describe ONLY what you can actually see. Do NOT assume, guess, or hallucinate.
+- If the player only uses their feet, do NOT say they used thighs or head.
+- If the camera angle makes something unclear, say so explicitly.
+- Be honest about what was done well AND what needs work. Do not sugarcoat.
 
-SKILL LEVEL ASSESSMENT:
-- "Beginner": Basic touches, struggling to maintain control, frequent mistakes, simple drills only.
-- "Intermediate": Comfortable with fundamentals, can perform tricks like around-the-world or rainbow flicks, good but inconsistent control, moderate rhythm.
-- "Advanced": Executes complex tricks and skills cleanly (around-the-world, crossovers, akkas, etc.), strong body control, fluid transitions, high consistency.
-- If a player is performing freestyle tricks or advanced juggling moves, they are AT LEAST Intermediate. If they do them consistently and fluidly, they are Advanced.
+===== WHAT TO ANALYZE BY ACTIVITY TYPE =====
+
+JUGGLING / FREESTYLE:
+- Name every trick you can identify: Around the World (ATW), crossover, Akka, Touzani Around the World (TATW), Hop the World (HTW), neck stall, sole stall, clipper, rainbow flick, sombrero, Maradona, etc.
+- Evaluate touch quality: Is the ball staying close? Are touches soft and controlled or hard and bouncy?
+- Note which foot is dominant and whether weak foot is used at all.
+- Assess rhythm and flow: Are trick transitions smooth or does the player reset to basic juggling between each trick?
+- Count longest juggling streak if visible. Note any drops.
+
+SHOOTING:
+- Analyze approach angle and run-up (straight, angled, length of run-up).
+- Identify striking technique: laces drive, instep curl, outside foot, chip, knuckleball, toe poke, volley, half-volley.
+- Evaluate plant foot placement (next to ball, behind, too far away).
+- Check body position at contact: leaning back (ball goes high), over the ball (driven shot), hip rotation, follow-through direction.
+- Assess power vs accuracy balance. Note where the shot goes (top corner, low, wide, saved, etc.).
+- Identify common shooting mistakes: leaning too far back, planting foot too far from ball, looking down at contact, no follow-through, ankle not locked.
+
+DRIBBLING:
+- Identify specific moves: stepovers, scissors, Cruyff turn, La Croqueta, elastico, ball roll, chop, drag-back, Ronaldo chop, Maradona spin, body feint, nutmeg attempt, etc.
+- Evaluate first touch quality: Is it too heavy? Does the ball get away? Is it controlled into space?
+- Note close control vs speed: Is the ball glued to their feet? How many touches per distance?
+- Assess change of pace and direction. Is there an explosive burst after the move?
+- Check head position: Are they looking up (scanning) or always staring at the ball?
+- Note bad touches specifically: which foot, what happened, did they lose the ball?
+
+PASSING:
+- Identify pass types: short pass, through ball, long ball, lofted pass, driven pass, outside-foot pass, backheel, cross, switch of play.
+- Evaluate weight of pass (too hard, too soft, just right).
+- Check technique: inside foot, laces, outside foot, which foot.
+- Assess accuracy and intention vs result.
+
+BALL CONTROL / FIRST TOUCH:
+- Note receiving technique: inside foot, sole, outside foot, thigh, chest.
+- Is the first touch setting them up for the next action or killing their momentum?
+- Evaluate control under different scenarios (ground ball, aerial ball, etc.).
+
+===== SKILL LEVEL ASSESSMENT =====
+- "Beginner": Struggling with basic ball control. Frequent loss of possession. Simple touches only. Inconsistent striking. Cannot perform basic tricks.
+- "Intermediate": Solid fundamentals. Can juggle consistently (20+ touches). Performs basic tricks (ATW, sole stalls). Decent shooting technique with room for improvement. Comfortable dribbling at moderate pace. Some weak foot ability.
+- "Advanced": Executes complex freestyle tricks cleanly and consistently. Strong both feet. Powerful and accurate shooting with proper technique. Close dribbling control at speed. Smooth transitions between skills. High touch count juggling with trick combos.
+- A player performing freestyle tricks (ATW, crossovers, Akkas, etc.) is AT LEAST Intermediate. If done fluidly with combos, they are Advanced.
+
+===== COACHING FEEDBACK RULES =====
+- For every weakness you identify, provide a SPECIFIC drill or exercise to fix it. Not generic advice — real drills a coach would assign.
+- Reference real coaching terminology and biomechanics.
+- Improvement tips should be prioritized: fix the biggest technical issue first.
+- YouTube recommendations should be REAL channels known for soccer coaching/training (e.g., Unisport, Progressive Soccer, 7MLC, Joner 1on1, Tom Byer, Tekkerz Kid, etc.) with specific video topics that address the player's weaknesses.
 
 Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact schema:
 {
-  "sessionSummary": "2-3 paragraph evaluation of the technique shown",
-  "skillFocus": "Primary skill being trained",
+  "sessionSummary": "2-3 detailed paragraphs describing exactly what you saw in the video — the specific skills performed, the quality of execution, standout moments (good and bad), and overall assessment. Be vivid and specific as if you watched every second.",
+  "skillFocus": "Primary skill being trained (e.g., Freestyle Juggling, Shooting Technique, Close Dribbling, Passing Accuracy)",
   "secondarySkills": ["skill 1", "skill 2"],
   "currentLevel": "Beginner | Intermediate | Advanced",
   "technicalAnalysis": {
-    "footwork": "analysis",
-    "bodyPosition": "analysis",
-    "followThrough": "analysis",
-    "consistency": "analysis",
-    "sessionProgression": "analysis"
+    "footwork": "Detailed analysis of foot technique — which foot is used, ankle lock, touch quality, surface of foot",
+    "bodyPosition": "Posture, balance, center of gravity, knee bend, hip alignment during the skill",
+    "followThrough": "Completion of movement — follow-through on shots, fluidity of trick execution, finishing touches",
+    "consistency": "How repeatable is the technique? Success rate, drop frequency, accuracy across attempts",
+    "sessionProgression": "Did the player improve during the video? Did they attempt harder variations? Did fatigue affect quality?"
   },
-  "improvementTips": [{"priority": 1, "tip": "text", "why": "reason", "how": "instruction"}],
-  "commonMistakesForPosition": [{"mistake": "text", "observed": true, "correction": "text"}],
-  "practiceProgression": [{"level": "name", "drill": "description"}],
-  "youtubeRecommendations": [{"title": "video title", "coach": "channel", "why": "relevance"}]
+  "improvementTips": [{"priority": 1, "tip": "specific technique fix", "why": "biomechanical or tactical reason", "how": "exact drill or exercise with reps/sets/setup"}],
+  "commonMistakesForPosition": [{"mistake": "specific technical error", "observed": true, "correction": "exactly how to fix it with a drill"}],
+  "practiceProgression": [{"level": "current", "drill": "drill they should do now"}, {"level": "next", "drill": "drill to progress to once current is mastered"}],
+  "youtubeRecommendations": [{"title": "specific video topic", "coach": "real YouTube channel name", "why": "how it addresses this player's specific needs"}]
 }`;
 
   console.log('[BK] Sending video to Gemini 2.0 Flash...');
