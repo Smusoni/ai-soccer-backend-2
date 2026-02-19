@@ -335,18 +335,23 @@ async function getAnalysisById(userId, analysisId) {
 }
 
 async function insertAnalysis(userId, item) {
-  await pool.query(
-    `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
-       session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
-       practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
-    [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
-     JSON.stringify(item.secondarySkills), item.sessionSummary, item.currentLevel,
-     JSON.stringify(item.technicalAnalysis), JSON.stringify(item.improvementTips),
-     JSON.stringify(item.commonMistakesForPosition), JSON.stringify(item.practiceProgression),
-     JSON.stringify(item.youtubeRecommendations), item.video_url, item.public_id,
-     item.skill, JSON.stringify(item.raw), item.created_at]
-  );
+  try {
+    await pool.query(
+      `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
+         session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
+         practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+      [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
+       JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
+       JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
+       JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
+       JSON.stringify(item.youtubeRecommendations || []), item.video_url, item.public_id,
+       item.skill, JSON.stringify(item.raw || {}), item.created_at]
+    );
+  } catch (e) {
+    console.error('[BK] insertAnalysis error:', e.message);
+    throw new Error('Failed to save analysis. Database table may need setup. Please try again.');
+  }
 }
 
 async function deleteAnalysis(userId, analysisId) {
@@ -357,10 +362,15 @@ async function deleteAnalysis(userId, analysisId) {
 }
 
 async function getAnalysisCount(userId) {
-  const { rows } = await pool.query(
-    'SELECT COUNT(*) as count FROM analyses WHERE user_id = $1', [userId]
-  );
-  return parseInt(rows[0].count, 10);
+  try {
+    const { rows } = await pool.query(
+      'SELECT COUNT(*) as count FROM analyses WHERE user_id = $1', [userId]
+    );
+    return parseInt(rows[0].count, 10);
+  } catch (e) {
+    console.error('[BK] getAnalysisCount error (table may not exist yet):', e.message);
+    return 0;
+  }
 }
 
 async function insertClip(userId, clip) {
