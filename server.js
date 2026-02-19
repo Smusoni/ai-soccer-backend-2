@@ -14,6 +14,7 @@ import { GoogleAIFileManager } from '@google/generative-ai/server';
 import os from 'os';
 import https from 'https';
 import dotenv from 'dotenv';
+import pg from 'pg';
 
 dotenv.config();
 
@@ -69,25 +70,26 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
     const userId = session.metadata?.userId;
     const customerId = session.customer;
     if (userId) {
-      const user = db.users.find(u => u.id === userId);
-      if (user) {
-        user.subscriptionStatus = 'active';
-        user.stripeCustomerId = customerId;
-        saveDB();
+      try {
+        await pool.query(
+          'UPDATE users SET subscription_status = $1, stripe_customer_id = $2 WHERE id = $3',
+          ['active', customerId, userId]
+        );
         console.log(`[BK] User ${userId} subscription activated`);
-      }
+      } catch (e) { console.error('[BK] Webhook DB error:', e.message); }
     }
   }
 
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object;
     const customerId = sub.customer;
-    const user = db.users.find(u => u.stripeCustomerId === customerId);
-    if (user) {
-      user.subscriptionStatus = 'cancelled';
-      saveDB();
-      console.log(`[BK] User ${user.id} subscription cancelled`);
-    }
+    try {
+      await pool.query(
+        'UPDATE users SET subscription_status = $1 WHERE stripe_customer_id = $2',
+        ['cancelled', customerId]
+      );
+      console.log(`[BK] Subscription cancelled for stripe customer ${customerId}`);
+    } catch (e) { console.error('[BK] Webhook DB error:', e.message); }
   }
 
   res.json({ received: true });
@@ -96,57 +98,241 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static('.'));
 
-/* ---------- Tiny JSON "DB" ---------- */
-const DATA_DIR  = path.join(__dirname, 'data');
-const DATA_PATH = path.join(DATA_DIR, 'data.json');
+/* ---------- PostgreSQL DB ---------- */
+const pool = new pg.Pool({
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' || process.env.POSTGRES_URL?.includes('railway')
+    ? { rejectUnauthorized: false }
+    : false,
+});
 
-let db = {
-  users: [],              // [{id,name,email,passHash,age,dob,createdAt}]
-  profiles: {},           // userId -> profile
-  clipsByUser: {},        // userId -> [{...clip}]
-  analysesByUser: {},     // userId -> [{...analysis}]
-};
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function loadDB() {
-  ensureDataDir();
-  if (fs.existsSync(DATA_PATH)) {
-    try {
-      const raw = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
-      db = { ...db, ...raw };
-    } catch (e) {
-      console.error('[BK] loadDB error', e);
-    }
+async function initDB() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        pass_hash TEXT NOT NULL,
+        age INTEGER,
+        dob TEXT,
+        subscription_status TEXT DEFAULT 'free',
+        stripe_customer_id TEXT,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+      );
+      CREATE TABLE IF NOT EXISTS profiles (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT,
+        age INTEGER,
+        dob TEXT,
+        height INTEGER,
+        weight TEXT,
+        foot TEXT,
+        position TEXT,
+        skill TEXT,
+        updated_at BIGINT
+      );
+      CREATE TABLE IF NOT EXISTS clips (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        url TEXT,
+        public_id TEXT,
+        created_at TEXT,
+        bytes INTEGER,
+        duration REAL,
+        width INTEGER,
+        height INTEGER,
+        format TEXT
+      );
+      CREATE TABLE IF NOT EXISTS analyses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        candidate_name TEXT,
+        video_type TEXT DEFAULT 'training',
+        skill_focus TEXT,
+        secondary_skills JSONB DEFAULT '[]',
+        session_summary TEXT,
+        current_level TEXT,
+        technical_analysis JSONB DEFAULT '{}',
+        improvement_tips JSONB DEFAULT '[]',
+        common_mistakes JSONB DEFAULT '[]',
+        practice_progression JSONB DEFAULT '[]',
+        youtube_recommendations JSONB DEFAULT '[]',
+        video_url TEXT,
+        public_id TEXT,
+        skill TEXT,
+        raw JSONB DEFAULT '{}',
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+      );
+    `);
+    console.log('[BK] PostgreSQL tables initialized');
+  } catch (e) {
+    console.error('[BK] Failed to initialize DB tables:', e.message);
+  } finally {
+    client.release();
   }
 }
 
-let saveTimer = null;
-function saveDB(immediate = false) {
-  const write = () => {
-    ensureDataDir();
-    fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), 'utf8');
-  };
-
-  if (immediate) return write();
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try { write(); } catch (e) { console.error('[BK] saveDB', e); }
-    saveTimer = null;
-  }, 250);
+/* ---------- DB helper functions ---------- */
+async function findUser(email) {
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [String(email)]
+  );
+  return rows[0] || null;
 }
 
-loadDB();
+async function findUserById(id) {
+  const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+  return rows[0] || null;
+}
+
+async function createUser({ id, name, email, passHash, age, dob }) {
+  await pool.query(
+    `INSERT INTO users (id, name, email, pass_hash, age, dob, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [id, name, email, passHash, age, dob, Date.now()]
+  );
+}
+
+async function updateUser(id, fields) {
+  const sets = [];
+  const vals = [];
+  let i = 1;
+  for (const [key, val] of Object.entries(fields)) {
+    const col = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+    sets.push(`${col} = $${i++}`);
+    vals.push(val);
+  }
+  if (sets.length === 0) return;
+  vals.push(id);
+  await pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = $${i}`, vals);
+}
+
+async function getProfile(userId) {
+  const { rows } = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
+  if (!rows[0]) return {};
+  const r = rows[0];
+  return { name: r.name, age: r.age, dob: r.dob, height: r.height, weight: r.weight, foot: r.foot, position: r.position, skill: r.skill, updatedAt: r.updated_at };
+}
+
+async function upsertProfile(userId, body) {
+  const existing = await getProfile(userId);
+  let heightInches = existing.height ?? null;
+
+  if (body.heightFeet != null || body.heightInches != null) {
+    const ft   = Number(body.heightFeet || 0);
+    const inch = Number(body.heightInches || 0);
+    const total = ft * 12 + inch;
+    if (total > 0) heightInches = total;
+  } else if (body.height != null) {
+    const h = Number(body.height);
+    if (!Number.isNaN(h) && h > 0) heightInches = h;
+  }
+
+  const profile = {
+    name: body.name ?? existing.name ?? null,
+    age: body.age ?? existing.age ?? null,
+    dob: body.dob ?? existing.dob ?? null,
+    height: heightInches,
+    weight: body.weight ?? existing.weight ?? null,
+    foot: body.foot ?? existing.foot ?? null,
+    position: body.position ?? existing.position ?? null,
+    skill: body.skill ?? existing.skill ?? null,
+    updated_at: Date.now(),
+  };
+
+  await pool.query(
+    `INSERT INTO profiles (user_id, name, age, dob, height, weight, foot, position, skill, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ON CONFLICT (user_id) DO UPDATE SET
+       name = $2, age = $3, dob = $4, height = $5, weight = $6,
+       foot = $7, position = $8, skill = $9, updated_at = $10`,
+    [userId, profile.name, profile.age, profile.dob, profile.height, profile.weight, profile.foot, profile.position, profile.skill, profile.updated_at]
+  );
+  return profile;
+}
+
+async function getAnalysesByUser(userId) {
+  const { rows } = await pool.query(
+    'SELECT * FROM analyses WHERE user_id = $1 ORDER BY created_at DESC', [userId]
+  );
+  return rows.map(r => ({
+    id: r.id, candidateName: r.candidate_name, videoType: r.video_type,
+    skillFocus: r.skill_focus, secondarySkills: r.secondary_skills,
+    sessionSummary: r.session_summary, currentLevel: r.current_level,
+    technicalAnalysis: r.technical_analysis, improvementTips: r.improvement_tips,
+    commonMistakesForPosition: r.common_mistakes, practiceProgression: r.practice_progression,
+    youtubeRecommendations: r.youtube_recommendations,
+    video_url: r.video_url, public_id: r.public_id, skill: r.skill,
+    raw: r.raw, created_at: Number(r.created_at),
+  }));
+}
+
+async function getAnalysisById(userId, analysisId) {
+  const { rows } = await pool.query(
+    'SELECT * FROM analyses WHERE id = $1 AND user_id = $2', [analysisId, userId]
+  );
+  if (!rows[0]) return null;
+  const r = rows[0];
+  return {
+    id: r.id, candidateName: r.candidate_name, videoType: r.video_type,
+    skillFocus: r.skill_focus, secondarySkills: r.secondary_skills,
+    sessionSummary: r.session_summary, currentLevel: r.current_level,
+    technicalAnalysis: r.technical_analysis, improvementTips: r.improvement_tips,
+    commonMistakesForPosition: r.common_mistakes, practiceProgression: r.practice_progression,
+    youtubeRecommendations: r.youtube_recommendations,
+    video_url: r.video_url, public_id: r.public_id, skill: r.skill,
+    raw: r.raw, created_at: Number(r.created_at),
+  };
+}
+
+async function insertAnalysis(userId, item) {
+  await pool.query(
+    `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
+       session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
+       practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+    [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
+     JSON.stringify(item.secondarySkills), item.sessionSummary, item.currentLevel,
+     JSON.stringify(item.technicalAnalysis), JSON.stringify(item.improvementTips),
+     JSON.stringify(item.commonMistakesForPosition), JSON.stringify(item.practiceProgression),
+     JSON.stringify(item.youtubeRecommendations), item.video_url, item.public_id,
+     item.skill, JSON.stringify(item.raw), item.created_at]
+  );
+}
+
+async function deleteAnalysis(userId, analysisId) {
+  const { rowCount } = await pool.query(
+    'DELETE FROM analyses WHERE id = $1 AND user_id = $2', [analysisId, userId]
+  );
+  return rowCount > 0;
+}
+
+async function getAnalysisCount(userId) {
+  const { rows } = await pool.query(
+    'SELECT COUNT(*) as count FROM analyses WHERE user_id = $1', [userId]
+  );
+  return parseInt(rows[0].count, 10);
+}
+
+async function insertClip(userId, clip) {
+  await pool.query(
+    `INSERT INTO clips (user_id, url, public_id, created_at, bytes, duration, width, height, format)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [userId, clip.url, clip.public_id, clip.created_at, clip.bytes, clip.duration, clip.width, clip.height, clip.format]
+  );
+}
+
+async function getClipCount(userId) {
+  const { rows } = await pool.query(
+    'SELECT COUNT(*) as count FROM clips WHERE user_id = $1', [userId]
+  );
+  return parseInt(rows[0].count, 10);
+}
 
 /* ---------- Token Blacklist ---------- */
 const tokenBlacklist = new Set();
-
-/* ---------- Helpers ---------- */
-const findUser     = email =>
-  db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-const findUserById = id => db.users.find(u => u.id === id);
 
 function auth(req, res, next) {
   try {
@@ -308,31 +494,22 @@ app.post('/api/signup', async (req, res) => {
     if (!name || !email || !password || !age || !dob) {
       return res.status(400).json({ ok: false, error: 'All fields required' });
     }
-    if (findUser(email)) {
+    const existing = await findUser(email);
+    if (existing) {
       return res.status(409).json({ ok: false, error: 'Email already registered' });
     }
 
     const id = uuidv4();
     const passHash = await bcrypt.hash(String(password), 10);
+    const trimName = String(name).trim();
+    const trimEmail = String(email).trim().toLowerCase();
 
-    const user = {
-      id,
-      name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
-      passHash,
-      age: Number(age),
-      dob: String(dob).trim(),
-      createdAt: Date.now(),
-    };
+    await createUser({ id, name: trimName, email: trimEmail, passHash, age: Number(age), dob: String(dob).trim() });
 
-    db.users.push(user);
-    saveDB();
-
-    // Send welcome email (fire-and-forget, don't block signup)
-    sendWelcomeEmail(user.name, user.email);
+    sendWelcomeEmail(trimName, trimEmail);
 
     const token = jwt.sign(
-      { sub: id, email: user.email, name: user.name },
+      { sub: id, email: trimEmail, name: trimName },
       JWT_SECRET,
       { expiresIn: '30d' },
     );
@@ -340,7 +517,7 @@ app.post('/api/signup', async (req, res) => {
     res.json({
       ok: true,
       token,
-      user: { id, name: user.name, email: user.email },
+      user: { id, name: trimName, email: trimEmail },
     });
   } catch (e) {
     console.error('[BK] signup', e);
@@ -355,10 +532,10 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Email and password required' });
     }
 
-    const user = findUser(email);
+    const user = await findUser(email);
     if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
-    const ok = await bcrypt.compare(String(password), user.passHash);
+    const ok = await bcrypt.compare(String(password), user.pass_hash);
     if (!ok) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
     const token = jwt.sign(
@@ -386,8 +563,7 @@ app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ ok: false, error: 'Email required' });
 
-    const user = findUser(email);
-    // Always return success to avoid revealing if email exists
+    const user = await findUser(email);
     if (!user) return res.json({ ok: true, message: 'If that email is registered, a reset code has been sent.' });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -432,7 +608,7 @@ app.post('/api/reset-password', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Password must be at least 6 characters' });
     }
 
-    const user = findUser(email);
+    const user = await findUser(email);
     if (!user) return res.status(400).json({ ok: false, error: 'Invalid email or code' });
 
     const reset = pendingResets.get(user.email);
@@ -444,9 +620,9 @@ app.post('/api/reset-password', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Code has expired. Request a new one.' });
     }
 
-    user.passHash = await bcrypt.hash(String(newPassword), 10);
+    const newHash = await bcrypt.hash(String(newPassword), 10);
+    await pool.query('UPDATE users SET pass_hash = $1 WHERE id = $2', [newHash, user.id]);
     pendingResets.delete(user.email);
-    saveDB();
 
     console.log(`[BK] Password reset for ${user.email}`);
     res.json({ ok: true, message: 'Password reset successfully. You can now log in.' });
@@ -456,8 +632,8 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-app.get('/api/me', auth, (req, res) => {
-  const u = findUserById(req.userId);
+app.get('/api/me', auth, async (req, res) => {
+  const u = await findUserById(req.userId);
   if (!u) return res.status(404).json({ ok: false, error: 'User not found' });
   res.json({ ok: true, user: { id: u.id, name: u.name, email: u.email } });
 });
@@ -480,144 +656,66 @@ app.post('/api/logout', auth, (req, res) => {
 /*                              PROFILE                                 */
 /* ==================================================================== */
 
-// We store height as TOTAL INCHES, but accept feet + inches from the client.
-function upsertProfile(userId, body) {
-  const existing = db.profiles[userId] || {};
-  let heightInches = existing.height ?? null;
-
-  if (body.heightFeet != null || body.heightInches != null) {
-    const ft   = Number(body.heightFeet || 0);
-    const inch = Number(body.heightInches || 0);
-    const total = ft * 12 + inch;
-    if (total > 0) heightInches = total;
-  } else if (body.height != null) {
-    const h = Number(body.height);
-    if (!Number.isNaN(h) && h > 0) heightInches = h;
-  }
-
-  db.profiles[userId] = {
-    ...existing,
-    name: body.name ?? existing.name ?? null,
-    age: body.age ?? existing.age ?? findUserById(userId)?.age ?? null,
-    dob: body.dob ?? existing.dob ?? null,
-    height: heightInches,
-    weight: body.weight ?? existing.weight ?? null,
-    foot: body.foot ?? existing.foot ?? null,
-    position: body.position ?? existing.position ?? null,
-    skill: body.skill ?? existing.skill ?? null, // “what they’re working on”
-    updatedAt: Date.now(),
-  };
-}
-
-app.get('/api/profile', auth, (req, res) => {
-  const user = findUserById(req.userId);
+app.get('/api/profile', auth, async (req, res) => {
+  const user = await findUserById(req.userId);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
-  
-  res.json({ 
-    ok: true, 
-    user: { 
-      id: user.id,
-      name: user.name, 
-      email: user.email, 
-      age: user.age,
-      dob: user.dob 
-    },
-    profile: db.profiles[req.userId] || {} 
-  });
+  const profile = await getProfile(req.userId);
+  res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email, age: user.age, dob: user.dob }, profile });
 });
 
-app.post('/api/profile', auth, (req, res) => {
+app.post('/api/profile', auth, async (req, res) => {
   const { name, age, dob, position, foot, height, weight } = req.body || {};
-  const user = findUserById(req.userId);
-  
+  const user = await findUserById(req.userId);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
-  
-  // Update user data
-  if (name) user.name = name;
-  if (age) user.age = Number(age);
-  if (dob) user.dob = dob;
-  
-  // Update profile data
-  upsertProfile(req.userId, {
-    position: position || null,
-    foot: foot || null,
-    height: Number(height) || null,
-    weight: Number(weight) || null,
-  });
-  
-  saveDB();
-  
-  res.json({ 
-    ok: true,
-    user: { 
-      id: user.id,
-      name: user.name, 
-      email: user.email, 
-      age: user.age,
-      dob: user.dob 
-    },
-    profile: db.profiles[req.userId] 
-  });
+  const updates = {};
+  if (name) updates.name = name;
+  if (age) updates.age = Number(age);
+  if (dob) updates.dob = dob;
+  if (Object.keys(updates).length) await updateUser(req.userId, updates);
+  await upsertProfile(req.userId, { position: position || null, foot: foot || null, height: Number(height) || null, weight: Number(weight) || null });
+  const updatedUser = await findUserById(req.userId);
+  const profile = await getProfile(req.userId);
+  res.json({ ok: true, user: { id: updatedUser.id, name: updatedUser.name, email: updatedUser.email, age: updatedUser.age, dob: updatedUser.dob }, profile });
 });
 
-app.put('/api/profile', auth, (req, res) => {
-  upsertProfile(req.userId, req.body || {});
-  saveDB();
-  const user = findUserById(req.userId);
-  res.json({ 
-    ok: true,
-    user: { 
-      id: user.id,
-      name: user.name, 
-      email: user.email, 
-      age: user.age,
-      dob: user.dob 
-    },
-    profile: db.profiles[req.userId] 
-  });
+app.put('/api/profile', auth, async (req, res) => {
+  await upsertProfile(req.userId, req.body || {});
+  const user = await findUserById(req.userId);
+  const profile = await getProfile(req.userId);
+  res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email, age: user.age, dob: user.dob }, profile });
 });
 
 /* ==================================================================== */
 /*                                CLIPS                                  */
 /* ==================================================================== */
 
-app.post('/api/clip', auth, (req, res) => {
-  const {
-    url, public_id, created_at,
-    bytes, duration, width, height, format,
-  } = req.body || {};
-
+app.post('/api/clip', auth, async (req, res) => {
+  const { url, public_id, created_at, bytes, duration, width, height, format } = req.body || {};
   if (!url && !public_id) {
     return res.status(400).json({ ok: false, error: 'url or public_id required' });
   }
-
-  if (!Array.isArray(db.clipsByUser[req.userId])) db.clipsByUser[req.userId] = [];
-
   const clip = {
-    url:        url || null,
-    public_id:  public_id || null,
+    url: url || null, public_id: public_id || null,
     created_at: created_at || new Date().toISOString(),
-    bytes:      Number(bytes) || null,
-    duration:   Number(duration) || null,
-    width:      Number(width) || null,
-    height:     Number(height) || null,
-    format:     format || null,
+    bytes: Number(bytes) || null, duration: Number(duration) || null,
+    width: Number(width) || null, height: Number(height) || null, format: format || null,
   };
-
-  db.clipsByUser[req.userId].unshift(clip);
-  saveDB();
-
-  res.json({ ok: true, clip, total: db.clipsByUser[req.userId].length });
+  await insertClip(req.userId, clip);
+  const total = await getClipCount(req.userId);
+  res.json({ ok: true, clip, total });
 });
 
 /* ==================================================================== */
 /*                               LIBRARY                                 */
 /* ==================================================================== */
 
-app.get('/api/analyses', auth, (req, res) => {
-  const items = (db.analysesByUser[req.userId] || []).map(item => ({
+app.get('/api/analyses', auth, async (req, res) => {
+  const items = await getAnalysesByUser(req.userId);
+  const profile = await getProfile(req.userId);
+  const user = await findUserById(req.userId);
+  const mapped = items.map(item => ({
     id: item.id,
-    candidateName: item.candidateName || db.profiles[req.userId]?.name || findUserById(req.userId)?.name || "Player",
+    candidateName: item.candidateName || profile.name || user?.name || "Player",
     videoType: item.videoType || 'training',
     videoUrl: item.video_url,
     publicId: item.public_id,
@@ -632,25 +730,26 @@ app.get('/api/analyses', auth, (req, res) => {
     practiceProgression: item.practiceProgression,
     youtubeRecommendations: item.youtubeRecommendations,
   }));
-  res.json({ ok: true, items, analyses: items });
+  res.json({ ok: true, items: mapped, analyses: mapped });
 });
 
-app.get('/api/analyses/:id', auth, (req, res) => {
-  const list = db.analysesByUser[req.userId] || [];
-  const item = list.find(x => x.id === req.params.id);
+app.get('/api/analyses/:id', auth, async (req, res) => {
+  const item = await getAnalysisById(req.userId, req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: 'Not found' });
-  
+
   const levelMap = {
     'Beginner': { grade: '4-5', description: 'Beginner' },
     'Intermediate': { grade: '6-7', description: 'Intermediate' },
     'Advanced': { grade: '8-9', description: 'Advanced' }
   };
   const currentLevelObj = levelMap[item.currentLevel] || { grade: '?', description: item.currentLevel };
+  const profile = await getProfile(req.userId);
+  const user = await findUserById(req.userId);
 
   res.json({
     ok: true,
     id: item.id,
-    candidateName: item.candidateName || db.profiles[req.userId]?.name || findUserById(req.userId)?.name || "Player",
+    candidateName: item.candidateName || profile.name || user?.name || "Player",
     videoType: item.videoType || 'training',
     videoUrl: item.video_url,
     publicId: item.public_id,
@@ -668,13 +767,9 @@ app.get('/api/analyses/:id', auth, (req, res) => {
   });
 });
 
-app.delete('/api/analyses/:id', auth, (req, res) => {
-  const list = db.analysesByUser[req.userId] || [];
-  const idx = list.findIndex(x => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ ok: false, error: 'Not found' });
-  list.splice(idx, 1);
-  db.analysesByUser[req.userId] = list;
-  saveDB();
+app.delete('/api/analyses/:id', auth, async (req, res) => {
+  const deleted = await deleteAnalysis(req.userId, req.params.id);
+  if (!deleted) return res.status(404).json({ ok: false, error: 'Not found' });
   res.json({ ok: true });
 });
 
@@ -689,7 +784,6 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
 
   const position = profile.position || user?.position || 'player';
 
-  // Upload the actual video to Gemini (native video understanding)
   console.log(`[BK] Uploading video for Gemini analysis...`);
   const file = await uploadVideoToGemini(videoUrl, videoData);
 
@@ -738,7 +832,6 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
     { text: prompt },
   ];
 
-  // Retry with backoff for 429 rate-limit errors
   let result;
   const maxRetries = 3;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -797,10 +890,10 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
 /*                          SUBSCRIPTION / PAYWALL                      */
 /* ==================================================================== */
 
-app.get('/api/subscription-status', auth, (req, res) => {
-  const currentUser = db.users.find(u => u.id === req.userId);
-  const analysisCount = (db.analysesByUser[req.userId] || []).length;
-  const subStatus = currentUser?.subscriptionStatus || 'free';
+app.get('/api/subscription-status', auth, async (req, res) => {
+  const currentUser = await findUserById(req.userId);
+  const analysisCount = await getAnalysisCount(req.userId);
+  const subStatus = currentUser?.subscription_status || 'free';
   const isAdmin = ADMIN_EMAILS.includes(currentUser?.email?.toLowerCase());
   const canAnalyze = isAdmin || analysisCount < FREE_ANALYSIS_LIMIT || subStatus === 'active';
 
@@ -819,10 +912,9 @@ app.post('/api/create-checkout-session', auth, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Stripe not configured' });
   }
   try {
-    const currentUser = db.users.find(u => u.id === req.userId);
+    const currentUser = await findUserById(req.userId);
     const appUrl = `${req.protocol}://${req.get('host')}`;
 
-    // Look up the price by lookup key
     const prices = await stripe.prices.list({ lookup_keys: [STRIPE_LOOKUP_KEY], limit: 1 });
     if (!prices.data.length) {
       return res.status(400).json({ ok: false, error: 'Price not found in Stripe' });
@@ -850,13 +942,13 @@ app.post('/api/manage-subscription', auth, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Stripe not configured' });
   }
   try {
-    const currentUser = db.users.find(u => u.id === req.userId);
-    if (!currentUser?.stripeCustomerId) {
+    const currentUser = await findUserById(req.userId);
+    if (!currentUser?.stripe_customer_id) {
       return res.status(400).json({ ok: false, error: 'No active subscription' });
     }
     const appUrl = `${req.protocol}://${req.get('host')}`;
     const session = await stripe.billingPortal.sessions.create({
-      customer: currentUser.stripeCustomerId,
+      customer: currentUser.stripe_customer_id,
       return_url: `${appUrl}#/account`,
     });
     res.json({ ok: true, url: session.url });
@@ -872,54 +964,39 @@ app.post('/api/manage-subscription', auth, async (req, res) => {
 
 app.post('/api/analyze', auth, async (req, res) => {
   try {
-    // --- Paywall check ---
-    const currentUser = db.users.find(u => u.id === req.userId);
-    const analysisCount = (db.analysesByUser[req.userId] || []).length;
-    const subStatus = currentUser?.subscriptionStatus || 'free';
+    const currentUser = await findUserById(req.userId);
+    const analysisCount = await getAnalysisCount(req.userId);
+    const subStatus = currentUser?.subscription_status || 'free';
     const isAdmin = ADMIN_EMAILS.includes(currentUser?.email?.toLowerCase());
-    
+
     if (!isAdmin && analysisCount >= FREE_ANALYSIS_LIMIT && subStatus !== 'active') {
-      return res.status(403).json({ 
-        ok: false, 
+      return res.status(403).json({
+        ok: false,
         error: 'limit_reached',
         analysisCount,
         limit: FREE_ANALYSIS_LIMIT,
         message: `You've used your ${FREE_ANALYSIS_LIMIT} free analyses. Upgrade to Ball Knowledge Pro for unlimited analysis.`
       });
     }
-    // --- End paywall check ---
 
     const {
       height, heightFeet, heightInches,
       weight, foot, position,
       videoUrl, publicId,
-      videoData,  // Base64 video/image data from local photo library
+      videoData,
       skill,
     } = req.body || {};
 
     console.log(`[BK] Analyze request - videoUrl: ${videoUrl ? 'present' : 'none'}, videoData: ${videoData ? 'present' : 'none'}, skill: ${skill}`);
 
     if (!videoUrl && !videoData) {
-      return res
-        .status(400)
-        .json({ ok: false, error: 'Upload a training clip before analyzing.' });
+      return res.status(400).json({ ok: false, error: 'Upload a training clip before analyzing.' });
     }
 
-    // Update + enrich profile before analysis
-    const profilePatch = {
-      height,
-      heightFeet,
-      heightInches,
-      weight,
-      foot,
-      position,
-      skill,
-    };
-    upsertProfile(req.userId, profilePatch);
-    saveDB();
+    await upsertProfile(req.userId, { height, heightFeet, heightInches, weight, foot, position, skill });
 
-    const profile = db.profiles[req.userId] || {};
-    const user    = findUserById(req.userId) || {};
+    const profile = await getProfile(req.userId);
+    const user = currentUser || {};
 
     const result = await runTextAnalysisForTraining({
       profile,
@@ -928,10 +1005,6 @@ app.post('/api/analyze', auth, async (req, res) => {
       videoData,
       skill: skill || profile.skill || null,
     });
-
-    if (!Array.isArray(db.analysesByUser[req.userId])) {
-      db.analysesByUser[req.userId] = [];
-    }
 
     const candidateName = profile.name?.trim() || user?.name?.trim() || "Player";
     const item = {
@@ -949,17 +1022,15 @@ app.post('/api/analyze', auth, async (req, res) => {
       youtubeRecommendations: result.youtubeRecommendations,
       video_url: videoUrl,
       public_id: publicId || null,
-      skill:     skill || profile.skill || null,
-      raw:       result.raw,
+      skill: skill || profile.skill || null,
+      raw: result.raw,
       created_at: Date.now(),
     };
 
-    db.analysesByUser[req.userId].unshift(item);
-    saveDB();
+    await insertAnalysis(req.userId, item);
 
     console.log(`[BK] Analysis complete for user ${req.userId} - Skill: ${item.skillFocus}, Level: ${item.currentLevel}`);
 
-    // Convert currentLevel string to object format for frontend compatibility
     const levelMap = {
       'Beginner': { grade: '4-5', description: item.currentLevel },
       'Intermediate': { grade: '6-7', description: item.currentLevel },
@@ -990,7 +1061,6 @@ app.post('/api/analyze', auth, async (req, res) => {
   } catch (e) {
     console.error('[BK] Analysis error:', e);
     console.error('[BK] Stack trace:', e.stack);
-    // More specific error text for the frontend
     res.status(500).json({
       ok: false,
       error: e.message || 'Analysis failed on the server. Try again with a shorter clip or try re-uploading.',
@@ -1004,10 +1074,7 @@ app.post("/api/feedback", async (req, res) => {
     const { playerContext, clipsNotes } = req.body;
 
     if (!playerContext || !clipsNotes) {
-      return res.status(400).json({
-        ok: false,
-        error: "Missing playerContext or clipsNotes"
-      });
+      return res.status(400).json({ ok: false, error: "Missing playerContext or clipsNotes" });
     }
 
     if (!genAI) {
@@ -1049,10 +1116,7 @@ Return VALID JSON ONLY with this structure:
 
   } catch (e) {
     console.error(e);
-    res.status(500).json({
-      ok: false,
-      error: e.message
-    });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
@@ -1068,24 +1132,26 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 /* ---------- Start server ---------- */
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[BK] ✅ Server running on http://localhost:${PORT}`);
-  console.log(`[BK] Gemini AI configured: ${genAI ? 'YES' : 'NO'}`);
-  console.log(`[BK] Stripe configured: ${stripe ? 'YES' : 'NO'} (key starts with: ${STRIPE_SECRET ? STRIPE_SECRET.substring(0, 7) + '...' : 'EMPTY'})`);
-  console.log(`[BK] Resend configured: ${resend ? 'YES' : 'NO'}`);
-  console.log(`[BK] Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`[BK] Server is listening and ready for requests`);
-});
+async function start() {
+  await initDB();
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[BK] Server running on http://localhost:${PORT}`);
+    console.log(`[BK] PostgreSQL: connected`);
+    console.log(`[BK] Gemini AI configured: ${genAI ? 'YES' : 'NO'}`);
+    console.log(`[BK] Stripe configured: ${stripe ? 'YES' : 'NO'} (key starts with: ${STRIPE_SECRET ? STRIPE_SECRET.substring(0, 7) + '...' : 'EMPTY'})`);
+    console.log(`[BK] Resend configured: ${resend ? 'YES' : 'NO'}`);
+    console.log(`[BK] Admin emails: ${ADMIN_EMAILS.length ? ADMIN_EMAILS.join(', ') : 'none'}`);
+    console.log(`[BK] Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`[BK] Server is listening and ready for requests`);
+  });
 
-server.on('error', (error) => {
-  console.error('[BK] Server error:', error);
-  if (error.code === 'EADDRINUSE') {
-    console.error(`[BK] Port ${PORT} is already in use`);
-    process.exit(1);
-  }
-});
+  server.on('error', (error) => {
+    console.error('[BK] Server error:', error);
+    if (error.code === 'EADDRINUSE') {
+      console.error(`[BK] Port ${PORT} is already in use`);
+      process.exit(1);
+    }
+  });
+}
 
-// Keep process alive
-setInterval(() => {
-  // This prevents the process from exiting
-}, 1000000);
+start();
