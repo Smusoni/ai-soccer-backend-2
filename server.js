@@ -116,9 +116,9 @@ async function initDB() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
+        name TEXT,
         email TEXT UNIQUE NOT NULL,
-        pass_hash TEXT NOT NULL,
+        pass_hash TEXT,
         age INTEGER,
         dob TEXT,
         subscription_status TEXT DEFAULT 'free',
@@ -170,6 +170,29 @@ async function initDB() {
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
       );
     `);
+
+    const addCol = async (table, col, type) => {
+      try { await client.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${col} ${type}`); }
+      catch (e) { /* column may already exist */ }
+    };
+    await addCol('users', 'name', 'TEXT');
+    await addCol('users', 'pass_hash', 'TEXT');
+    await addCol('users', 'age', 'INTEGER');
+    await addCol('users', 'dob', 'TEXT');
+    await addCol('users', 'subscription_status', "TEXT DEFAULT 'free'");
+    await addCol('users', 'stripe_customer_id', 'TEXT');
+
+    // Migrate password_hash -> pass_hash if old schema exists
+    try {
+      const colCheck = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'password_hash'
+      `);
+      if (colCheck.rows.length > 0) {
+        await client.query(`UPDATE users SET pass_hash = password_hash WHERE pass_hash IS NULL AND password_hash IS NOT NULL`);
+        console.log('[BK] Migrated password_hash -> pass_hash');
+      }
+    } catch (e) { console.error('[BK] password_hash migration skipped:', e.message); }
     console.log('[BK] PostgreSQL tables initialized');
   } catch (e) {
     console.error('[BK] Failed to initialize DB tables:', e.message);
@@ -539,7 +562,9 @@ app.post('/api/login', async (req, res) => {
     const user = await findUser(email);
     if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
-    const ok = await bcrypt.compare(String(password), user.pass_hash);
+    const hash = user.pass_hash || user.password_hash;
+    if (!hash) return res.status(401).json({ ok: false, error: 'Account needs password reset' });
+    const ok = await bcrypt.compare(String(password), hash);
     if (!ok) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
     const token = jwt.sign(
