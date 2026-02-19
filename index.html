@@ -571,57 +571,292 @@
   </header>
 
   <!-- =========== HOME/LANDING PAGE =========== -->
+  <style>
+    @keyframes heroGlow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    @keyframes floatUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes countUp { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+    .hero-glow {
+      position: absolute; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,217,255,0.15), transparent 70%);
+      top: -200px; left: 50%; transform: translateX(-50%);
+      animation: heroGlow 6s ease-in-out infinite; pointer-events: none; z-index: 0;
+    }
+    .hero-glow-2 {
+      position: absolute; width: 400px; height: 400px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,136,255,0.12), transparent 70%);
+      bottom: -100px; right: -100px;
+      animation: heroGlow 8s ease-in-out infinite reverse; pointer-events: none; z-index: 0;
+    }
+    .fade-in { animation: floatUp 0.8s ease-out both; }
+    .fade-in-d1 { animation-delay: 0.1s; }
+    .fade-in-d2 { animation-delay: 0.25s; }
+    .fade-in-d3 { animation-delay: 0.4s; }
+    .fade-in-d4 { animation-delay: 0.55s; }
+    .stat-num { animation: countUp 0.6s ease-out both; }
+    .feature-icon-box {
+      flex-shrink: 0; width: 72px; height: 72px;
+      background: linear-gradient(135deg, rgba(0,217,255,0.12), rgba(0,136,255,0.12));
+      border: 1px solid rgba(0,217,255,0.15); border-radius: 18px;
+      display: flex; align-items: center; justify-content: center; font-size: 36px;
+      transition: all 0.3s;
+    }
+    .feature-step:hover .feature-icon-box {
+      background: linear-gradient(135deg, rgba(0,217,255,0.2), rgba(0,136,255,0.2));
+      border-color: var(--accent); box-shadow: 0 0 20px rgba(0,217,255,0.2);
+      transform: scale(1.08);
+    }
+    .pricing-card {
+      background: var(--gradient-card); backdrop-filter: blur(12px);
+      border: 1.5px solid var(--line); border-radius: 20px;
+      padding: 36px 28px; text-align: center; flex: 1; min-width: 260px;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden;
+    }
+    .pricing-card:hover { border-color: var(--line-bright); transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .pricing-card.featured { border-color: var(--accent); box-shadow: 0 0 30px rgba(0,217,255,0.15); }
+    .pricing-card.featured::before {
+      content: 'MOST POPULAR'; position: absolute; top: 0; left: 0; right: 0;
+      background: var(--gradient-primary); color: var(--bg); font-size: 11px;
+      font-weight: 800; letter-spacing: 1.5px; padding: 6px; text-align: center;
+    }
+    .pricing-price { font-size: 48px; font-weight: 900; color: var(--text-bright); margin: 16px 0 4px; letter-spacing: -2px; }
+    .pricing-price span { font-size: 16px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+    .pricing-feature { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text); text-align: left; }
+    .pricing-check { color: var(--accent); font-weight: 700; font-size: 16px; flex-shrink: 0; }
+    .faq-item { border: 1px solid var(--line); border-radius: 14px; margin-bottom: 12px; overflow: hidden; transition: all 0.3s; }
+    .faq-item:hover { border-color: var(--line-bright); }
+    .faq-q {
+      padding: 20px 24px; cursor: pointer; display: flex; justify-content: space-between;
+      align-items: center; font-weight: 600; font-size: 15px; color: var(--text-bright);
+      background: transparent; transition: background 0.2s; user-select: none;
+    }
+    .faq-q:hover { background: rgba(0,217,255,0.04); }
+    .faq-a { padding: 0 24px 20px; color: var(--muted); font-size: 14px; line-height: 1.7; display: none; }
+    .faq-item.open .faq-a { display: block; }
+    .faq-item.open .faq-arrow { transform: rotate(180deg); }
+    .faq-arrow { transition: transform 0.3s; color: var(--accent); font-size: 18px; }
+    .sample-report {
+      background: var(--card); border: 1.5px solid var(--line); border-radius: 16px;
+      padding: 28px; max-width: 520px; margin: 0 auto;
+      box-shadow: var(--shadow-lg), 0 0 40px rgba(0,217,255,0.08);
+    }
+    .sample-tag {
+      display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px;
+      font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    @media (max-width: 768px) {
+      .hero-glow, .hero-glow-2 { display: none; }
+      .pricing-row { flex-direction: column !important; }
+      .feature-step { flex-direction: column !important; text-align: center; }
+      .feature-step .feature-icon-box { margin: 0 auto; }
+    }
+  </style>
+
   <section class="container hide" id="homePage" style="padding:40px 20px">
     <!-- Hero Section -->
-    <div style="text-align:center;padding:80px 20px 60px">
-      <h1 class="logo" style="margin-bottom:20px;font-size:120px;line-height:1">⚽ BALL KNOWLEDGE</h1>
-      <p style="font-size:28px;line-height:1.4;margin:0 auto 40px;max-width:700px;color:var(--muted);font-weight:500">
-        Analyze. Improve. Dominate.
-      </p>
-      <button onclick="setHash('login'); goTo('login')" class="btn-primary" style="padding:22px 60px;font-size:22px;min-height:70px;font-weight:800;box-shadow:0 8px 30px rgba(63,185,80,0.4);text-transform:uppercase;letter-spacing:1px">
-        Start Free Analysis →
-      </button>
+    <div style="position:relative;text-align:center;padding:100px 20px 80px">
+      <div class="hero-glow"></div>
+      <div class="hero-glow-2"></div>
+      <div style="position:relative;z-index:1" class="fade-in">
+        <p style="font-size:14px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin:0 0 20px">AI-Powered Soccer Coaching</p>
+        <h1 class="logo" style="margin-bottom:24px;font-size:110px;line-height:0.95">⚽ BALL<br>KNOWLEDGE</h1>
+        <p style="font-size:22px;line-height:1.5;margin:0 auto 20px;max-width:600px;color:var(--muted);font-weight:400">
+          Upload your training video. Get a full coaching report in seconds. Improve faster than ever.
+        </p>
+        <p style="font-size:16px;color:var(--text);margin:0 0 40px;font-weight:600">
+          Your first <span style="color:var(--accent)">2 analyses are free</span> — no credit card needed.
+        </p>
+        <button onclick="setHash('signup'); goTo('signup')" class="btn-primary fade-in fade-in-d2" style="padding:20px 56px;font-size:20px;min-height:64px;font-weight:800;box-shadow:0 8px 30px rgba(0,217,255,0.3);text-transform:uppercase;letter-spacing:1px;border-radius:14px">
+          Get Started Free →
+        </button>
+      </div>
     </div>
 
-    <!-- Features Grid -->
-    <div style="max-width:1000px;margin:80px auto">
-      <h2 style="text-align:center;font-size:42px;margin-bottom:16px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">How It Works</h2>
-      <p style="text-align:center;color:var(--muted);font-size:18px;margin-bottom:60px">Three simple steps to level up your game</p>
+    <!-- Social Proof Stats -->
+    <div class="fade-in fade-in-d3" style="display:flex;justify-content:center;gap:48px;flex-wrap:wrap;padding:40px 20px 60px;max-width:700px;margin:0 auto">
+      <div style="text-align:center">
+        <div class="stat-num" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">AI</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;font-weight:500">Video Analysis</div>
+      </div>
+      <div style="text-align:center">
+        <div class="stat-num" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">&lt; 60s</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;font-weight:500">Full Report</div>
+      </div>
+      <div style="text-align:center">
+        <div class="stat-num" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">24/7</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;font-weight:500">Available</div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div style="max-width:100px;height:2px;background:var(--gradient-primary);margin:0 auto 80px;border-radius:2px"></div>
+
+    <!-- How It Works -->
+    <div style="max-width:900px;margin:0 auto 100px">
+      <h2 class="fade-in" style="text-align:center;font-size:40px;margin-bottom:12px;color:var(--text-bright);font-weight:800;letter-spacing:-1px">How It Works</h2>
+      <p class="fade-in fade-in-d1" style="text-align:center;color:var(--muted);font-size:17px;margin-bottom:56px">Three steps to better performance</p>
       
-      <div style="display:grid;gap:32px">
-        <div class="card" style="display:flex;gap:32px;align-items:center;padding:40px;transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-          <div style="flex-shrink:0;width:80px;height:80px;background:linear-gradient(135deg,rgba(63,185,80,0.2),rgba(88,166,255,0.2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:48px">📹</div>
+      <div style="display:grid;gap:24px">
+        <div class="card feature-step fade-in fade-in-d1" style="display:flex;gap:28px;align-items:center;padding:32px 36px;cursor:default">
+          <div class="feature-icon-box">📹</div>
           <div style="flex:1">
-            <h3 style="margin:0 0 12px 0;font-size:24px;color:var(--accent)">1. Upload Your Video</h3>
-            <p style="margin:0;color:var(--muted);font-size:16px;line-height:1.6">Record yourself during training or a game. Drag and drop your video or paste a YouTube link. That's it.</p>
+            <h3 style="margin:0 0 8px 0;font-size:20px;color:var(--text-bright)">1. Upload Your Training Video</h3>
+            <p style="margin:0;color:var(--muted);font-size:15px;line-height:1.6">Record yourself during a session. Upload via Cloudinary link or directly from your device.</p>
           </div>
         </div>
         
-        <div class="card" style="display:flex;gap:32px;align-items:center;padding:40px;transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-          <div style="flex-shrink:0;width:80px;height:80px;background:linear-gradient(135deg,rgba(63,185,80,0.2),rgba(88,166,255,0.2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:48px">🤖</div>
+        <div class="card feature-step fade-in fade-in-d2" style="display:flex;gap:28px;align-items:center;padding:32px 36px;cursor:default">
+          <div class="feature-icon-box">🧠</div>
           <div style="flex:1">
-            <h3 style="margin:0 0 12px 0;font-size:24px;color:var(--accent)">2. AI Analyzes Every Frame</h3>
-            <p style="margin:0;color:var(--muted);font-size:16px;line-height:1.6">Gemini AI watches your full video and breaks down your technique, positioning, decision-making, and identifies your best moments.</p>
+            <h3 style="margin:0 0 8px 0;font-size:20px;color:var(--text-bright)">2. AI Watches the Full Video</h3>
+            <p style="margin:0;color:var(--muted);font-size:15px;line-height:1.6">Our AI analyzes every second of your video — footwork, body position, technique, and consistency.</p>
           </div>
         </div>
         
-        <div class="card" style="display:flex;gap:32px;align-items:center;padding:40px;transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-          <div style="flex-shrink:0;width:80px;height:80px;background:linear-gradient(135deg,rgba(63,185,80,0.2),rgba(88,166,255,0.2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:48px">🎯</div>
+        <div class="card feature-step fade-in fade-in-d3" style="display:flex;gap:28px;align-items:center;padding:32px 36px;cursor:default">
+          <div class="feature-icon-box">📊</div>
           <div style="flex:1">
-            <h3 style="margin:0 0 12px 0;font-size:24px;color:var(--accent)">3. Get Actionable Feedback</h3>
-            <p style="margin:0;color:var(--muted);font-size:16px;line-height:1.6">Receive position-specific insights, priority improvements, highlight reels, and detailed technical analysis.</p>
+            <h3 style="margin:0 0 8px 0;font-size:20px;color:var(--text-bright)">3. Get Your Coaching Report</h3>
+            <p style="margin:0;color:var(--muted);font-size:15px;line-height:1.6">Receive a detailed breakdown with skill level, improvement tips, practice drills, and YouTube recommendations.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- CTA Section -->
-    <div style="text-align:center;padding:80px 20px;max-width:800px;margin:0 auto">
-      <h2 style="font-size:48px;margin-bottom:24px;line-height:1.2">Ready to Take Your<br>Game to the Next Level?</h2>
-      <p style="font-size:20px;color:var(--muted);margin-bottom:40px">Join thousands of players improving their skills with AI-powered analysis</p>
-      <button onclick="setHash('login'); goTo('login')" class="btn-primary" style="padding:22px 60px;font-size:22px;min-height:70px;font-weight:800;box-shadow:0 8px 30px rgba(63,185,80,0.4);text-transform:uppercase;letter-spacing:1px">
-        Get Started Free →
-      </button>
+    <!-- Sample Report Preview -->
+    <div style="max-width:900px;margin:0 auto 100px">
+      <h2 class="fade-in" style="text-align:center;font-size:40px;margin-bottom:12px;color:var(--text-bright);font-weight:800;letter-spacing:-1px">What You'll Get</h2>
+      <p class="fade-in fade-in-d1" style="text-align:center;color:var(--muted);font-size:17px;margin-bottom:48px">A real coaching report — not generic tips</p>
+      
+      <div class="sample-report fade-in fade-in-d2">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600">Analysis Report</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-top:4px">Training Session — Juggling</div>
+          </div>
+          <span class="sample-tag" style="background:rgba(0,217,255,0.12);color:var(--accent)">Advanced</span>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Session Summary</div>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7;margin:0">The player demonstrates strong ball control with consistent foot-only juggling. Both feet are used with fluid transitions between touches. Around-the-world tricks are executed cleanly with good rhythm...</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:var(--surface);padding:14px;border-radius:10px;border:1px solid var(--line)">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600">Skill Focus</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-top:4px">Ball Control</div>
+          </div>
+          <div style="background:var(--surface);padding:14px;border-radius:10px;border:1px solid var(--line)">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600">Skill Level</div>
+            <div style="font-size:15px;font-weight:700;color:var(--accent);margin-top:4px">8-9 / Advanced</div>
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Top Improvement Tips</div>
+          <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+            <span style="color:var(--accent);font-weight:700;font-size:14px;margin-top:1px">1.</span>
+            <span style="font-size:13px;color:var(--text);line-height:1.5">Add weak-foot-only sequences to build symmetry</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+            <span style="color:var(--accent);font-weight:700;font-size:14px;margin-top:1px">2.</span>
+            <span style="font-size:13px;color:var(--text);line-height:1.5">Incorporate movement while juggling — walk, turn, change direction</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="color:var(--accent);font-weight:700;font-size:14px;margin-top:1px">3.</span>
+            <span style="font-size:13px;color:var(--text);line-height:1.5">Chain 3+ tricks together without resetting to basic juggle</span>
+          </div>
+        </div>
+        <div style="text-align:center;padding-top:16px;border-top:1px solid var(--line)">
+          <p style="margin:0;font-size:12px;color:var(--muted);font-style:italic">+ YouTube recommendations, practice drills, and more</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div style="max-width:900px;margin:0 auto 100px">
+      <h2 class="fade-in" style="text-align:center;font-size:40px;margin-bottom:12px;color:var(--text-bright);font-weight:800;letter-spacing:-1px">Simple Pricing</h2>
+      <p class="fade-in fade-in-d1" style="text-align:center;color:var(--muted);font-size:17px;margin-bottom:48px">Start free. Upgrade when you're ready.</p>
+
+      <div class="pricing-row fade-in fade-in-d2" style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
+        <!-- Free -->
+        <div class="pricing-card">
+          <div style="font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Free</div>
+          <div class="pricing-price">$0</div>
+          <p style="color:var(--muted);font-size:13px;margin:0 0 24px">Get started instantly</p>
+          <div style="border-top:1px solid var(--line);padding-top:20px">
+            <div class="pricing-feature"><span class="pricing-check">✓</span> 2 video analyses</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Full coaching reports</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Skill level assessment</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Improvement tips</div>
+            <div class="pricing-feature" style="color:var(--muted)"><span style="color:var(--line-bright);font-size:16px;flex-shrink:0">✗</span> Unlimited analyses</div>
+          </div>
+          <button onclick="setHash('signup'); goTo('signup')" style="width:100%;margin-top:24px;background:var(--card);border:1.5px solid var(--line);color:var(--text);box-shadow:none">
+            Sign Up Free
+          </button>
+        </div>
+
+        <!-- Pro -->
+        <div class="pricing-card featured" style="padding-top:52px">
+          <div style="font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">Pro</div>
+          <div class="pricing-price">$10<span>/mo</span></div>
+          <p style="color:var(--muted);font-size:13px;margin:0 0 24px">For serious players</p>
+          <div style="border-top:1px solid var(--line);padding-top:20px">
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Unlimited video analyses</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Full coaching reports</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Skill level assessment</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Improvement tips & drills</div>
+            <div class="pricing-feature"><span class="pricing-check">✓</span> Priority processing</div>
+          </div>
+          <button onclick="setHash('signup'); goTo('signup')" style="width:100%;margin-top:24px">
+            Start Free, Upgrade Later
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div style="max-width:700px;margin:0 auto 100px">
+      <h2 class="fade-in" style="text-align:center;font-size:40px;margin-bottom:12px;color:var(--text-bright);font-weight:800;letter-spacing:-1px">FAQ</h2>
+      <p class="fade-in fade-in-d1" style="text-align:center;color:var(--muted);font-size:17px;margin-bottom:40px">Common questions</p>
+
+      <div class="fade-in fade-in-d2">
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">What kind of videos can I upload? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a">Any training session video — juggling, dribbling, passing drills, shooting practice, and more. Just record yourself and upload. We currently support training videos, with game analysis coming soon.</div>
+        </div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">How accurate is the AI analysis? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a">Our AI watches your entire video and only describes what it actually sees — no guessing. It analyzes footwork, body position, technique consistency, and provides specific improvement tips tailored to what you're working on.</div>
+        </div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">How long does an analysis take? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a">Most analyses complete in under 60 seconds. Longer videos may take a bit more time as the AI processes every frame.</div>
+        </div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">Can I cancel my subscription? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a">Yes, you can cancel anytime from the Manage Subscription option in your menu. Your Pro access continues until the end of your billing period. Payments are handled securely through Stripe.</div>
+        </div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">Is my video data safe? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a">Your videos are processed securely and only used for generating your analysis. We use industry-standard security including encrypted passwords and secure authentication. Check our Privacy Policy for full details.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Final CTA -->
+    <div style="text-align:center;padding:60px 20px 80px;position:relative">
+      <div class="hero-glow" style="top:auto;bottom:-200px;opacity:0.3"></div>
+      <div style="position:relative;z-index:1">
+        <h2 class="fade-in" style="font-size:44px;margin-bottom:16px;line-height:1.15;color:var(--text-bright);font-weight:800;letter-spacing:-1px">Ready to Level Up<br>Your Game?</h2>
+        <p class="fade-in fade-in-d1" style="font-size:18px;color:var(--muted);margin-bottom:36px;max-width:500px;margin-left:auto;margin-right:auto">Join Ball Knowledge and start training smarter today.</p>
+        <button onclick="setHash('signup'); goTo('signup')" class="fade-in fade-in-d2" style="padding:20px 56px;font-size:20px;min-height:64px;font-weight:800;box-shadow:0 8px 30px rgba(0,217,255,0.3);text-transform:uppercase;letter-spacing:1px;border-radius:14px">
+          Create Free Account →
+        </button>
+      </div>
     </div>
 
     <!-- Footer -->
