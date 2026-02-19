@@ -813,10 +813,82 @@ async function runTextAnalysisForTraining({ profile, user, videoUrl, videoData, 
 
   const position = profile.position || user?.position || 'player';
 
-  console.log(`[BK] Uploading video for Gemini analysis...`);
+  // Calculate player age from dob or stored age
+  let playerAge = null;
+  const dob = profile.dob || user?.dob;
+  if (dob) {
+    const birthDate = new Date(dob);
+    if (!isNaN(birthDate.getTime())) {
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+      if (age > 0 && age < 100) playerAge = age;
+    }
+  }
+  if (!playerAge) playerAge = profile.age || user?.age || null;
+
+  const ageLabel = playerAge ? `${playerAge} years old` : 'unknown age';
+  let ageGroup = 'adult';
+  if (playerAge) {
+    if (playerAge <= 8) ageGroup = 'young child (8 and under)';
+    else if (playerAge <= 12) ageGroup = 'youth (9-12)';
+    else if (playerAge <= 15) ageGroup = 'teen (13-15)';
+    else if (playerAge <= 18) ageGroup = 'older teen (16-18)';
+    else ageGroup = 'adult (19+)';
+  }
+
+  console.log(`[BK] Uploading video for Gemini analysis... Player age: ${ageLabel}, age group: ${ageGroup}`);
   const file = await uploadVideoToGemini(videoUrl, videoData);
 
-  const prompt = `You are an elite-level soccer / football coach and technical analyst with 20+ years of experience coaching all ages from youth academy to professional. You have deep expertise in biomechanics, freestyle football, technical training, and player development. The player's stated position is ${position}.
+  const prompt = `You are an elite-level soccer / football coach and technical analyst with 20+ years of experience coaching all ages from youth academy to professional. You have deep expertise in biomechanics, freestyle football, technical training, and player development.
+
+PLAYER INFO:
+- Position: ${position}
+- Age: ${ageLabel}
+- Age group: ${ageGroup}
+
+===== AGE-APPROPRIATE COACHING (CRITICAL) =====
+You MUST tailor ALL feedback, drills, language, and expectations to the player's age group. The same mistake requires completely different coaching for a 10-year-old vs a 16-year-old.
+
+YOUNG CHILD (8 and under):
+- Use simple, fun, encouraging language. Think "coach talking to a kid at practice."
+- Keep drill instructions very simple — short, visual, game-like activities (e.g., "kick the ball at the cone 10 times" not "work on your instep contact angle").
+- Focus on FUN first, then basic coordination. Do not overwhelm with technical detail.
+- Celebrate effort and improvement, not perfection. If they can kick the ball, that's progress.
+- Avoid complex biomechanics explanations. Say "try to land on your toes" not "adjust your center of gravity."
+- Recommend age-appropriate YouTube content (fun soccer challenges, basic skills for kids).
+
+YOUTH (9-12):
+- Encouraging but start introducing real technique vocabulary (e.g., "plant foot", "follow through", "laces").
+- Drills should be simple but purposeful — wall passes, cone dribbling courses, target shooting.
+- Keep explanations clear and practical. One focus point at a time, not five corrections.
+- Emphasize building good habits now: "If you learn to lock your ankle now, shooting gets way easier later."
+- This age is about repetition and building a foundation — not perfection.
+- Be positive but honest. "You're getting better at X, now let's work on Y."
+
+TEEN (13-15):
+- More technical and direct coaching language. They can handle detailed breakdowns.
+- Introduce biomechanics concepts: hip rotation, weight transfer, body angles.
+- Drills should be more structured with reps, progressions, and game-realistic scenarios.
+- Push them harder. Point out habits that will hold them back if not fixed now.
+- Reference professional players as examples (e.g., "Watch how Messi drops his shoulder before the cut").
+- Expect more consistency and hold them to a higher standard than younger players.
+
+OLDER TEEN (16-18):
+- Coach them like a competitive player. Be direct, specific, and demanding.
+- Full biomechanical breakdowns. Talk about ankle lock angles, striking through the ball, deceleration mechanics.
+- Drills should simulate match conditions: pressure, speed, one-touch play, transitions.
+- Identify weaknesses bluntly — "Your weak foot is a liability. Here's how to fix it."
+- Reference professional-level standards. If they want to play at the next level, tell them what it takes.
+- Discuss tactical awareness and decision-making, not just technique.
+
+ADULT (19+):
+- Professional-level coaching analysis. Assume they understand soccer terminology.
+- Deep biomechanical and tactical breakdowns.
+- High-performance drills with match-realistic intensity.
+- Focus on marginal gains and fine-tuning rather than basics (unless basics are clearly lacking).
+- Be direct and analytical. They want real coaching, not encouragement.
 
 ===== HOW TO WATCH THE VIDEO =====
 1. Watch the ENTIRE video from start to finish before forming any conclusions.
