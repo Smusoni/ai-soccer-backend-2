@@ -335,22 +335,55 @@ async function getAnalysisById(userId, analysisId) {
 }
 
 async function insertAnalysis(userId, item) {
+  const doInsert = () => pool.query(
+    `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
+       session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
+       practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+    [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
+     JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
+     JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
+     JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
+     JSON.stringify(item.youtubeRecommendations || []), item.video_url, item.public_id,
+     item.skill, JSON.stringify(item.raw || {}), item.created_at]
+  );
+
   try {
-    await pool.query(
-      `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
-         session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
-         practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
-      [item.id, userId, item.candidateName, item.videoType, item.skillFocus,
-       JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
-       JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
-       JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
-       JSON.stringify(item.youtubeRecommendations || []), item.video_url, item.public_id,
-       item.skill, JSON.stringify(item.raw || {}), item.created_at]
-    );
+    await doInsert();
   } catch (e) {
-    console.error('[BK] insertAnalysis error:', e.message);
-    throw new Error('Failed to save analysis. Database table may need setup. Please try again.');
+    console.error('[BK] insertAnalysis first attempt failed:', e.message);
+    if (e.message.includes('does not exist') || e.message.includes('undefined column')) {
+      console.log('[BK] Attempting to create/fix analyses table and retry...');
+      try {
+        await pool.query(`CREATE TABLE IF NOT EXISTS analyses (
+          id TEXT PRIMARY KEY, user_id TEXT NOT NULL, candidate_name TEXT,
+          video_type TEXT DEFAULT 'training', skill_focus TEXT,
+          secondary_skills JSONB DEFAULT '[]', session_summary TEXT, current_level TEXT,
+          technical_analysis JSONB DEFAULT '{}', improvement_tips JSONB DEFAULT '[]',
+          common_mistakes JSONB DEFAULT '[]', practice_progression JSONB DEFAULT '[]',
+          youtube_recommendations JSONB DEFAULT '[]', video_url TEXT, public_id TEXT,
+          skill TEXT, raw JSONB DEFAULT '{}',
+          created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+        )`);
+        const addCol = async (col, type) => {
+          try { await pool.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS ${col} ${type}`); } catch {}
+        };
+        await addCol('candidate_name', 'TEXT'); await addCol('video_type', "TEXT DEFAULT 'training'");
+        await addCol('skill_focus', 'TEXT'); await addCol('secondary_skills', "JSONB DEFAULT '[]'");
+        await addCol('session_summary', 'TEXT'); await addCol('current_level', 'TEXT');
+        await addCol('technical_analysis', "JSONB DEFAULT '{}'"); await addCol('improvement_tips', "JSONB DEFAULT '[]'");
+        await addCol('common_mistakes', "JSONB DEFAULT '[]'"); await addCol('practice_progression', "JSONB DEFAULT '[]'");
+        await addCol('youtube_recommendations', "JSONB DEFAULT '[]'"); await addCol('video_url', 'TEXT');
+        await addCol('public_id', 'TEXT'); await addCol('skill', 'TEXT'); await addCol('raw', "JSONB DEFAULT '{}'");
+        await doInsert();
+        console.log('[BK] Retry succeeded after table fix');
+      } catch (retryErr) {
+        console.error('[BK] insertAnalysis retry also failed:', retryErr.message);
+        throw retryErr;
+      }
+    } else {
+      throw e;
+    }
   }
 }
 
