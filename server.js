@@ -126,7 +126,7 @@ async function initDB() {
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
       );
       CREATE TABLE IF NOT EXISTS profiles (
-        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        user_id TEXT PRIMARY KEY,
         name TEXT,
         age INTEGER,
         dob TEXT,
@@ -139,7 +139,7 @@ async function initDB() {
       );
       CREATE TABLE IF NOT EXISTS clips (
         id SERIAL PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
         url TEXT,
         public_id TEXT,
         created_at TEXT,
@@ -151,7 +151,7 @@ async function initDB() {
       );
       CREATE TABLE IF NOT EXISTS analyses (
         id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
         candidate_name TEXT,
         video_type TEXT DEFAULT 'training',
         skill_focus TEXT,
