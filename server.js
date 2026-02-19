@@ -202,6 +202,21 @@ async function initDB() {
     await addCol('analyses', 'skill', 'TEXT');
     await addCol('analyses', 'raw', "JSONB DEFAULT '{}'");
 
+    // Drop NOT NULL constraints on legacy columns that our code doesn't populate
+    const dropNotNull = async (table, col) => {
+      try { await client.query(`ALTER TABLE ${table} ALTER COLUMN ${col} DROP NOT NULL`); }
+      catch (e) { /* column may not exist or already nullable */ }
+    };
+    await dropNotNull('analyses', 'analysis_data');
+    await dropNotNull('analyses', 'video_url');
+    await dropNotNull('analyses', 'user_id');
+    await dropNotNull('users', 'name');
+    await dropNotNull('users', 'pass_hash');
+
+    // Set a default for analysis_data if it exists so old NOT NULL columns don't block inserts
+    try { await client.query(`ALTER TABLE analyses ALTER COLUMN analysis_data SET DEFAULT '{}'::jsonb`); }
+    catch (e) { /* column may not exist */ }
+
     // Migrate password_hash -> pass_hash if old schema exists
     try {
       const colCheck = await client.query(`
@@ -352,7 +367,7 @@ async function insertAnalysis(userId, item) {
     await doInsert();
   } catch (e) {
     console.error('[BK] insertAnalysis first attempt failed:', e.message);
-    if (e.message.includes('does not exist') || e.message.includes('undefined column')) {
+    if (e.message.includes('does not exist') || e.message.includes('undefined column') || e.message.includes('not-null constraint') || e.message.includes('violates not')) {
       console.log('[BK] Attempting to create/fix analyses table and retry...');
       try {
         await pool.query(`CREATE TABLE IF NOT EXISTS analyses (
@@ -375,6 +390,9 @@ async function insertAnalysis(userId, item) {
         await addCol('common_mistakes', "JSONB DEFAULT '[]'"); await addCol('practice_progression', "JSONB DEFAULT '[]'");
         await addCol('youtube_recommendations', "JSONB DEFAULT '[]'"); await addCol('video_url', 'TEXT');
         await addCol('public_id', 'TEXT'); await addCol('skill', 'TEXT'); await addCol('raw', "JSONB DEFAULT '{}'");
+        // Fix legacy NOT NULL constraints
+        try { await pool.query(`ALTER TABLE analyses ALTER COLUMN analysis_data DROP NOT NULL`); } catch {}
+        try { await pool.query(`ALTER TABLE analyses ALTER COLUMN analysis_data SET DEFAULT '{}'::jsonb`); } catch {}
         await doInsert();
         console.log('[BK] Retry succeeded after table fix');
       } catch (retryErr) {
