@@ -988,6 +988,18 @@ ADULT (19+):
 - If the camera angle makes something unclear, say so explicitly.
 - Be honest about what was done well AND what needs work. Do not sugarcoat.
 
+===== UNDERSTAND INTENT vs OUTCOME (VERY IMPORTANT) =====
+Do NOT confuse what the player is TRYING to do with what the ball happens to do.
+- If a player is passing against a wall and the ball bounces back off the ground, that is NOT a volley. That is a WALL PASS DRILL where the ball happened to bounce. The player is practicing passing and receiving, not volleying.
+- A volley is when a player INTENTIONALLY strikes the ball out of the air (e.g., a cross comes in and they hit it before it bounces). If the ball just bounces because of the surface, the wall, or a heavy touch, that is an uncontrolled bounce — NOT an intentional aerial technique.
+- If the ball is bouncing and the player is clearly trying to get it under control or keep it on the ground, recognize that as a FIRST TOUCH / CONTROL issue, not as the player choosing to play in the air.
+- Always ask yourself: "Is the player CHOOSING to do this, or is this happening because they haven't controlled the ball?" The answer changes the entire analysis.
+- Common drill recognition:
+  * Passing against a wall = wall pass drill (passing accuracy, first touch, weight of pass)
+  * Ball bouncing off wall = natural rebound, not a volley unless player deliberately strikes it mid-air
+  * Ball popping up after a touch = heavy/poor first touch, not intentional juggling
+  * Player chasing a loose ball = loss of control, not a dribbling move
+
 ===== WHAT TO ANALYZE BY ACTIVITY TYPE =====
 
 JUGGLING / FREESTYLE:
@@ -1013,16 +1025,21 @@ DRIBBLING:
 - Check head position: Are they looking up (scanning) or always staring at the ball?
 - Note bad touches specifically: which foot, what happened, did they lose the ball?
 
-PASSING:
+PASSING (including wall pass drills):
 - Identify pass types: short pass, through ball, long ball, lofted pass, driven pass, outside-foot pass, backheel, cross, switch of play.
-- Evaluate weight of pass (too hard, too soft, just right).
+- Evaluate weight of pass (too hard, too soft, just right). Too hard = ball bounces back fast and high off the wall. Too soft = ball doesn't reach the target.
 - Check technique: inside foot, laces, outside foot, which foot.
 - Assess accuracy and intention vs result.
+- WALL PASSING: If the player is passing against a wall and receiving the rebound, analyze the PASS WEIGHT (is the return bouncing or rolling?), the FIRST TOUCH on the rebound (can they control it quickly?), and BODY POSITIONING (are they preparing for the next pass?).
+- If the ball keeps bouncing back instead of rolling, the player is hitting the ball too hard or striking too low. That's a pass weight issue, NOT a volley drill.
+- Note if the player is working one-touch or two-touch patterns against the wall.
 
 BALL CONTROL / FIRST TOUCH:
 - Note receiving technique: inside foot, sole, outside foot, thigh, chest.
 - Is the first touch setting them up for the next action or killing their momentum?
-- Evaluate control under different scenarios (ground ball, aerial ball, etc.).
+- Evaluate control under different scenarios (ground ball, aerial ball, bouncing ball off a wall).
+- If the ball is bouncing and the player is trying to bring it down or keep it on the ground, that is a first touch PROBLEM to correct — not a different skill being practiced.
+- A good first touch cushions the ball and keeps it close. A bad first touch lets the ball bounce away or pop up.
 
 ===== SKILL LEVEL ASSESSMENT =====
 - "Beginner": Struggling with basic ball control. Frequent loss of possession. Simple touches only. Inconsistent striking. Cannot perform basic tricks.
