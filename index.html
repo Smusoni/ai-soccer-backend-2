@@ -543,6 +543,7 @@
       <a href="#" id="profileLink" role="menuitem">Profile</a>
       <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
       <a href="#" id="library" role="menuitem">Library</a>
+      <a href="#" id="statsLink" role="menuitem" style="display:none;color:var(--accent2)">📊 Investor Stats</a>
       <a href="#" id="upgradeLink" role="menuitem" style="color:var(--accent)">⚡ Upgrade to Pro</a>
       <a href="#" id="manageSubLink" role="menuitem" style="display:none;color:var(--accent2)">Manage Subscription</a>
       <div style="border-top:1px solid var(--line);margin:8px 0"></div>
@@ -1609,6 +1610,37 @@
     </div>
   </section>
 
+  <!-- =========== ADMIN STATS PAGE =========== -->
+  <section class="card container hide" id="statsPage">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0">Investor Stats</h3>
+        <p class="muted" style="margin:8px 0 0">Admin-only growth metrics for demos</p>
+      </div>
+      <button id="refreshStatsBtn" style="padding:10px 16px;font-size:14px">Refresh</button>
+    </div>
+
+    <div id="statsError" class="err hide" style="margin-top:16px;padding:12px;border-radius:10px;border:1px solid var(--error)"></div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px">
+      <div class="metric-card"><div class="metric-label">Total Users</div><div id="statsTotalUsers" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Total Analyses</div><div id="statsTotalAnalyses" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Total Clips</div><div id="statsTotalClips" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Analyses (7 days)</div><div id="statsAnalyses7d" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Analyses (30 days)</div><div id="statsAnalyses30d" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Active Subscriptions</div><div id="statsActiveSubs" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Free Users</div><div id="statsFreeUsers" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">Pro Conversion Rate</div><div id="statsConversion" class="metric-value">0%</div></div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h4 style="margin-top:0">Top Skill Focuses</h4>
+      <div id="statsTopSkills" class="muted">No data yet.</div>
+    </div>
+
+    <p id="statsUpdatedAt" class="muted" style="margin-top:12px"></p>
+  </section>
+
   <!-- =========== PROFILE PAGE (after login) =========== -->
   <section class="card container hide" id="profilePage" aria-labelledby="profileTitle">
     <h3 id="profileTitle" style="margin:0 0 24px 0">Your Profile</h3>
@@ -1760,6 +1792,7 @@
   const setToken   = (t) => localStorage.setItem('bk_token', t);
   const getToken   = ()  => localStorage.getItem('bk_token');
   const clearToken = ()  => localStorage.removeItem('bk_token');
+  let isAdminUser = false;
 
   function show(el){ if(!el) return; el.classList.remove('hide'); }
   function hide(el){ if(!el) return; el.classList.add('hide'); }
@@ -1785,7 +1818,7 @@
     hide($('homePage')); hide($('loginCard')); hide($('signupCard'));
     hide($('analysisCard')); hide($('libraryPage')); hide($('profilePage'));
     hide($('reportViewPage')); hide($('forgotCard')); hide($('resetCard'));
-    hide($('termsPage')); hide($('privacyPage'));
+    hide($('termsPage')); hide($('privacyPage')); hide($('statsPage'));
 
     const menuContainer = document.querySelector('.menu-container');
     
@@ -1834,6 +1867,11 @@
       show($('reportViewPage'));
       if ($('pageTag')) $('pageTag').textContent = 'Report';
       if (menuContainer) menuContainer.style.display = 'block';
+    } else if (screen === 'stats') {
+      show($('statsPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Investor Stats';
+      if (menuContainer) menuContainer.style.display = 'block';
+      loadAdminStats();
     } else {
       show($('homePage'));
       if ($('pageTag')) $('pageTag').textContent = 'Home';
@@ -1859,6 +1897,7 @@
     if (page === 'library') { loadLibrary(); }
     else if (page === 'profile') { goTo('profile'); }
     else if (page === 'analysis') { goTo('analysis'); }
+    else if (page === 'stats') { goTo('stats'); }
     else if (page.startsWith('reportView')) { goTo('reportView'); }
     else { setHash('analysis'); }
   });
@@ -2011,6 +2050,7 @@
   $('profileLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('profile')});
   $('newAnalysis')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('analysis');hide($('results'))});
   $('library')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('library')});
+  $('statsLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('stats')});
   $('upgradeLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');startCheckout()});
   $('manageSubLink')?.addEventListener('click',async(e)=>{
     e.preventDefault();menuPanel.classList.remove('active');
@@ -2045,7 +2085,15 @@
       const text = $('freeCounterText');
       const upgradeLink = $('upgradeLink');
       const manageLink = $('manageSubLink');
-      if (res.plan === 'pro') {
+      const statsLink = $('statsLink');
+      isAdminUser = res.plan === 'admin';
+      if (statsLink) statsLink.style.display = isAdminUser ? '' : 'none';
+
+      if (res.plan === 'admin') {
+        counter.classList.add('hide');
+        if (upgradeLink) upgradeLink.style.display = 'none';
+        if (manageLink) manageLink.style.display = 'none';
+      } else if (res.plan === 'pro') {
         counter.classList.add('hide');
         if (upgradeLink) upgradeLink.style.display = 'none';
         if (manageLink) manageLink.style.display = '';
@@ -2058,6 +2106,40 @@
         if (manageLink) manageLink.style.display = 'none';
       }
     } catch(e) { /* ignore */ }
+  }
+
+  async function loadAdminStats() {
+    const errBox = $('statsError');
+    if (errBox) {
+      errBox.textContent = '';
+      errBox.classList.add('hide');
+    }
+    try {
+      const out = await api('/api/admin/stats');
+      if (!out.ok) throw new Error(out.error || 'Could not load stats');
+      const s = out.stats || {};
+      const fmt = (n) => Number(n || 0).toLocaleString();
+
+      $('statsTotalUsers').textContent = fmt(s.totalUsers);
+      $('statsTotalAnalyses').textContent = fmt(s.totalAnalyses);
+      $('statsTotalClips').textContent = fmt(s.totalClips);
+      $('statsAnalyses7d').textContent = fmt(s.analysesLast7d);
+      $('statsAnalyses30d').textContent = fmt(s.analysesLast30d);
+      $('statsActiveSubs').textContent = fmt(s.activeSubscriptions);
+      $('statsFreeUsers').textContent = fmt(s.freeUsers);
+      $('statsConversion').textContent = `${Number(s.proConversionRate || 0).toFixed(1)}%`;
+
+      const top = Array.isArray(s.topSkillFocuses) ? s.topSkillFocuses : [];
+      $('statsTopSkills').innerHTML = top.length
+        ? top.map(x => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${x.skill}</span><strong>${fmt(x.count)}</strong></div>`).join('')
+        : '<span class="muted">No skill data yet.</span>';
+      $('statsUpdatedAt').textContent = `Last updated: ${new Date().toLocaleString()}`;
+    } catch (e) {
+      if (errBox) {
+        errBox.textContent = e.message || 'Could not load stats';
+        errBox.classList.remove('hide');
+      }
+    }
   }
 
   async function startCheckout() {
@@ -2740,6 +2822,7 @@
   $('editProfileBtn')?.addEventListener('click', showEditMode);
   $('cancelEditBtn')?.addEventListener('click', hideEditMode);
   $('saveProfileBtn')?.addEventListener('click', saveProfile);
+  $('refreshStatsBtn')?.addEventListener('click', loadAdminStats);
   $('viewLibraryBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     setHash('library');
@@ -2754,6 +2837,7 @@
       if (getToken()) {
         if (page === 'library') { loadLibrary(); }
         else if (page === 'profile') { goTo('profile'); }
+        else if (page === 'stats') { goTo('stats'); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
         if (page === 'login') { goTo('login'); }

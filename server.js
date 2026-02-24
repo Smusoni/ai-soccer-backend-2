@@ -442,6 +442,18 @@ async function getClipCount(userId) {
   return parseInt(rows[0].count, 10);
 }
 
+function toMs(value) {
+  if (!value) return 0;
+  if (value instanceof Date) return value.getTime();
+  const asNum = Number(value);
+  if (!Number.isNaN(asNum) && asNum > 0) {
+    // Handle both seconds and milliseconds epoch inputs.
+    return asNum > 1e12 ? asNum : asNum * 1000;
+  }
+  const parsed = Date.parse(String(value));
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 /* ---------- Token Blacklist ---------- */
 const tokenBlacklist = new Set();
 
@@ -1165,6 +1177,94 @@ app.get('/api/subscription-status', auth, async (req, res) => {
     remaining: (isAdmin || subStatus === 'active') ? 'unlimited' : Math.max(0, FREE_ANALYSIS_LIMIT - analysisCount),
     canAnalyze,
   });
+});
+
+app.get('/api/admin/stats', auth, async (req, res) => {
+  try {
+    const currentUser = await findUserById(req.userId);
+    const isAdmin = ADMIN_EMAILS.includes(currentUser?.email?.toLowerCase());
+    if (!isAdmin) {
+      return res.status(403).json({ ok: false, error: 'Admin access required' });
+    }
+
+    const safeCount = async (query, params = []) => {
+      try {
+        const { rows } = await pool.query(query, params);
+        return parseInt(rows?.[0]?.count || 0, 10);
+      } catch {
+        return 0;
+      }
+    };
+
+    const totalUsers = await safeCount('SELECT COUNT(*)::int AS count FROM users');
+    const totalAnalyses = await safeCount('SELECT COUNT(*)::int AS count FROM analyses');
+    const totalClips = await safeCount('SELECT COUNT(*)::int AS count FROM clips');
+    const activeSubscriptions = await safeCount(
+      "SELECT COUNT(*)::int AS count FROM users WHERE subscription_status = 'active'"
+    );
+
+    let topSkillFocuses = [];
+    try {
+      const { rows } = await pool.query(
+        `SELECT skill_focus, COUNT(*)::int AS count
+         FROM analyses
+         WHERE skill_focus IS NOT NULL AND TRIM(skill_focus) <> ''
+         GROUP BY skill_focus
+         ORDER BY count DESC
+         LIMIT 5`
+      );
+      topSkillFocuses = rows.map(r => ({ skill: r.skill_focus, count: r.count }));
+    } catch {
+      topSkillFocuses = [];
+    }
+
+    let createdAtRows = [];
+    try {
+      const { rows } = await pool.query('SELECT created_at FROM analyses ORDER BY created_at DESC LIMIT 5000');
+      createdAtRows = rows || [];
+    } catch {
+      createdAtRows = [];
+    }
+
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
+    let analysesLast7d = 0;
+    let analysesLast30d = 0;
+    let latestAnalysisAt = null;
+
+    for (const row of createdAtRows) {
+      const t = toMs(row.created_at);
+      if (!t) continue;
+      if (!latestAnalysisAt || t > latestAnalysisAt) latestAnalysisAt = t;
+      if (t >= monthAgo) analysesLast30d++;
+      if (t >= weekAgo) analysesLast7d++;
+    }
+
+    const freeUsers = Math.max(0, totalUsers - activeSubscriptions);
+    const proConversionRate = totalUsers > 0
+      ? Number(((activeSubscriptions / totalUsers) * 100).toFixed(1))
+      : 0;
+
+    return res.json({
+      ok: true,
+      stats: {
+        totalUsers,
+        totalAnalyses,
+        totalClips,
+        analysesLast7d,
+        analysesLast30d,
+        activeSubscriptions,
+        freeUsers,
+        proConversionRate,
+        topSkillFocuses,
+        latestAnalysisAt,
+      },
+    });
+  } catch (e) {
+    console.error('[BK] admin stats error:', e.message);
+    return res.status(500).json({ ok: false, error: 'Failed to load admin stats' });
+  }
 });
 
 app.post('/api/create-checkout-session', auth, async (req, res) => {
