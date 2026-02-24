@@ -2110,14 +2110,23 @@
   }
 
   async function loadSubscriptionStatus() {
+    const counter = $('freeCounter');
+    const text = $('freeCounterText');
+    const upgradeLink = $('upgradeLink');
+    const manageLink = $('manageSubLink');
+    const statsLink = $('statsLink');
+
+    // Safe default on every call: treat as free user until API confirms otherwise.
+    isAdminUser = false;
+    if (statsLink) statsLink.style.display = 'none';
+    if (upgradeLink) upgradeLink.style.display = '';
+    if (manageLink) manageLink.style.display = 'none';
+    if (counter) counter.classList.remove('hide');
+    if (text) text.textContent = 'Upgrade to Pro for unlimited analyses';
+
     try {
       const res = await api('/api/subscription-status');
       if (!res.ok) return;
-      const counter = $('freeCounter');
-      const text = $('freeCounterText');
-      const upgradeLink = $('upgradeLink');
-      const manageLink = $('manageSubLink');
-      const statsLink = $('statsLink');
       isAdminUser = res.plan === 'admin';
       if (statsLink) statsLink.style.display = isAdminUser ? '' : 'none';
 
