@@ -1638,6 +1638,38 @@
       <div id="statsTopSkills" class="muted">No data yet.</div>
     </div>
 
+    <div class="card" style="margin-top:18px">
+      <h4 style="margin-top:0">30-Day Activity Trend</h4>
+      <p class="muted" style="margin:0 0 10px">Analyses per day</p>
+      <div id="statsDailyChart" style="display:flex;align-items:flex-end;gap:4px;height:140px"></div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h4 style="margin-top:0">Weekly Breakdown</h4>
+      <div id="statsWeeklyChart" style="display:grid;gap:8px"></div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h4 style="margin-top:0">Conversion Funnel</h4>
+      <div style="display:grid;gap:10px">
+        <div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px">Signed Up Users</div>
+          <div style="background:var(--line);border-radius:8px;height:20px;overflow:hidden"><div id="funnelSignedUp" style="height:100%;width:0;background:var(--accent2)"></div></div>
+          <div id="funnelSignedUpText" class="muted" style="margin-top:4px">0</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px">Active Analyzers</div>
+          <div style="background:var(--line);border-radius:8px;height:20px;overflow:hidden"><div id="funnelActiveAnalyzers" style="height:100%;width:0;background:var(--accent)"></div></div>
+          <div id="funnelActiveAnalyzersText" class="muted" style="margin-top:4px">0</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px">Pro Subscribers</div>
+          <div style="background:var(--line);border-radius:8px;height:20px;overflow:hidden"><div id="funnelProSubscribers" style="height:100%;width:0;background:var(--success)"></div></div>
+          <div id="funnelProSubscribersText" class="muted" style="margin-top:4px">0</div>
+        </div>
+      </div>
+    </div>
+
     <p id="statsUpdatedAt" class="muted" style="margin-top:12px"></p>
   </section>
 
@@ -2119,6 +2151,7 @@
       if (!out.ok) throw new Error(out.error || 'Could not load stats');
       const s = out.stats || {};
       const fmt = (n) => Number(n || 0).toLocaleString();
+      const pct = (n) => `${Math.max(0, Math.min(100, Number(n || 0))).toFixed(1)}%`;
 
       $('statsTotalUsers').textContent = fmt(s.totalUsers);
       $('statsTotalAnalyses').textContent = fmt(s.totalAnalyses);
@@ -2133,6 +2166,49 @@
       $('statsTopSkills').innerHTML = top.length
         ? top.map(x => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${x.skill}</span><strong>${fmt(x.count)}</strong></div>`).join('')
         : '<span class="muted">No skill data yet.</span>';
+
+      const daily = Array.isArray(s.dailyAnalyses) ? s.dailyAnalyses : [];
+      const dailyMax = Math.max(1, ...daily.map(d => Number(d.value || 0)));
+      $('statsDailyChart').innerHTML = daily.length
+        ? daily.map((d, idx) => {
+            const h = Math.max(4, Math.round((Number(d.value || 0) / dailyMax) * 120));
+            const showLabel = idx % 5 === 0 || idx === daily.length - 1;
+            return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px">
+              <div title="${d.label}: ${d.value}" style="width:100%;max-width:12px;height:${h}px;background:var(--accent2);border-radius:4px"></div>
+              <div class="muted" style="font-size:10px;line-height:1">${showLabel ? d.label : ''}</div>
+            </div>`;
+          }).join('')
+        : '<span class="muted">No activity data yet.</span>';
+
+      const weekly = Array.isArray(s.weeklyBreakdown) ? s.weeklyBreakdown : [];
+      const weekMax = Math.max(1, ...weekly.map(w => Number(w.value || 0)));
+      $('statsWeeklyChart').innerHTML = weekly.length
+        ? weekly.map(w => {
+            const width = Math.max(2, Math.round((Number(w.value || 0) / weekMax) * 100));
+            return `<div style="display:grid;grid-template-columns:60px 1fr 44px;align-items:center;gap:10px">
+              <span class="muted" style="font-size:12px">${w.label}</span>
+              <div style="height:10px;background:var(--line);border-radius:99px;overflow:hidden">
+                <div style="height:100%;width:${width}%;background:var(--accent);border-radius:99px"></div>
+              </div>
+              <strong style="font-size:12px;text-align:right">${fmt(w.value)}</strong>
+            </div>`;
+          }).join('')
+        : '<span class="muted">No weekly data yet.</span>';
+
+      const funnel = s.funnel || {};
+      const signedUp = Number(funnel.signedUpUsers || 0);
+      const analyzers = Number(funnel.activeAnalyzers || 0);
+      const pro = Number(funnel.proSubscribers || 0);
+      const base = Math.max(1, signedUp);
+      const analyzersPct = (analyzers / base) * 100;
+      const proPct = (pro / base) * 100;
+      $('funnelSignedUp').style.width = '100%';
+      $('funnelActiveAnalyzers').style.width = `${Math.max(0, Math.min(100, analyzersPct))}%`;
+      $('funnelProSubscribers').style.width = `${Math.max(0, Math.min(100, proPct))}%`;
+      $('funnelSignedUpText').textContent = `${fmt(signedUp)} users`;
+      $('funnelActiveAnalyzersText').textContent = `${fmt(analyzers)} users (${pct(s.activeAnalyzerRate)})`;
+      $('funnelProSubscribersText').textContent = `${fmt(pro)} users (${pct(s.proConversionRate)})`;
+
       $('statsUpdatedAt').textContent = `Last updated: ${new Date().toLocaleString()}`;
     } catch (e) {
       if (errBox) {

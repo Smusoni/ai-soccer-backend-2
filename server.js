@@ -1225,6 +1225,16 @@ app.get('/api/admin/stats', auth, async (req, res) => {
     } catch {
       createdAtRows = [];
     }
+    let userCreatedRows = [];
+    try {
+      const { rows } = await pool.query('SELECT created_at FROM users ORDER BY created_at DESC LIMIT 5000');
+      userCreatedRows = rows || [];
+    } catch {
+      userCreatedRows = [];
+    }
+    const activeAnalyzers = await safeCount(
+      'SELECT COUNT(DISTINCT user_id)::int AS count FROM analyses WHERE user_id IS NOT NULL'
+    );
 
     const now = Date.now();
     const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
@@ -1241,9 +1251,45 @@ app.get('/api/admin/stats', auth, async (req, res) => {
       if (t >= weekAgo) analysesLast7d++;
     }
 
+    const dayLabel = (ts) => {
+      const d = new Date(ts);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${mm}/${dd}`;
+    };
+    const dayKey = (ts) => new Date(ts).toISOString().slice(0, 10);
+    const countsByDay = new Map();
+    const signupsByDay = new Map();
+
+    for (const row of createdAtRows) {
+      const t = toMs(row.created_at);
+      if (!t || t < monthAgo) continue;
+      const key = dayKey(t);
+      countsByDay.set(key, (countsByDay.get(key) || 0) + 1);
+    }
+    for (const row of userCreatedRows) {
+      const t = toMs(row.created_at);
+      if (!t || t < monthAgo) continue;
+      const key = dayKey(t);
+      signupsByDay.set(key, (signupsByDay.get(key) || 0) + 1);
+    }
+
+    const dailyAnalyses = [];
+    const dailySignups = [];
+    for (let i = 29; i >= 0; i--) {
+      const t = now - i * 24 * 60 * 60 * 1000;
+      const key = dayKey(t);
+      dailyAnalyses.push({ label: dayLabel(t), value: countsByDay.get(key) || 0 });
+      dailySignups.push({ label: dayLabel(t), value: signupsByDay.get(key) || 0 });
+    }
+    const weeklyBreakdown = dailyAnalyses.slice(-7);
+
     const freeUsers = Math.max(0, totalUsers - activeSubscriptions);
     const proConversionRate = totalUsers > 0
       ? Number(((activeSubscriptions / totalUsers) * 100).toFixed(1))
+      : 0;
+    const activeAnalyzerRate = totalUsers > 0
+      ? Number(((activeAnalyzers / totalUsers) * 100).toFixed(1))
       : 0;
 
     return res.json({
@@ -1257,8 +1303,18 @@ app.get('/api/admin/stats', auth, async (req, res) => {
         activeSubscriptions,
         freeUsers,
         proConversionRate,
+        activeAnalyzers,
+        activeAnalyzerRate,
         topSkillFocuses,
         latestAnalysisAt,
+        dailyAnalyses,
+        dailySignups,
+        weeklyBreakdown,
+        funnel: {
+          signedUpUsers: totalUsers,
+          activeAnalyzers,
+          proSubscribers: activeSubscriptions,
+        },
       },
     });
   } catch (e) {
