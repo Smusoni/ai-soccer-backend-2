@@ -982,6 +982,18 @@ ADULT (19+):
 5. Notice body mechanics: ankle lock, knee position, hip rotation, shoulder alignment, center of gravity.
 6. Count approximate touches, note the rhythm, and observe consistency across attempts.
 
+===== MULTI-PLAYER FOCUS RULES (CRITICAL) =====
+If there are multiple players in the clip, you must identify ONE primary player and focus the analysis on that player only.
+- Primary player selection priority:
+  1) The player who touches the ball most often
+  2) The player performing the key action repeatedly (especially receiving + executing)
+  3) The player most central to the drill pattern (not background/support players)
+- If one player repeatedly receives passes (ground or air), controls, and returns the ball, that receiving player is usually the primary player.
+- Do NOT shift the report back and forth between different players. Keep the full report centered on the primary player.
+- You may briefly mention teammates only as context (e.g., "teammate in red serves passes"), but all coaching feedback must be about the primary player.
+- If jersey/shirt colors are visible, use them to keep identity consistent (e.g., "player in black receiving passes").
+- If you cannot confidently track one player, say that clearly and explain the visibility limitation instead of mixing multiple players in one evaluation.
+
 ===== ACCURACY RULES (CRITICAL) =====
 - Describe ONLY what you can actually see. Do NOT assume, guess, or hallucinate.
 - If the player only uses their feet, do NOT say they used thighs or head.
