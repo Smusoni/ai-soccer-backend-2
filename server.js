@@ -169,6 +169,16 @@ async function initDB() {
         raw JSONB DEFAULT '{}',
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
       )`,
+      `CREATE TABLE IF NOT EXISTS player_stats (
+        user_id TEXT PRIMARY KEY,
+        total_analyses INTEGER DEFAULT 0,
+        skill_frequency JSONB DEFAULT '{}',
+        skill_levels JSONB DEFAULT '{}',
+        skill_last_seen JSONB DEFAULT '{}',
+        monthly_activity JSONB DEFAULT '{}',
+        last_analysis_at BIGINT,
+        updated_at BIGINT
+      )`,
     ];
 
     for (const sql of tables) {
@@ -201,6 +211,7 @@ async function initDB() {
     await addCol('analyses', 'public_id', 'TEXT');
     await addCol('analyses', 'skill', 'TEXT');
     await addCol('analyses', 'raw', "JSONB DEFAULT '{}'");
+    await addCol('player_stats', 'monthly_activity', "JSONB DEFAULT '{}'");
 
     // Drop NOT NULL constraints on legacy columns that our code doesn't populate
     const dropNotNull = async (table, col) => {
@@ -255,7 +266,7 @@ async function findUserById(id) {
 async function createUser({ id, name, email, passHash, age, dob }) {
   await pool.query(
     `INSERT INTO users (id, name, email, pass_hash, password_hash, age, dob, created_at)
-     VALUES ($1::uuid, $2, $3, $4, $4, $5, $6, NOW())`,
+     VALUES ($1::uuid, $2, $3, $4::text, $4::text, $5, $6, NOW())`,
     [id, name, email, passHash, age, dob]
   );
 }
@@ -368,6 +379,9 @@ async function insertAnalysis(userId, item) {
 
   try {
     await doInsert();
+    updatePlayerStats(userId, item).catch(e =>
+      console.error('[BK] updatePlayerStats failed:', e.message)
+    );
   } catch (e) {
     console.error('[BK] insertAnalysis first attempt failed:', e.message);
     if (e.message.includes('does not exist') || e.message.includes('undefined column') || e.message.includes('not-null constraint') || e.message.includes('violates not')) {
@@ -397,6 +411,9 @@ async function insertAnalysis(userId, item) {
         try { await pool.query(`ALTER TABLE analyses ALTER COLUMN analysis_data DROP NOT NULL`); } catch {}
         try { await pool.query(`ALTER TABLE analyses ALTER COLUMN analysis_data SET DEFAULT '{}'::jsonb`); } catch {}
         await doInsert();
+        updatePlayerStats(userId, item).catch(e =>
+          console.error('[BK] updatePlayerStats failed:', e.message)
+        );
         console.log('[BK] Retry succeeded after table fix');
       } catch (retryErr) {
         console.error('[BK] insertAnalysis retry also failed:', retryErr.message);
@@ -405,6 +422,65 @@ async function insertAnalysis(userId, item) {
     } else {
       throw e;
     }
+  }
+}
+
+async function updatePlayerStats(userId, item) {
+  try {
+    const now = Date.now();
+    const ts = item.created_at || now;
+    const d = new Date(ts);
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    const primarySkill = item.skillFocus || null;
+    const secondary = Array.isArray(item.secondarySkills) ? item.secondarySkills.filter(Boolean) : [];
+    const allSkills = primarySkill ? [primarySkill, ...secondary] : secondary;
+    const level = item.currentLevel || null;
+
+    const { rows } = await pool.query('SELECT * FROM player_stats WHERE user_id = $1', [userId]);
+    const existing = rows[0] || null;
+
+    const skillFreq     = existing?.skill_frequency   || {};
+    const skillLevels   = existing?.skill_levels      || {};
+    const skillLastSeen = existing?.skill_last_seen   || {};
+    const monthlyAct    = existing?.monthly_activity  || {};
+
+    for (const sk of allSkills) {
+      if (!sk) continue;
+      skillFreq[sk] = (skillFreq[sk] || 0) + 1;
+    }
+    if (primarySkill && level) skillLevels[primarySkill] = level;
+    if (primarySkill) skillLastSeen[primarySkill] = ts;
+
+    if (!monthlyAct[monthKey]) monthlyAct[monthKey] = { sessions: 0, skills: [] };
+    monthlyAct[monthKey].sessions += 1;
+    if (primarySkill && !monthlyAct[monthKey].skills.includes(primarySkill)) {
+      monthlyAct[monthKey].skills.push(primarySkill);
+    }
+
+    const totalAnalyses = (existing?.total_analyses || 0) + 1;
+
+    await pool.query(
+      `INSERT INTO player_stats
+         (user_id, total_analyses, skill_frequency, skill_levels, skill_last_seen,
+          monthly_activity, last_analysis_at, updated_at)
+       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7, $8)
+       ON CONFLICT (user_id) DO UPDATE SET
+         total_analyses   = $2,
+         skill_frequency  = $3::jsonb,
+         skill_levels     = $4::jsonb,
+         skill_last_seen  = $5::jsonb,
+         monthly_activity = $6::jsonb,
+         last_analysis_at = $7,
+         updated_at       = $8`,
+      [userId, totalAnalyses,
+       JSON.stringify(skillFreq), JSON.stringify(skillLevels),
+       JSON.stringify(skillLastSeen), JSON.stringify(monthlyAct),
+       ts, now]
+    );
+    console.log(`[BK] updatePlayerStats OK for user ${userId} - total: ${totalAnalyses}`);
+  } catch (e) {
+    console.error('[BK] updatePlayerStats error (non-fatal):', e.message);
   }
 }
 
@@ -1533,6 +1609,279 @@ Return VALID JSON ONLY with this structure:
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/* ==================================================================== */
+/*                     PLAYER REPORT / TRENDS                           */
+/* ==================================================================== */
+
+app.get('/api/player-report', auth, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const { rows: statsRows } = await pool.query(
+      'SELECT * FROM player_stats WHERE user_id = $1', [userId]
+    );
+    const stats = statsRows[0] || null;
+
+    const { rows: analysisRows } = await pool.query(
+      `SELECT id, skill_focus, secondary_skills, current_level, session_summary, created_at
+       FROM analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
+      [userId]
+    );
+
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    let skillFrequency  = stats?.skill_frequency  || {};
+    let skillLevels     = stats?.skill_levels      || {};
+    let skillLastSeen   = stats?.skill_last_seen   || {};
+    let monthlyActivity = stats?.monthly_activity  || {};
+    let totalAnalyses   = stats?.total_analyses    || 0;
+    let lastAnalysisAt  = stats?.last_analysis_at  || null;
+
+    // Fallback: derive from raw analyses rows for users who had analyses before player_stats existed
+    if (!stats && analysisRows.length > 0) {
+      for (const row of analysisRows) {
+        const ts = toMs(row.created_at);
+        const primarySkill = row.skill_focus || null;
+        const secondary = Array.isArray(row.secondary_skills) ? row.secondary_skills : [];
+        const allSkills = primarySkill ? [primarySkill, ...secondary] : secondary;
+        const level = row.current_level || null;
+        const d = new Date(ts);
+        const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        for (const sk of allSkills) { if (sk) skillFrequency[sk] = (skillFrequency[sk] || 0) + 1; }
+        if (primarySkill && level) skillLevels[primarySkill] = level;
+        if (primarySkill && (!skillLastSeen[primarySkill] || ts > skillLastSeen[primarySkill])) {
+          skillLastSeen[primarySkill] = ts;
+        }
+        if (!monthlyActivity[mk]) monthlyActivity[mk] = { sessions: 0, skills: [] };
+        monthlyActivity[mk].sessions += 1;
+        if (primarySkill && !monthlyActivity[mk].skills.includes(primarySkill)) {
+          monthlyActivity[mk].skills.push(primarySkill);
+        }
+        totalAnalyses++;
+        if (!lastAnalysisAt || ts > lastAnalysisAt) lastAnalysisAt = ts;
+      }
+    }
+
+    const topSkills = Object.entries(skillFrequency)
+      .sort((a, b) => b[1] - a[1])
+      .map(([skill, count]) => ({
+        skill, count,
+        level: skillLevels[skill] || null,
+        lastSeen: skillLastSeen[skill] || null,
+      }));
+
+    const currentMonthData = monthlyActivity[currentMonthKey] || { sessions: 0, skills: [] };
+
+    const monthlyHistory = Object.entries(monthlyActivity)
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .slice(-12)
+      .map(([month, data]) => ({ month, sessions: data.sessions, skills: data.skills }));
+
+    const recentSessions = analysisRows.slice(0, 5).map(r => ({
+      id: r.id,
+      skillFocus: r.skill_focus,
+      currentLevel: r.current_level,
+      sessionSummary: r.session_summary
+        ? r.session_summary.slice(0, 200) + (r.session_summary.length > 200 ? '...' : '')
+        : null,
+      createdAt: toMs(r.created_at),
+    }));
+
+    res.json({
+      ok: true,
+      report: {
+        totalAnalyses,
+        lastAnalysisAt,
+        topSkills,
+        currentMonth: {
+          month: currentMonthKey,
+          sessions: currentMonthData.sessions,
+          skillsTrained: currentMonthData.skills,
+        },
+        monthlyHistory,
+        recentSessions,
+        skillFrequency,
+        skillLevels,
+        skillLastSeen,
+      },
+    });
+  } catch (e) {
+    console.error('[BK] player-report error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to load player report' });
+  }
+});
+
+app.post('/api/player-report/email', auth, async (req, res) => {
+  try {
+    if (!resend) return res.status(400).json({ ok: false, error: 'Email service not configured' });
+
+    const userId = req.userId;
+    const user = await findUserById(userId);
+    const profile = await getProfile(userId);
+    if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+
+    const playerName  = profile?.name || user.name || 'Player';
+    const playerEmail = user.email;
+
+    const { rows: statsRows } = await pool.query(
+      'SELECT * FROM player_stats WHERE user_id = $1', [userId]
+    );
+    const stats = statsRows[0] || null;
+
+    const { rows: analysisRows } = await pool.query(
+      `SELECT id, skill_focus, secondary_skills, current_level, session_summary, created_at
+       FROM analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
+      [userId]
+    );
+
+    let skillFrequency  = stats?.skill_frequency  || {};
+    let skillLevels     = stats?.skill_levels      || {};
+    let monthlyActivity = stats?.monthly_activity  || {};
+    let totalAnalyses   = stats?.total_analyses    || 0;
+
+    if (!stats && analysisRows.length > 0) {
+      for (const row of analysisRows) {
+        const ts = toMs(row.created_at);
+        const primarySkill = row.skill_focus || null;
+        const secondary = Array.isArray(row.secondary_skills) ? row.secondary_skills : [];
+        const allSkills = primarySkill ? [primarySkill, ...secondary] : secondary;
+        const level = row.current_level || null;
+        const d = new Date(ts);
+        const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        for (const sk of allSkills) { if (sk) skillFrequency[sk] = (skillFrequency[sk] || 0) + 1; }
+        if (primarySkill && level) skillLevels[primarySkill] = level;
+        if (!monthlyActivity[mk]) monthlyActivity[mk] = { sessions: 0, skills: [] };
+        monthlyActivity[mk].sessions += 1;
+        if (primarySkill && !monthlyActivity[mk].skills.includes(primarySkill)) {
+          monthlyActivity[mk].skills.push(primarySkill);
+        }
+        totalAnalyses++;
+      }
+    }
+
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const reportMonthLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+    const currentMonthData = monthlyActivity[currentMonthKey] || { sessions: 0, skills: [] };
+
+    const topSkills = Object.entries(skillFrequency)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([skill, count]) => ({ skill, count, level: skillLevels[skill] || 'N/A' }));
+
+    const skillRowsHtml = topSkills.length > 0
+      ? topSkills.map((s, i) => `
+          <tr style="border-bottom:1px solid #1e2a3a">
+            <td style="padding:12px 16px;color:#cccccc;font-size:15px">${i + 1}. ${s.skill}</td>
+            <td style="padding:12px 16px;text-align:center">
+              <span style="background:#0d1f2d;color:#00ff95;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:700">${s.count} session${s.count !== 1 ? 's' : ''}</span>
+            </td>
+            <td style="padding:12px 16px;text-align:center">
+              <span style="color:${s.level === 'Advanced' ? '#00ff95' : s.level === 'Intermediate' ? '#19d3ff' : '#ffcc00'};font-size:13px;font-weight:600">${s.level}</span>
+            </td>
+          </tr>`).join('')
+      : `<tr><td colspan="3" style="padding:16px;color:#666;text-align:center">No sessions recorded yet.</td></tr>`;
+
+    const last3Months = Object.entries(monthlyActivity)
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .slice(-3);
+
+    const monthRowsHtml = last3Months.map(([mk, data]) => {
+      const [yr, mo] = mk.split('-');
+      const label = `${monthNames[parseInt(mo, 10) - 1]} ${yr}`;
+      return `
+        <tr style="border-bottom:1px solid #1e2a3a">
+          <td style="padding:10px 16px;color:#cccccc;font-size:14px">${label}</td>
+          <td style="padding:10px 16px;text-align:center;color:#19d3ff;font-weight:700">${data.sessions}</td>
+          <td style="padding:10px 16px;color:#888;font-size:13px">${(data.skills || []).slice(0, 3).join(', ') || '—'}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:620px;margin:0 auto;background:#0a0f1a;color:#ffffff;border-radius:16px;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#00ff95,#19d3ff);padding:36px 32px;text-align:center">
+          <div style="font-size:32px;margin-bottom:6px">⚽</div>
+          <h1 style="margin:0;font-size:24px;color:#0a0a0a;font-weight:800">Ball Knowledge</h1>
+          <p style="margin:6px 0 0;color:#0a0a0a;font-size:15px;opacity:0.75">${reportMonthLabel} Training Report</p>
+        </div>
+        <div style="padding:28px 32px 0">
+          <h2 style="margin:0 0 8px;color:#00ff95;font-size:20px">Hey ${playerName},</h2>
+          <p style="color:#aaaaaa;font-size:15px;line-height:1.7;margin:0">Here's your Ball Knowledge training summary. Keep up the work on the pitch!</p>
+        </div>
+        <div style="padding:24px 32px">
+          <div style="background:#111827;border-radius:12px;padding:20px;text-align:center;display:flex">
+            <div style="flex:1;border-right:1px solid #1e2a3a;padding-right:16px">
+              <div style="font-size:36px;font-weight:800;color:#00ff95">${currentMonthData.sessions}</div>
+              <div style="color:#888;font-size:13px;margin-top:4px">Sessions This Month</div>
+            </div>
+            <div style="flex:1;border-right:1px solid #1e2a3a;padding:0 16px">
+              <div style="font-size:36px;font-weight:800;color:#19d3ff">${totalAnalyses}</div>
+              <div style="color:#888;font-size:13px;margin-top:4px">Total Sessions</div>
+            </div>
+            <div style="flex:1;padding-left:16px">
+              <div style="font-size:36px;font-weight:800;color:#ffcc00">${topSkills.length}</div>
+              <div style="color:#888;font-size:13px;margin-top:4px">Skills Practiced</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:0 32px 24px">
+          <h3 style="margin:0 0 16px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Top Skills (All Time)</h3>
+          <table style="width:100%;border-collapse:collapse;background:#111827;border-radius:12px;overflow:hidden">
+            <thead>
+              <tr style="background:#0d1f2d">
+                <th style="padding:10px 16px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Skill</th>
+                <th style="padding:10px 16px;text-align:center;color:#888;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Sessions</th>
+                <th style="padding:10px 16px;text-align:center;color:#888;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Level</th>
+              </tr>
+            </thead>
+            <tbody>${skillRowsHtml}</tbody>
+          </table>
+        </div>
+        ${last3Months.length > 0 ? `
+        <div style="padding:0 32px 24px">
+          <h3 style="margin:0 0 16px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Recent Months</h3>
+          <table style="width:100%;border-collapse:collapse;background:#111827;border-radius:12px;overflow:hidden">
+            <thead>
+              <tr style="background:#0d1f2d">
+                <th style="padding:10px 16px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Month</th>
+                <th style="padding:10px 16px;text-align:center;color:#888;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Sessions</th>
+                <th style="padding:10px 16px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Skills</th>
+              </tr>
+            </thead>
+            <tbody>${monthRowsHtml}</tbody>
+          </table>
+        </div>` : ''}
+        <div style="padding:0 32px 32px;text-align:center">
+          <a href="https://smusoni.github.io/ai-soccer-backend-2" style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;text-decoration:none;padding:14px 40px;border-radius:12px;font-weight:700;font-size:16px;display:inline-block;margin-top:8px">
+            Analyze Your Next Session
+          </a>
+        </div>
+        <div style="border-top:1px solid #1e2a3a;padding:20px 32px;text-align:center">
+          <p style="color:#555;font-size:12px;margin:0">Ball Knowledge · Analyze. Improve. Dominate.</p>
+          <p style="color:#444;font-size:11px;margin:6px 0 0">You requested this report from your Ball Knowledge account.</p>
+        </div>
+      </div>`;
+
+    await resend.emails.send({
+      from: 'Ball Knowledge <onboarding@resend.dev>',
+      to: playerEmail,
+      subject: `Your ${reportMonthLabel} Training Report — Ball Knowledge`,
+      html,
+    });
+
+    console.log(`[BK] Monthly report emailed to ${playerEmail}`);
+    res.json({ ok: true, message: `Report sent to ${playerEmail}` });
+  } catch (e) {
+    console.error('[BK] player-report/email error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to send report email' });
   }
 });
 
