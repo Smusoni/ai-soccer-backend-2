@@ -556,6 +556,45 @@ function auth(req, res, next) {
 /* ---------- Gemini AI client ---------- */
 const genAI       = GEMINI_KEY ? new GoogleGenerativeAI(GEMINI_KEY) : null;
 const fileManager = GEMINI_KEY ? new GoogleAIFileManager(GEMINI_KEY) : null;
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+
+function getGeminiErrorText(err) {
+  return String(err?.message || err?.error || err || '');
+}
+
+function isGeminiRetryable(err) {
+  const text = getGeminiErrorText(err).toLowerCase();
+  return err?.status === 429 || err?.status === 503 ||
+    text.includes('429') ||
+    text.includes('resource exhausted') ||
+    text.includes('quota') ||
+    text.includes('temporarily unavailable') ||
+    text.includes('deadline exceeded') ||
+    text.includes('503');
+}
+
+async function generateGeminiContent(contentParts, label = 'request') {
+  let lastErr = null;
+  for (const modelName of GEMINI_MODELS) {
+    const model = genAI.getGenerativeModel({ model: modelName });
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await model.generateContent(contentParts);
+        return { result, modelName };
+      } catch (err) {
+        lastErr = err;
+        const retryable = isGeminiRetryable(err);
+        if (!retryable || attempt === maxRetries) break;
+        const waitMs = Math.min(30000, 4000 * attempt);
+        console.log(`[BK] Gemini ${label} retry (${modelName}) ${attempt}/${maxRetries} in ${Math.round(waitMs / 1000)}s: ${getGeminiErrorText(err)}`);
+        await new Promise(r => setTimeout(r, waitMs));
+      }
+    }
+    console.log(`[BK] Gemini model fallback: ${modelName} failed, trying next model...`);
+  }
+  throw lastErr || new Error('Gemini request failed');
+}
 
 /* ---------- Video helpers for Gemini ---------- */
 function detectMimeType(url) {
@@ -631,13 +670,20 @@ app.post('/api/test-ai', async (req, res) => {
     if (!genAI) {
       return res.status(400).json({ ok: false, error: 'Gemini API key not configured' });
     }
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent('Give me one quick soccer training tip in 2 sentences.');
+    const { result, modelName } = await generateGeminiContent('Give me one quick soccer training tip in 2 sentences.', 'test-ai');
     const message = result.response.text();
-    res.json({ ok: true, message, model: 'gemini-2.0-flash' });
+    res.json({ ok: true, message, model: modelName });
   } catch (error) {
-    console.error('[BK] test-ai error:', error.message);
-    res.status(500).json({ ok: false, error: error.message });
+    const msg = getGeminiErrorText(error);
+    console.error('[BK] test-ai error:', msg);
+    if (isGeminiRetryable(error)) {
+      return res.status(503).json({
+        ok: false,
+        error: 'Gemini quota/rate limit reached. Please retry in a minute or verify billing is enabled on your Google AI project.',
+        detail: msg,
+      });
+    }
+    res.status(500).json({ ok: false, error: msg });
   }
 });
 
@@ -1172,8 +1218,7 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
   "youtubeRecommendations": [{"title": "specific video topic", "coach": "real YouTube channel name", "why": "how it addresses this player's specific needs"}]
 }`;
 
-  console.log('[BK] Sending video to Gemini 2.0 Flash...');
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  console.log('[BK] Sending video to Gemini...');
 
   const contentParts = [
     { fileData: { mimeType: file.mimeType, fileUri: file.uri } },
@@ -1181,24 +1226,20 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
   ];
 
   let result;
-  const maxRetries = 3;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      result = await model.generateContent(contentParts);
-      break;
-    } catch (err) {
-      if (err.status === 429 && attempt < maxRetries) {
-        const waitSec = attempt * 10;
-        console.log(`[BK] Rate limited (429). Retry ${attempt}/${maxRetries} in ${waitSec}s...`);
-        await new Promise(r => setTimeout(r, waitSec * 1000));
-      } else {
-        throw err;
-      }
+  let usedModelName = GEMINI_MODELS[0];
+  try {
+    const out = await generateGeminiContent(contentParts, 'analyze');
+    result = out.result;
+    usedModelName = out.modelName;
+  } catch (err) {
+    if (isGeminiRetryable(err)) {
+      throw new Error('Gemini quota/rate limit reached. Please retry shortly, or enable billing in Google AI Studio/Vertex for reliable analysis.');
     }
+    throw err;
   }
 
   const rawContent = result.response.text();
-  console.log(`[BK] Gemini response (first 500 chars):`, rawContent.substring(0, 500));
+  console.log(`[BK] Gemini (${usedModelName}) response (first 500 chars):`, rawContent.substring(0, 500));
 
   let data = {};
   try {
