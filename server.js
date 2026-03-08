@@ -1783,6 +1783,100 @@ app.get('/api/player-report', auth, async (req, res) => {
   }
 });
 
+app.get('/api/progress', auth, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const skillFilter = String(req.query.skill || '').trim().toLowerCase();
+    const range = String(req.query.range || '90').trim().toLowerCase();
+
+    const { rows } = await pool.query(
+      `SELECT id, skill_focus, current_level, session_summary, created_at, raw
+       FROM analyses
+       WHERE user_id = $1
+       ORDER BY created_at ASC
+       LIMIT 2000`,
+      [userId]
+    );
+
+    const levelFallback = (level) => {
+      const l = String(level || '').toLowerCase();
+      if (l.includes('advanced')) return 8.8;
+      if (l.includes('beginner')) return 5.2;
+      return 6.8;
+    };
+
+    const parseSnapshotScore = (raw, fallback) => {
+      const candidate = raw?.sessionSnapshot?.levelScore;
+      if (candidate === null || candidate === undefined) return fallback;
+      const text = String(candidate).trim();
+      if (!text) return fallback;
+      if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(text)) return fallback;
+      const clean = text.endsWith('/10') ? text.replace('/10', '').trim() : text;
+      const n = Number(clean);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(0, Math.min(10, n));
+    };
+
+    const now = Date.now();
+    const rangeDays = range === 'all' ? null : Math.max(1, Number(range) || 90);
+    const since = rangeDays ? (now - (rangeDays * 24 * 60 * 60 * 1000)) : null;
+
+    const allSkillsSet = new Set();
+    const points = [];
+    for (const r of rows) {
+      const ts = toMs(r.created_at);
+      const skill = String(r.skill_focus || 'General').trim();
+      const skillLower = skill.toLowerCase();
+      allSkillsSet.add(skill);
+
+      if (since && ts < since) continue;
+      if (skillFilter && skillLower !== skillFilter) continue;
+
+      const fallback = levelFallback(r.current_level);
+      const score = parseSnapshotScore(r.raw, fallback);
+      points.push({
+        id: r.id,
+        ts,
+        label: new Date(ts).toLocaleDateString(),
+        skill,
+        level: r.current_level || 'Intermediate',
+        score: Number(score.toFixed(1)),
+        summary: r.session_summary
+          ? r.session_summary.slice(0, 160) + (r.session_summary.length > 160 ? '...' : '')
+          : '',
+      });
+    }
+
+    const sessions = points.length;
+    const firstScore = sessions ? points[0].score : null;
+    const lastScore = sessions ? points[sessions - 1].score : null;
+    const delta = (firstScore !== null && lastScore !== null)
+      ? Number((lastScore - firstScore).toFixed(1))
+      : null;
+    const avgScore = sessions
+      ? Number((points.reduce((sum, p) => sum + p.score, 0) / sessions).toFixed(1))
+      : null;
+
+    res.json({
+      ok: true,
+      progress: {
+        skill: skillFilter || 'all',
+        range,
+        skills: Array.from(allSkillsSet).sort(),
+        sessions,
+        firstScore,
+        lastScore,
+        delta,
+        avgScore,
+        points,
+      },
+    });
+  } catch (e) {
+    console.error('[BK] progress error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to load progress' });
+  }
+});
+
 app.post('/api/player-report/email', auth, async (req, res) => {
   try {
     if (!resend) return res.status(400).json({ ok: false, error: 'Email service not configured' });

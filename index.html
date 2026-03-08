@@ -630,6 +630,7 @@
       <a href="#" id="profileLink" role="menuitem">Profile</a>
       <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
       <a href="#" id="library" role="menuitem">Library</a>
+      <a href="#" id="progressLink" role="menuitem">Progress</a>
       <a href="#" id="statsLink" role="menuitem" style="display:none;color:var(--accent2)">📊 Investor Stats</a>
       <a href="#" id="upgradeLink" role="menuitem" style="color:var(--accent)">⚡ Upgrade to Pro</a>
       <a href="#" id="manageSubLink" role="menuitem" style="display:none;color:var(--accent2)">Manage Subscription</a>
@@ -1830,6 +1831,59 @@
     <p id="statsUpdatedAt" class="muted" style="margin-top:12px"></p>
   </section>
 
+  <!-- =========== PROGRESS PAGE =========== -->
+  <section class="card container hide" id="progressPage">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0">Progress</h3>
+        <p class="muted" style="margin:8px 0 0">Track how your skills improve over time.</p>
+      </div>
+      <button id="refreshProgressBtn" style="padding:10px 16px;font-size:14px">Refresh</button>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+        <div>
+          <label class="field-label" style="display:block;margin-bottom:6px">Skill Filter</label>
+          <select id="progressSkillFilter" style="width:100%">
+            <option value="">All skills</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="display:block;margin-bottom:6px">Time Range</label>
+          <select id="progressRangeFilter" style="width:100%">
+            <option value="30">Last 30 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="progressError" class="err hide" style="margin-top:12px;padding:10px;border:1px solid var(--error);border-radius:10px"></div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:14px">
+      <div class="metric-card"><div class="metric-label">Sessions</div><div id="progressSessions" class="metric-value">0</div></div>
+      <div class="metric-card"><div class="metric-label">First Score</div><div id="progressFirstScore" class="metric-value">—</div></div>
+      <div class="metric-card"><div class="metric-label">Latest Score</div><div id="progressLastScore" class="metric-value">—</div></div>
+      <div class="metric-card"><div class="metric-label">Improvement</div><div id="progressDelta" class="metric-value">—</div></div>
+      <div class="metric-card"><div class="metric-label">Average Score</div><div id="progressAvgScore" class="metric-value">—</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h4 style="margin-top:0">Score Trend</h4>
+      <p class="muted" style="margin:0 0 8px">Session score (0-10) by date</p>
+      <div id="progressChart" style="display:flex;align-items:flex-end;gap:6px;height:180px"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h4 style="margin-top:0">Recent Sessions</h4>
+      <div id="progressSessionsList" style="display:grid;gap:8px"></div>
+    </div>
+  </section>
+
   <!-- =========== PROFILE PAGE (after login) =========== -->
   <section class="card container hide" id="profilePage" aria-labelledby="profileTitle">
     <h3 id="profileTitle" style="margin:0 0 24px 0">Your Profile</h3>
@@ -1986,6 +2040,17 @@
   function show(el){ if(!el) return; el.classList.remove('hide'); }
   function hide(el){ if(!el) return; el.classList.add('hide'); }
 
+  function formatLevelScore(rawLevelScore, fallbackScore) {
+    const raw = String(rawLevelScore ?? '').trim();
+    if (!raw) return fallbackScore;
+    // Guard against bad data where a date was accidentally placed into levelScore.
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(raw)) return fallbackScore;
+    if (/\/10$/.test(raw)) return raw;
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 0 && n <= 10) return `${n}/10`;
+    return fallbackScore;
+  }
+
   async function api(path, opts = {}) {
     // Handle FormData for file uploads
     let headers = Object.assign({}, opts.headers || {});
@@ -2007,7 +2072,7 @@
     hide($('homePage')); hide($('loginCard')); hide($('signupCard'));
     hide($('analysisCard')); hide($('libraryPage')); hide($('profilePage'));
     hide($('reportViewPage')); hide($('forgotCard')); hide($('resetCard'));
-    hide($('termsPage')); hide($('privacyPage')); hide($('statsPage'));
+    hide($('termsPage')); hide($('privacyPage')); hide($('statsPage')); hide($('progressPage'));
 
     const menuContainer = document.querySelector('.menu-container');
     
@@ -2061,6 +2126,11 @@
       if ($('pageTag')) $('pageTag').textContent = 'Investor Stats';
       if (menuContainer) menuContainer.style.display = 'block';
       loadAdminStats();
+    } else if (screen === 'progress') {
+      show($('progressPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Progress';
+      if (menuContainer) menuContainer.style.display = 'block';
+      loadProgressPage();
     } else {
       show($('homePage'));
       if ($('pageTag')) $('pageTag').textContent = 'Home';
@@ -2087,6 +2157,7 @@
     else if (page === 'profile') { goTo('profile'); }
     else if (page === 'analysis') { goTo('analysis'); }
     else if (page === 'stats') { goTo('stats'); }
+    else if (page === 'progress') { goTo('progress'); }
     else if (page.startsWith('reportView')) { goTo('reportView'); }
     else { setHash('analysis'); }
   });
@@ -2239,6 +2310,7 @@
   $('profileLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('profile')});
   $('newAnalysis')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('analysis');hide($('results'))});
   $('library')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('library')});
+  $('progressLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('progress')});
   $('statsLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('stats')});
   $('upgradeLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');startCheckout()});
   $('manageSubLink')?.addEventListener('click',async(e)=>{
@@ -2384,6 +2456,81 @@
     }
   }
 
+  async function loadProgressPage() {
+    const errBox = $('progressError');
+    if (errBox) {
+      errBox.textContent = '';
+      errBox.classList.add('hide');
+    }
+    try {
+      const skillSelect = $('progressSkillFilter');
+      const rangeSelect = $('progressRangeFilter');
+      const selectedSkill = String(skillSelect?.value || '').trim();
+      const selectedRange = String(rangeSelect?.value || '90').trim();
+
+      const query = new URLSearchParams();
+      if (selectedSkill) query.set('skill', selectedSkill);
+      query.set('range', selectedRange || '90');
+      const out = await api(`/api/progress?${query.toString()}`);
+      if (!out.ok) throw new Error(out.error || 'Could not load progress');
+
+      const p = out.progress || {};
+      const skills = Array.isArray(p.skills) ? p.skills : [];
+      const points = Array.isArray(p.points) ? p.points : [];
+      const fmtScore = (v) => (v === null || v === undefined) ? '—' : `${Number(v).toFixed(1)}/10`;
+
+      if (skillSelect) {
+        const current = selectedSkill;
+        skillSelect.innerHTML = `<option value="">All skills</option>${
+          skills.map(s => `<option value="${s}">${s}</option>`).join('')
+        }`;
+        skillSelect.value = skills.includes(current) ? current : '';
+      }
+
+      $('progressSessions').textContent = Number(p.sessions || 0).toLocaleString();
+      $('progressFirstScore').textContent = fmtScore(p.firstScore);
+      $('progressLastScore').textContent = fmtScore(p.lastScore);
+      $('progressAvgScore').textContent = fmtScore(p.avgScore);
+      const delta = p.delta;
+      $('progressDelta').textContent = delta === null || delta === undefined
+        ? '—'
+        : `${delta > 0 ? '+' : ''}${Number(delta).toFixed(1)}`;
+      $('progressDelta').style.color = delta > 0 ? 'var(--success)' : (delta < 0 ? 'var(--error)' : 'var(--muted)');
+
+      const chart = $('progressChart');
+      const maxScore = 10;
+      chart.innerHTML = points.length
+        ? points.map((pt, idx) => {
+            const h = Math.max(4, Math.round((Number(pt.score || 0) / maxScore) * 150));
+            const showLabel = idx % Math.max(1, Math.ceil(points.length / 8)) === 0 || idx === points.length - 1;
+            return `<div style="flex:1;min-width:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px">
+              <div title="${pt.label} - ${pt.skill} - ${pt.score}/10" style="width:100%;max-width:14px;height:${h}px;background:var(--accent2);border-radius:5px"></div>
+              <div class="muted" style="font-size:10px;line-height:1">${showLabel ? pt.label : ''}</div>
+            </div>`;
+          }).join('')
+        : '<span class="muted">No progress data for this filter yet.</span>';
+
+      const recent = points.slice(-8).reverse();
+      $('progressSessionsList').innerHTML = recent.length
+        ? recent.map(r => `
+          <div style="display:grid;grid-template-columns:90px 1fr 72px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
+            <span class="muted" style="font-size:12px">${r.label}</span>
+            <div>
+              <div style="font-weight:600">${r.skill}</div>
+              <div class="muted" style="font-size:12px">${r.summary || ''}</div>
+            </div>
+            <strong style="text-align:right;color:var(--accent2)">${Number(r.score).toFixed(1)}/10</strong>
+          </div>
+        `).join('')
+        : '<span class="muted">No sessions found for this filter.</span>';
+    } catch (e) {
+      if (errBox) {
+        errBox.textContent = e.message || 'Could not load progress';
+        errBox.classList.remove('hide');
+      }
+    }
+  }
+
   async function startCheckout() {
     const btn = $('upgradeBtn');
     btn.textContent = 'Redirecting to Stripe…';
@@ -2518,7 +2665,7 @@
         const fallbackScore = levelDesc.includes('advanced') ? '8.8/10' : (levelDesc.includes('beginner') ? '5.2/10' : '6.8/10');
         const snap = out.sessionSnapshot || {};
         $('snapshotDate').textContent = nowDate;
-        $('snapshotLevelScore').textContent = snap.levelScore ? `${snap.levelScore}/10` : fallbackScore;
+        $('snapshotLevelScore').textContent = formatLevelScore(snap.levelScore, fallbackScore);
         $('snapshotConfidence').textContent = snap.confidence || 'High';
         const tiles = Array.isArray(snap.quickTiles) ? snap.quickTiles : [];
         $('snapshotTiles').innerHTML = tiles.length
@@ -2777,7 +2924,7 @@
         const viewFallbackScore = viewLevelDesc.includes('advanced') ? '8.8/10' : (viewLevelDesc.includes('beginner') ? '5.2/10' : '6.8/10');
         const viewSnap = item.sessionSnapshot || {};
         $('viewSnapshotDate').textContent = viewDate;
-        $('viewSnapshotLevelScore').textContent = viewSnap.levelScore ? `${viewSnap.levelScore}/10` : viewFallbackScore;
+        $('viewSnapshotLevelScore').textContent = formatLevelScore(viewSnap.levelScore, viewFallbackScore);
         $('viewSnapshotConfidence').textContent = viewSnap.confidence || 'High';
         const viewTiles = Array.isArray(viewSnap.quickTiles) ? viewSnap.quickTiles : [];
         $('viewSnapshotTiles').innerHTML = viewTiles.length
@@ -3198,6 +3345,9 @@
   $('cancelEditBtn')?.addEventListener('click', hideEditMode);
   $('saveProfileBtn')?.addEventListener('click', saveProfile);
   $('refreshStatsBtn')?.addEventListener('click', loadAdminStats);
+  $('refreshProgressBtn')?.addEventListener('click', loadProgressPage);
+  $('progressSkillFilter')?.addEventListener('change', loadProgressPage);
+  $('progressRangeFilter')?.addEventListener('change', loadProgressPage);
   $('viewLibraryBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     setHash('library');
@@ -3213,6 +3363,7 @@
         if (page === 'library') { loadLibrary(); }
         else if (page === 'profile') { goTo('profile'); }
         else if (page === 'stats') { goTo('stats'); }
+        else if (page === 'progress') { goTo('progress'); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
         if (page === 'login') { goTo('login'); }
