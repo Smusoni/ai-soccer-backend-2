@@ -2104,6 +2104,12 @@
   function show(el){ if(!el) return; el.classList.remove('hide'); }
   function hide(el){ if(!el) return; el.classList.add('hide'); }
 
+  function esc(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(str ?? '')));
+    return d.innerHTML;
+  }
+
   function formatLevelScore(rawLevelScore, fallbackScore) {
     const raw = String(rawLevelScore ?? '').trim();
     if (!raw) return fallbackScore;
@@ -2475,7 +2481,7 @@
 
       const top = Array.isArray(s.topSkillFocuses) ? s.topSkillFocuses : [];
       $('statsTopSkills').innerHTML = top.length
-        ? top.map(x => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${x.skill}</span><strong>${fmt(x.count)}</strong></div>`).join('')
+        ? top.map(x => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(x.skill)}</span><strong>${fmt(x.count)}</strong></div>`).join('')
         : '<span class="muted">No skill data yet.</span>';
 
       const daily = Array.isArray(s.dailyAnalyses) ? s.dailyAnalyses : [];
@@ -2485,8 +2491,8 @@
             const h = Math.max(4, Math.round((Number(d.value || 0) / dailyMax) * 120));
             const showLabel = idx % 5 === 0 || idx === daily.length - 1;
             return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px">
-              <div title="${d.label}: ${d.value}" style="width:100%;max-width:12px;height:${h}px;background:var(--accent2);border-radius:4px"></div>
-              <div class="muted" style="font-size:10px;line-height:1">${showLabel ? d.label : ''}</div>
+              <div title="${esc(d.label)}: ${d.value}" style="width:100%;max-width:12px;height:${h}px;background:var(--accent2);border-radius:4px"></div>
+              <div class="muted" style="font-size:10px;line-height:1">${showLabel ? esc(d.label) : ''}</div>
             </div>`;
           }).join('')
         : '<span class="muted">No activity data yet.</span>';
@@ -2497,7 +2503,7 @@
         ? weekly.map(w => {
             const width = Math.max(2, Math.round((Number(w.value || 0) / weekMax) * 100));
             return `<div style="display:grid;grid-template-columns:60px 1fr 44px;align-items:center;gap:10px">
-              <span class="muted" style="font-size:12px">${w.label}</span>
+              <span class="muted" style="font-size:12px">${esc(w.label)}</span>
               <div style="height:10px;background:var(--line);border-radius:99px;overflow:hidden">
                 <div style="height:100%;width:${width}%;background:var(--accent);border-radius:99px"></div>
               </div>
@@ -2577,8 +2583,8 @@
             const h = Math.max(4, Math.round((Number(pt.score || 0) / maxScore) * 150));
             const showLabel = idx % Math.max(1, Math.ceil(points.length / 8)) === 0 || idx === points.length - 1;
             return `<div style="flex:1;min-width:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px">
-              <div title="${pt.label} - ${pt.skill} - ${pt.score}/10" style="width:100%;max-width:14px;height:${h}px;background:var(--accent2);border-radius:5px"></div>
-              <div class="muted" style="font-size:10px;line-height:1">${showLabel ? pt.label : ''}</div>
+              <div title="${esc(pt.label)} - ${esc(pt.skill)} - ${pt.score}/10" style="width:100%;max-width:14px;height:${h}px;background:var(--accent2);border-radius:5px"></div>
+              <div class="muted" style="font-size:10px;line-height:1">${showLabel ? esc(pt.label) : ''}</div>
             </div>`;
           }).join('')
         : '<span class="muted">No progress data for this filter yet.</span>';
@@ -2587,10 +2593,10 @@
       $('progressSessionsList').innerHTML = recent.length
         ? recent.map(r => `
           <div style="display:grid;grid-template-columns:90px 1fr 72px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
-            <span class="muted" style="font-size:12px">${r.label}</span>
+            <span class="muted" style="font-size:12px">${esc(r.label)}</span>
             <div>
-              <div style="font-weight:600">${r.skill}</div>
-              <div class="muted" style="font-size:12px">${r.summary || ''}</div>
+              <div style="font-weight:600">${esc(r.skill)}</div>
+              <div class="muted" style="font-size:12px">${esc(r.summary || '')}</div>
             </div>
             <strong style="text-align:right;color:var(--accent2)">${Number(r.score).toFixed(1)}/10</strong>
           </div>
@@ -2707,11 +2713,11 @@
             <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start">
               <div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  <strong>${r.skill || 'Skill'}</strong>
+                  <strong>${esc(r.skill || 'Skill')}</strong>
                   <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:${r.completed ? 'rgba(34,197,94,0.15)' : 'rgba(124,58,237,0.18)'};border:1px solid var(--line);color:${r.completed ? 'var(--success)' : '#c4b5fd'}">${r.completed ? 'Completed' : 'Upcoming'}</span>
                 </div>
-                ${r.drill ? `<div class="muted" style="margin-top:5px">Drill: ${r.drill}</div>` : ''}
-                ${r.note ? `<div class="muted" style="margin-top:5px">${r.note}</div>` : ''}
+                ${r.drill ? `<div class="muted" style="margin-top:5px">Drill: ${esc(r.drill)}</div>` : ''}
+                ${r.note ? `<div class="muted" style="margin-top:5px">${esc(r.note)}</div>` : ''}
                 <div class="muted" style="margin-top:7px;font-size:12px">Remind at: ${new Date(Number(r.remindAt || 0)).toLocaleString()}</div>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
@@ -2894,9 +2900,9 @@
         $('snapshotTiles').innerHTML = tiles.length
           ? tiles.map(t => `
             <div style="background:#111827;border:1px solid #1f2937;border-radius:12px;padding:12px">
-              <div class="field-label" style="margin-bottom:4px">${t.label || 'Metric'}</div>
-              <div style="font-weight:700;color:var(--text-bright)">${t.value || '—'}</div>
-              <div class="muted" style="margin-top:4px">${t.note || ''}</div>
+              <div class="field-label" style="margin-bottom:4px">${esc(t.label || 'Metric')}</div>
+              <div style="font-weight:700;color:var(--text-bright)">${esc(t.value || '—')}</div>
+              <div class="muted" style="margin-top:4px">${esc(t.note || '')}</div>
             </div>`).join('')
           : `<div class="muted">Snapshot metrics will improve as more sessions are analyzed.</div>`;
 
@@ -2912,10 +2918,10 @@
         if (out.improvementTips && out.improvementTips.length){
           $('improvementTipsRows').innerHTML = out.improvementTips.map(t => `
             <tr style="border-bottom:1px solid #1e2a3a">
-              <td style="padding:9px 10px;color:#ffcc00;font-weight:700">${t.priority || '-'}</td>
-              <td style="padding:9px 10px;color:#e6e6e6">${t.tip || '-'}</td>
-              <td style="padding:9px 10px;color:#aaaaaa">${t.why || '-'}</td>
-              <td style="padding:9px 10px;color:#88d8ff">${t.how || '-'}</td>
+              <td style="padding:9px 10px;color:#ffcc00;font-weight:700">${esc(t.priority || '-')}</td>
+              <td style="padding:9px 10px;color:#e6e6e6">${esc(t.tip || '-')}</td>
+              <td style="padding:9px 10px;color:#aaaaaa">${esc(t.why || '-')}</td>
+              <td style="padding:9px 10px;color:#88d8ff">${esc(t.how || '-')}</td>
             </tr>
           `).join('');
         } else {
@@ -2925,8 +2931,8 @@
         // Common Mistakes
         if (out.commonMistakesForPosition && out.commonMistakesForPosition.length){
           $('commonMistakes').innerHTML = out.commonMistakesForPosition.map(m => `
-            <li><strong>${m.mistake}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br>
-            <span class="muted">Correction: ${m.correction}</span></li>
+            <li><strong>${esc(m.mistake)}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br>
+            <span class="muted">Correction: ${esc(m.correction)}</span></li>
           `).join('');
         } else {
           $('commonMistakes').innerHTML = '<li>No mistakes data</li>';
@@ -2935,8 +2941,8 @@
         if (out.practiceProgression && out.practiceProgression.length){
           $('progressionList').innerHTML = out.practiceProgression.map(p=>`
             <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:16px;border-radius:12px">
-              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${p.level}</div>
-              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p.drill}</p>
+              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${esc(p.level)}</div>
+              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${esc(p.drill)}</p>
             </div>
           `).join('');
         }
@@ -2948,8 +2954,8 @@
             const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
             const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
             return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
-              <div><strong>${t.metric || 'Metric'}</strong><div class="muted" style="font-size:12px">${t.note || ''}</div></div>
-              <div style="color:${color};font-weight:700">${icon} ${t.trend || 'flat'}</div>
+              <div><strong>${esc(t.metric || 'Metric')}</strong><div class="muted" style="font-size:12px">${esc(t.note || '')}</div></div>
+              <div style="color:${color};font-weight:700">${icon} ${esc(t.trend || 'flat')}</div>
             </div>`;
           }).join('');
         } else {
@@ -2960,8 +2966,8 @@
         if (out.nextSessionPlan && out.nextSessionPlan.length){
           $('nextSessionPlan').innerHTML = out.nextSessionPlan.map(s => `
             <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
-              <div><div style="font-weight:700">${s.block || 'Block'}</div><div class="muted" style="font-size:12px">${s.duration || ''}</div></div>
-              <div style="color:var(--text)">${s.focus || s.drill || 'Training focus'}</div>
+              <div><div style="font-weight:700">${esc(s.block || 'Block')}</div><div class="muted" style="font-size:12px">${esc(s.duration || '')}</div></div>
+              <div style="color:var(--text)">${esc(s.focus || s.drill || 'Training focus')}</div>
             </div>
           `).join('');
         } else {
@@ -2977,9 +2983,9 @@
           $('youtubeList').innerHTML = out.youtubeRecommendations.map(y=>`
             <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
               <div style="background:#111827;border:1px solid #1f2937;padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
-                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${y.title}</div>
-                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${y.coach}</p>
-                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${y.why}</p>
+                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${esc(y.title)}</div>
+                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${esc(y.coach)}</p>
+                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${esc(y.why)}</p>
               </div>
             </a>
           `).join('');
@@ -3072,18 +3078,18 @@
                   const tr = String(t.trend || '').toLowerCase();
                   const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
                   const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
-                  return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.03);border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:11px;color:${color};margin-right:6px;margin-top:6px">${icon} ${t.metric || 'Metric'}</span>`;
+                  return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.03);border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:11px;color:${color};margin-right:6px;margin-top:6px">${icon} ${esc(t.metric || 'Metric')}</span>`;
                 }).join('')
               : '<span class="muted" style="font-size:12px">Trend data appears after multiple sessions.</span>';
             const youtube = Array.isArray(i.youtubeRecommendations) ? i.youtubeRecommendations.slice(0, 2) : [];
             const youtubeHtml = youtube.length
-              ? youtube.map(y => `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title || '')}" target="_blank" style="display:inline-block;font-size:12px;color:var(--accent2);text-decoration:none;margin-right:10px;margin-top:6px">▶ ${y.title || 'Training video'}</a>`).join('')
+              ? youtube.map(y => `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title || '')}" target="_blank" style="display:inline-block;font-size:12px;color:var(--accent2);text-decoration:none;margin-right:10px;margin-top:6px">▶ ${esc(y.title || 'Training video')}</a>`).join('')
               : '<span class="muted" style="font-size:12px">No video recommendations yet.</span>';
             return `
             <div class="card">
-              <strong>${i.candidateName || 'Candidate'}</strong><br>
+              <strong>${esc(i.candidateName || 'Candidate')}</strong><br>
               <span class="muted">${new Date(i.createdAt).toLocaleString()}</span><br>
-              <span>${i.sessionSummary ? i.sessionSummary.substring(0, 120) + '…' : 'Analysis saved'}</span><br>
+              <span>${i.sessionSummary ? esc(i.sessionSummary.substring(0, 120)) + '…' : 'Analysis saved'}</span><br>
               <div style="margin-top:8px">
                 <div class="muted" style="font-size:11px;margin-bottom:2px">Progress scan</div>
                 <div>${trendHtml}</div>
@@ -3158,9 +3164,9 @@
         $('viewSnapshotTiles').innerHTML = viewTiles.length
           ? viewTiles.map(t => `
             <div style="background:#111827;border:1px solid #1f2937;border-radius:12px;padding:12px">
-              <div class="field-label" style="margin-bottom:4px">${t.label || 'Metric'}</div>
-              <div style="font-weight:700;color:var(--text-bright)">${t.value || '—'}</div>
-              <div class="muted" style="margin-top:4px">${t.note || ''}</div>
+              <div class="field-label" style="margin-bottom:4px">${esc(t.label || 'Metric')}</div>
+              <div style="font-weight:700;color:var(--text-bright)">${esc(t.value || '—')}</div>
+              <div class="muted" style="margin-top:4px">${esc(t.note || '')}</div>
             </div>`).join('')
           : `<div class="muted">Snapshot metrics will improve as more sessions are analyzed.</div>`;
         
@@ -3177,10 +3183,10 @@
         $('viewImprovementTipsRows').innerHTML = tips.length
           ? tips.map(t => `
             <tr style="border-bottom:1px solid #1e2a3a">
-              <td style="padding:9px 10px;color:#ffcc00;font-weight:700">${t.priority || '-'}</td>
-              <td style="padding:9px 10px;color:#e6e6e6">${t.tip || '-'}</td>
-              <td style="padding:9px 10px;color:#aaaaaa">${t.why || '-'}</td>
-              <td style="padding:9px 10px;color:#88d8ff">${t.how || '-'}</td>
+              <td style="padding:9px 10px;color:#ffcc00;font-weight:700">${esc(t.priority || '-')}</td>
+              <td style="padding:9px 10px;color:#e6e6e6">${esc(t.tip || '-')}</td>
+              <td style="padding:9px 10px;color:#aaaaaa">${esc(t.why || '-')}</td>
+              <td style="padding:9px 10px;color:#88d8ff">${esc(t.how || '-')}</td>
             </tr>
           `).join('')
           : '<tr><td colspan="4" class="muted" style="padding:10px">No tips available</td></tr>';
@@ -3188,7 +3194,7 @@
         // Common Mistakes
         const mistakes = item.commonMistakesForPosition || [];
         $('viewCommonMistakes').innerHTML = mistakes.length
-          ? mistakes.map(m => `<li><strong>${m.mistake}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br><span class="muted">Correction: ${m.correction}</span></li>`).join('')
+          ? mistakes.map(m => `<li><strong>${esc(m.mistake)}</strong> (${m.observed ? 'Observed' : 'Not observed'})<br><span class="muted">Correction: ${esc(m.correction)}</span></li>`).join('')
           : '<li>No mistakes data</li>';
         
         // Practice Progression
@@ -3196,8 +3202,8 @@
         $('viewProgressionList').innerHTML = progression.length
           ? progression.map(p => `
             <div style="background:linear-gradient(135deg,rgba(0,255,149,0.08),rgba(25,211,255,0.08));border:1.5px solid var(--line);border-left:4px solid var(--accent);padding:16px;border-radius:12px">
-              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${p.level}</div>
-              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p.drill}</p>
+              <div style="color:var(--accent);font-weight:700;margin-bottom:8px">${esc(p.level)}</div>
+              <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${esc(p.drill)}</p>
             </div>
           `).join('')
           : '<p>No progression data</p>';
@@ -3209,8 +3215,8 @@
             const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
             const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
             return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
-              <div><strong>${t.metric || 'Metric'}</strong><div class="muted" style="font-size:12px">${t.note || ''}</div></div>
-              <div style="color:${color};font-weight:700">${icon} ${t.trend || 'flat'}</div>
+              <div><strong>${esc(t.metric || 'Metric')}</strong><div class="muted" style="font-size:12px">${esc(t.note || '')}</div></div>
+              <div style="color:${color};font-weight:700">${icon} ${esc(t.trend || 'flat')}</div>
             </div>`;
           }).join('');
         } else {
@@ -3221,8 +3227,8 @@
         if (item.nextSessionPlan && item.nextSessionPlan.length){
           $('viewNextSessionPlan').innerHTML = item.nextSessionPlan.map(s => `
             <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
-              <div><div style="font-weight:700">${s.block || 'Block'}</div><div class="muted" style="font-size:12px">${s.duration || ''}</div></div>
-              <div style="color:var(--text)">${s.focus || s.drill || 'Training focus'}</div>
+              <div><div style="font-weight:700">${esc(s.block || 'Block')}</div><div class="muted" style="font-size:12px">${esc(s.duration || '')}</div></div>
+              <div style="color:var(--text)">${esc(s.focus || s.drill || 'Training focus')}</div>
             </div>
           `).join('');
         } else {
@@ -3240,9 +3246,9 @@
           ? youtube.map(y => `
             <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
               <div style="background:#111827;border:1px solid #1f2937;padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
-                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${y.title}</div>
-                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${y.coach}</p>
-                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${y.why}</p>
+                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${esc(y.title)}</div>
+                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${esc(y.coach)}</p>
+                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${esc(y.why)}</p>
               </div>
             </a>
           `).join('')
