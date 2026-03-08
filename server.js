@@ -1278,6 +1278,15 @@ PLAYER INFO:
 - Position: ${position}
 - Age: ${ageLabel}
 - Age group: ${ageGroup}
+- Requested training focus from player: ${skill || 'not provided'}
+
+===== PRIMARY SKILL DETECTION (CRITICAL) =====
+- Choose "skillFocus" from the MOST REPEATED, MOST CENTRAL action in the clip (what the player is actually drilling over and over).
+- Do NOT infer skills that are not clearly present. If there are no clear shot attempts, do NOT label shooting.
+- Only include a skill in "secondarySkills" if it is clearly observable multiple times (not a one-off touch).
+- If the player provided a requested focus, use it as a tie-breaker ONLY when the video evidence supports it.
+- If the player says "first touch + passing" and the clip shows repeated wall passing/receiving with control errors, skillFocus should be "First Touch / Ball Control" or "Passing & First Touch" — not shooting.
+- For shooting to be listed, there must be clear repeated shot attempts toward a target/goal with striking mechanics visible.
 
 ===== AGE-APPROPRIATE COACHING (CRITICAL) =====
 You MUST tailor ALL feedback, drills, language, and expectations to the player's age group. The same mistake requires completely different coaching for a 10-year-old vs a 16-year-old.
@@ -1745,15 +1754,20 @@ app.post('/api/analyze', auth, async (req, res) => {
       videoUrl, publicId,
       videoData,
       skill,
+      candidateInfo,
     } = req.body || {};
 
-    console.log(`[BK] Analyze request - videoUrl: ${videoUrl ? 'present' : 'none'}, videoData: ${videoData ? 'present' : 'none'}, skill: ${skill}`);
+    const requestedFocus = String(
+      skill || candidateInfo?.focus || candidateInfo?.skill || ''
+    ).trim() || null;
+
+    console.log(`[BK] Analyze request - videoUrl: ${videoUrl ? 'present' : 'none'}, videoData: ${videoData ? 'present' : 'none'}, requestedFocus: ${requestedFocus || 'none'}`);
 
     if (!videoUrl && !videoData) {
       return res.status(400).json({ ok: false, error: 'Upload a training clip before analyzing.' });
     }
 
-    await upsertProfile(req.userId, { height, heightFeet, heightInches, weight, foot, position, skill });
+    await upsertProfile(req.userId, { height, heightFeet, heightInches, weight, foot, position, skill: requestedFocus });
 
     const profile = await getProfile(req.userId);
     const user = currentUser || {};
@@ -1763,7 +1777,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       user,
       videoUrl,
       videoData,
-      skill: skill || profile.skill || null,
+      skill: requestedFocus || profile.skill || null,
     });
 
     const candidateName = profile.name?.trim() || user?.name?.trim() || "Player";
@@ -1785,7 +1799,7 @@ app.post('/api/analyze', auth, async (req, res) => {
       youtubeRecommendations: result.youtubeRecommendations,
       video_url: videoUrl,
       public_id: publicId || null,
-      skill: skill || profile.skill || null,
+      skill: requestedFocus || profile.skill || null,
       raw: result.raw,
       created_at: Date.now(),
     };
