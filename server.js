@@ -673,9 +673,50 @@ async function uploadVideoToGemini(videoUrl, videoData) {
 
 /* ---------- Misc ---------- */
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, uptime: process.uptime() }),
-);
+
+async function buildHealthPayload() {
+  const startedAt = Date.now();
+  try {
+    await pool.query('SELECT 1');
+    return {
+      ok: true,
+      service: 'ball-knowledge-api',
+      uptimeSec: Number(process.uptime().toFixed(1)),
+      db: 'up',
+      geminiConfigured: !!genAI,
+      stripeConfigured: !!STRIPE_SECRET,
+      resendConfigured: !!RESEND_KEY,
+      checkedInMs: Date.now() - startedAt,
+      now: new Date().toISOString(),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      service: 'ball-knowledge-api',
+      uptimeSec: Number(process.uptime().toFixed(1)),
+      db: 'down',
+      error: e.message || 'DB health check failed',
+      checkedInMs: Date.now() - startedAt,
+      now: new Date().toISOString(),
+    };
+  }
+}
+
+app.get('/healthz', async (_req, res) => {
+  const health = await buildHealthPayload();
+  return res.status(health.ok ? 200 : 503).json(health);
+});
+
+app.get('/readyz', async (_req, res) => {
+  const health = await buildHealthPayload();
+  return res.status(health.ok ? 200 : 503).json(health);
+});
+
+app.get('/api/health', async (_req, res) => {
+  const health = await buildHealthPayload();
+  return res.status(health.ok ? 200 : 503).json(health);
+});
+
 app.get('/api/test', (_req, res) =>
   res.json({ ok: true, message: 'Test route working!', timestamp: new Date().toISOString() }),
 );
