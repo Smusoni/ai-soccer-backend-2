@@ -506,13 +506,42 @@
 
     /* Hybrid report visual theme (matches approved preview) */
     #results, #reportViewContent{
-      max-width:900px;
+      max-width:920px;
       margin:0 auto;
     }
 
     #results > h3,
     #reportViewPage > div > h3{
       text-align:center;
+      width:100%;
+      margin:0;
+      font-size:38px;
+      font-weight:800;
+      letter-spacing:-0.8px;
+      color:#22e68a;
+      background:none;
+      -webkit-text-fill-color:unset;
+    }
+
+    #reportViewPage{
+      background:transparent !important;
+      border:none !important;
+      box-shadow:none !important;
+      padding-top:4px;
+    }
+
+    #reportViewPage > div:first-child{
+      max-width:920px;
+      margin:0 auto 14px auto;
+      position:relative;
+      justify-content:center !important;
+      min-height:44px;
+    }
+
+    #reportViewPage > div:first-child button{
+      position:absolute;
+      right:0;
+      top:0;
     }
 
     #results .card,
@@ -520,6 +549,8 @@
       background:#111827;
       border:1px solid #1f2937;
       box-shadow:none;
+      border-radius:14px;
+      padding:18px 20px;
     }
 
     #results .card:hover,
@@ -534,6 +565,8 @@
       background:#111827;
       border:1px solid #1f2937;
       border-left:3px solid var(--accent2);
+      border-radius:12px;
+      padding:12px;
     }
 
     #results .metric-card:hover,
@@ -542,10 +575,24 @@
       border-left:3px solid var(--accent2);
     }
 
+    #results .field-label,
+    #reportViewContent .field-label{
+      color:#9ca3af;
+      letter-spacing:0.8px;
+    }
+
     #results table,
     #reportViewContent table{
       background:#111827;
       border-color:#1f2937;
+    }
+
+    #results h4,
+    #reportViewContent h4{
+      margin:0 0 10px 0;
+      color:#f3f4f6;
+      font-size:26px;
+      font-weight:700;
     }
     
     @media (max-width:768px){
