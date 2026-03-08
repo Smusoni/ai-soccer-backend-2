@@ -179,6 +179,17 @@ async function initDB() {
         last_analysis_at BIGINT,
         updated_at BIGINT
       )`,
+      `CREATE TABLE IF NOT EXISTS skill_reminders (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        skill TEXT NOT NULL,
+        drill TEXT,
+        note TEXT,
+        remind_at BIGINT NOT NULL,
+        completed BOOLEAN DEFAULT FALSE,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
+        updated_at BIGINT
+      )`,
     ];
 
     for (const sql of tables) {
@@ -212,6 +223,10 @@ async function initDB() {
     await addCol('analyses', 'skill', 'TEXT');
     await addCol('analyses', 'raw', "JSONB DEFAULT '{}'");
     await addCol('player_stats', 'monthly_activity', "JSONB DEFAULT '{}'");
+    await addCol('skill_reminders', 'drill', 'TEXT');
+    await addCol('skill_reminders', 'note', 'TEXT');
+    await addCol('skill_reminders', 'completed', "BOOLEAN DEFAULT FALSE");
+    await addCol('skill_reminders', 'updated_at', 'BIGINT');
 
     // Drop NOT NULL constraints on legacy columns that our code doesn't populate
     const dropNotNull = async (table, col) => {
@@ -1024,6 +1039,157 @@ app.delete('/api/analyses/:id', auth, async (req, res) => {
   const deleted = await deleteAnalysis(req.userId, req.params.id);
   if (!deleted) return res.status(404).json({ ok: false, error: 'Not found' });
   res.json({ ok: true });
+});
+
+/* ==================================================================== */
+/*                              REMINDERS                                */
+/* ==================================================================== */
+
+app.post('/api/reminders', auth, async (req, res) => {
+  try {
+    const { skill, drill, note, remindAt } = req.body || {};
+    const trimSkill = String(skill || '').trim();
+    const ts = Number(remindAt);
+    if (!trimSkill) return res.status(400).json({ ok: false, error: 'Skill is required' });
+    if (!Number.isFinite(ts) || ts <= 0) return res.status(400).json({ ok: false, error: 'Valid reminder date/time is required' });
+
+    const id = uuidv4();
+    const now = Date.now();
+    await pool.query(
+      `INSERT INTO skill_reminders (id, user_id, skill, drill, note, remind_at, completed, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, FALSE, $7, $7)`,
+      [id, req.userId, trimSkill, String(drill || '').trim() || null, String(note || '').trim() || null, ts, now]
+    );
+    res.json({
+      ok: true,
+      reminder: {
+        id,
+        skill: trimSkill,
+        drill: String(drill || '').trim() || null,
+        note: String(note || '').trim() || null,
+        remindAt: ts,
+        completed: false,
+      },
+    });
+  } catch (e) {
+    console.error('[BK] create reminder error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to create reminder' });
+  }
+});
+
+app.get('/api/reminders', auth, async (req, res) => {
+  try {
+    const status = String(req.query.status || 'upcoming').trim().toLowerCase();
+    let where = 'WHERE user_id = $1';
+    if (status === 'completed') where += ' AND completed = TRUE';
+    else if (status === 'upcoming') where += ' AND completed = FALSE';
+    const order = status === 'completed' ? 'ORDER BY remind_at DESC' : 'ORDER BY remind_at ASC';
+
+    const { rows } = await pool.query(
+      `SELECT id, skill, drill, note, remind_at, completed, created_at
+       FROM skill_reminders
+       ${where}
+       ${order}
+       LIMIT 500`,
+      [req.userId]
+    );
+    res.json({
+      ok: true,
+      reminders: rows.map(r => ({
+        id: r.id,
+        skill: r.skill,
+        drill: r.drill,
+        note: r.note,
+        remindAt: Number(r.remind_at) || 0,
+        completed: !!r.completed,
+        createdAt: Number(r.created_at) || 0,
+      })),
+    });
+  } catch (e) {
+    console.error('[BK] list reminders error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to load reminders' });
+  }
+});
+
+app.patch('/api/reminders/:id', auth, async (req, res) => {
+  try {
+    const reminderId = String(req.params.id || '').trim();
+    if (!reminderId) return res.status(400).json({ ok: false, error: 'Reminder ID required' });
+    const { completed, remindAt, note, drill, skill } = req.body || {};
+
+    const updates = [];
+    const vals = [];
+    let i = 1;
+    if (typeof completed === 'boolean') {
+      updates.push(`completed = $${i++}`);
+      vals.push(completed);
+    }
+    if (remindAt !== undefined) {
+      const ts = Number(remindAt);
+      if (!Number.isFinite(ts) || ts <= 0) return res.status(400).json({ ok: false, error: 'Invalid remindAt' });
+      updates.push(`remind_at = $${i++}`);
+      vals.push(ts);
+    }
+    if (note !== undefined) {
+      updates.push(`note = $${i++}`);
+      vals.push(String(note || '').trim() || null);
+    }
+    if (drill !== undefined) {
+      updates.push(`drill = $${i++}`);
+      vals.push(String(drill || '').trim() || null);
+    }
+    if (skill !== undefined) {
+      const trimSkill = String(skill || '').trim();
+      if (!trimSkill) return res.status(400).json({ ok: false, error: 'Skill cannot be empty' });
+      updates.push(`skill = $${i++}`);
+      vals.push(trimSkill);
+    }
+    if (!updates.length) return res.status(400).json({ ok: false, error: 'No updates provided' });
+    updates.push(`updated_at = $${i++}`);
+    vals.push(Date.now());
+    vals.push(reminderId, req.userId);
+
+    const { rows } = await pool.query(
+      `UPDATE skill_reminders
+       SET ${updates.join(', ')}
+       WHERE id = $${i++} AND user_id = $${i}
+       RETURNING id, skill, drill, note, remind_at, completed, created_at`,
+      vals
+    );
+    if (!rows[0]) return res.status(404).json({ ok: false, error: 'Reminder not found' });
+    const r = rows[0];
+    res.json({
+      ok: true,
+      reminder: {
+        id: r.id,
+        skill: r.skill,
+        drill: r.drill,
+        note: r.note,
+        remindAt: Number(r.remind_at) || 0,
+        completed: !!r.completed,
+        createdAt: Number(r.created_at) || 0,
+      },
+    });
+  } catch (e) {
+    console.error('[BK] update reminder error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to update reminder' });
+  }
+});
+
+app.delete('/api/reminders/:id', auth, async (req, res) => {
+  try {
+    const reminderId = String(req.params.id || '').trim();
+    if (!reminderId) return res.status(400).json({ ok: false, error: 'Reminder ID required' });
+    const { rowCount } = await pool.query(
+      'DELETE FROM skill_reminders WHERE id = $1 AND user_id = $2',
+      [reminderId, req.userId]
+    );
+    if (!rowCount) return res.status(404).json({ ok: false, error: 'Reminder not found' });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[BK] delete reminder error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to delete reminder' });
+  }
 });
 
 /* ==================================================================== */

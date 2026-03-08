@@ -631,6 +631,7 @@
       <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
       <a href="#" id="library" role="menuitem">Library</a>
       <a href="#" id="progressLink" role="menuitem">Progress</a>
+      <a href="#" id="remindersLink" role="menuitem">Reminders</a>
       <a href="#" id="statsLink" role="menuitem" style="display:none;color:var(--accent2)">📊 Investor Stats</a>
       <a href="#" id="upgradeLink" role="menuitem" style="color:var(--accent)">⚡ Upgrade to Pro</a>
       <a href="#" id="manageSubLink" role="menuitem" style="display:none;color:var(--accent2)">Manage Subscription</a>
@@ -1566,6 +1567,7 @@
       <div class="row" style="gap:8px">
         <button id="newAnalysisBtn" style="flex:1">Analyze Another Video</button>
         <button id="saveAnalysisBtn" style="flex:1">Save Report</button>
+        <button id="setReminderFromResultBtn" style="flex:1;background:linear-gradient(135deg,#7c3aed,#4f46e5)">Set Reminder</button>
       </div>
     </div>
   </section>
@@ -1581,7 +1583,10 @@
   <section class="card container hide" id="reportViewPage">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
       <h3 style="margin:0">Analysis Report</h3>
-      <button onclick="setHash('library'); goTo('library')" style="padding:10px 20px;font-size:14px">← Back to Library</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="viewSetReminderBtn" style="padding:10px 16px;font-size:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5)">Set Reminder</button>
+        <button onclick="setHash('library'); goTo('library')" style="padding:10px 20px;font-size:14px">← Back to Library</button>
+      </div>
     </div>
 
     <div id="reportViewContent">
@@ -1860,6 +1865,9 @@
           </select>
         </div>
       </div>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end">
+        <button id="progressSetReminderBtn" style="padding:8px 14px;font-size:13px;background:linear-gradient(135deg,#7c3aed,#4f46e5)">Set Reminder for This Skill</button>
+      </div>
     </div>
 
     <div id="progressError" class="err hide" style="margin-top:12px;padding:10px;border:1px solid var(--error);border-radius:10px"></div>
@@ -1881,6 +1889,60 @@
     <div class="card" style="margin-top:16px">
       <h4 style="margin-top:0">Recent Sessions</h4>
       <div id="progressSessionsList" style="display:grid;gap:8px"></div>
+    </div>
+  </section>
+
+  <!-- =========== REMINDERS PAGE =========== -->
+  <section class="card container hide" id="remindersPage">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0">Reminders</h3>
+        <p class="muted" style="margin:8px 0 0">Set drill reminders so training stays consistent.</p>
+      </div>
+      <button id="refreshRemindersBtn" style="padding:10px 16px;font-size:14px">Refresh</button>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h4 style="margin-top:0">Set Reminder</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+        <div>
+          <label class="field-label" style="display:block;margin-bottom:6px">Skill</label>
+          <input id="reminderSkill" type="text" placeholder="e.g. First Touch" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label" style="display:block;margin-bottom:6px">Drill (optional)</label>
+          <input id="reminderDrill" type="text" placeholder="e.g. Wall pass 3x60s" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label" style="display:block;margin-bottom:6px">Date</label>
+          <input id="reminderDate" type="date" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label" style="display:block;margin-bottom:6px">Time</label>
+          <input id="reminderTime" type="time" value="18:00" style="width:100%">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="field-label" style="display:block;margin-bottom:6px">Note (optional)</label>
+        <textarea id="reminderNote" rows="3" placeholder="What should you focus on in this session?" style="width:100%"></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px">
+        <button id="createReminderBtn" style="padding:10px 16px;background:linear-gradient(135deg,#7c3aed,#4f46e5)">Save Reminder</button>
+      </div>
+      <div id="reminderCreateMsg" class="muted" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h4 style="margin:0">Your Reminder List</h4>
+        <select id="reminderStatusFilter" style="width:200px">
+          <option value="upcoming" selected>Upcoming</option>
+          <option value="completed">Completed</option>
+          <option value="all">All reminders</option>
+        </select>
+      </div>
+      <div id="remindersError" class="err hide" style="margin-top:10px;padding:10px;border:1px solid var(--error);border-radius:10px"></div>
+      <div id="remindersList" style="display:grid;gap:8px;margin-top:10px"></div>
     </div>
   </section>
 
@@ -2036,6 +2098,8 @@
   const getToken   = ()  => localStorage.getItem('bk_token');
   const clearToken = ()  => localStorage.removeItem('bk_token');
   let isAdminUser = false;
+  let lastTrainingAnalysis = null;
+  let lastViewedAnalysis = null;
 
   function show(el){ if(!el) return; el.classList.remove('hide'); }
   function hide(el){ if(!el) return; el.classList.add('hide'); }
@@ -2072,7 +2136,7 @@
     hide($('homePage')); hide($('loginCard')); hide($('signupCard'));
     hide($('analysisCard')); hide($('libraryPage')); hide($('profilePage'));
     hide($('reportViewPage')); hide($('forgotCard')); hide($('resetCard'));
-    hide($('termsPage')); hide($('privacyPage')); hide($('statsPage')); hide($('progressPage'));
+    hide($('termsPage')); hide($('privacyPage')); hide($('statsPage')); hide($('progressPage')); hide($('remindersPage'));
 
     const menuContainer = document.querySelector('.menu-container');
     
@@ -2131,6 +2195,13 @@
       if ($('pageTag')) $('pageTag').textContent = 'Progress';
       if (menuContainer) menuContainer.style.display = 'block';
       loadProgressPage();
+    } else if (screen === 'reminders') {
+      show($('remindersPage'));
+      if ($('pageTag')) $('pageTag').textContent = 'Reminders';
+      if (menuContainer) menuContainer.style.display = 'block';
+      if ($('reminderDate') && !$('reminderDate').value) $('reminderDate').value = toLocalDateInputValue(Date.now() + (24 * 60 * 60 * 1000));
+      if ($('reminderTime') && !$('reminderTime').value) $('reminderTime').value = '18:00';
+      loadReminders();
     } else {
       show($('homePage'));
       if ($('pageTag')) $('pageTag').textContent = 'Home';
@@ -2158,6 +2229,7 @@
     else if (page === 'analysis') { goTo('analysis'); }
     else if (page === 'stats') { goTo('stats'); }
     else if (page === 'progress') { goTo('progress'); }
+    else if (page === 'reminders') { goTo('reminders'); }
     else if (page.startsWith('reportView')) { goTo('reportView'); }
     else { setHash('analysis'); }
   });
@@ -2311,6 +2383,7 @@
   $('newAnalysis')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('analysis');hide($('results'))});
   $('library')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('library')});
   $('progressLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('progress')});
+  $('remindersLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('reminders')});
   $('statsLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');setHash('stats')});
   $('upgradeLink')?.addEventListener('click',(e)=>{e.preventDefault();menuPanel.classList.remove('active');startCheckout()});
   $('manageSubLink')?.addEventListener('click',async(e)=>{
@@ -2531,6 +2604,154 @@
     }
   }
 
+  function toLocalDateInputValue(ts) {
+    const d = new Date(ts || Date.now());
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function prefillReminderFromAnalysisItem(item) {
+    const skill = String(item?.skillFocus || item?.skill || '').trim();
+    const progression = Array.isArray(item?.practiceProgression) ? item.practiceProgression : [];
+    const nextPlan = Array.isArray(item?.nextSessionPlan) ? item.nextSessionPlan : [];
+    const drill = String(nextPlan[0]?.drill || progression[0]?.drill || '').trim();
+    const note = String(nextPlan[0]?.coachCue || item?.summary || '').trim();
+
+    if ($('reminderSkill')) $('reminderSkill').value = skill;
+    if ($('reminderDrill')) $('reminderDrill').value = drill;
+    if ($('reminderNote')) $('reminderNote').value = note;
+    if ($('reminderDate')) $('reminderDate').value = toLocalDateInputValue(Date.now() + (24 * 60 * 60 * 1000));
+    if ($('reminderTime')) $('reminderTime').value = '18:00';
+  }
+
+  function openReminderPrefill(item) {
+    prefillReminderFromAnalysisItem(item || {});
+    setHash('reminders');
+    goTo('reminders');
+  }
+
+  async function createReminder() {
+    const msg = $('reminderCreateMsg');
+    if (msg) {
+      msg.textContent = '';
+      msg.className = 'muted';
+    }
+    const skill = String($('reminderSkill')?.value || '').trim();
+    const drill = String($('reminderDrill')?.value || '').trim();
+    const date = String($('reminderDate')?.value || '').trim();
+    const time = String($('reminderTime')?.value || '18:00').trim() || '18:00';
+    const note = String($('reminderNote')?.value || '').trim();
+
+    if (!skill) {
+      if (msg) {
+        msg.textContent = 'Skill is required.';
+        msg.className = 'err';
+      }
+      return;
+    }
+    if (!date) {
+      if (msg) {
+        msg.textContent = 'Date is required.';
+        msg.className = 'err';
+      }
+      return;
+    }
+    const remindAt = new Date(`${date}T${time}:00`).getTime();
+    if (!Number.isFinite(remindAt)) {
+      if (msg) {
+        msg.textContent = 'Please choose a valid date/time.';
+        msg.className = 'err';
+      }
+      return;
+    }
+
+    const res = await api('/api/reminders', {
+      method: 'POST',
+      body: JSON.stringify({ skill, drill, note, remindAt }),
+    });
+    if (!res.ok) {
+      if (msg) {
+        msg.textContent = res.error || 'Could not save reminder.';
+        msg.className = 'err';
+      }
+      return;
+    }
+    if (msg) {
+      msg.textContent = 'Reminder saved.';
+      msg.className = 'ok';
+    }
+    if ($('reminderDrill')) $('reminderDrill').value = '';
+    if ($('reminderNote')) $('reminderNote').value = '';
+    await loadReminders();
+  }
+
+  async function loadReminders() {
+    const list = $('remindersList');
+    const err = $('remindersError');
+    const status = String($('reminderStatusFilter')?.value || 'upcoming').trim();
+    if (err) {
+      err.textContent = '';
+      err.classList.add('hide');
+    }
+    if (list) list.innerHTML = '<span class="muted">Loading reminders…</span>';
+    try {
+      const res = await api(`/api/reminders?status=${encodeURIComponent(status)}`);
+      if (!res.ok) throw new Error(res.error || 'Could not load reminders');
+      const items = Array.isArray(res.reminders) ? res.reminders : [];
+      if (!list) return;
+      list.innerHTML = items.length
+        ? items.map(r => `
+          <div class="card" style="margin:0;padding:12px">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <strong>${r.skill || 'Skill'}</strong>
+                  <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:${r.completed ? 'rgba(34,197,94,0.15)' : 'rgba(124,58,237,0.18)'};border:1px solid var(--line);color:${r.completed ? 'var(--success)' : '#c4b5fd'}">${r.completed ? 'Completed' : 'Upcoming'}</span>
+                </div>
+                ${r.drill ? `<div class="muted" style="margin-top:5px">Drill: ${r.drill}</div>` : ''}
+                ${r.note ? `<div class="muted" style="margin-top:5px">${r.note}</div>` : ''}
+                <div class="muted" style="margin-top:7px;font-size:12px">Remind at: ${new Date(Number(r.remindAt || 0)).toLocaleString()}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+                <button onclick="toggleReminderComplete('${r.id}', ${r.completed ? 'false' : 'true'})" style="padding:6px 10px;font-size:12px;background:${r.completed ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'linear-gradient(135deg,#16a34a,#22c55e)'}">${r.completed ? 'Mark Upcoming' : 'Complete'}</button>
+                <button onclick="deleteReminder('${r.id}')" style="padding:6px 10px;font-size:12px;background:#ff6b6b;box-shadow:0 2px 8px rgba(255,107,107,0.2)">Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join('')
+        : '<span class="muted">No reminders yet for this filter.</span>';
+    } catch (e) {
+      if (err) {
+        err.textContent = e.message || 'Could not load reminders';
+        err.classList.remove('hide');
+      }
+      if (list) list.innerHTML = '';
+    }
+  }
+
+  async function toggleReminderComplete(id, completed) {
+    const res = await api(`/api/reminders/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ completed: !!completed }),
+    });
+    if (!res.ok) {
+      alert(res.error || 'Could not update reminder');
+      return;
+    }
+    await loadReminders();
+  }
+
+  async function deleteReminder(id) {
+    const res = await api(`/api/reminders/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      alert(res.error || 'Could not delete reminder');
+      return;
+    }
+    await loadReminders();
+  }
+
   async function startCheckout() {
     const btn = $('upgradeBtn');
     btn.textContent = 'Redirecting to Stripe…';
@@ -2648,11 +2869,13 @@
       }
 
       $('summary').textContent = out.summary || 'Analysis complete';
+      lastTrainingAnalysis = null;
 
       if (videoType === 'training') {
         // Show training results
         hide($('gameResults'));
         show($('trainingResults'));
+        lastTrainingAnalysis = out;
 
         $('skillFocus').textContent = out.skillFocus || 'Skill assessment';
         $('skillRecognition').textContent = (out.secondarySkills || []).join(', ') || 'Training session analysis';
@@ -2819,6 +3042,9 @@
         }
       }
 
+      const setReminderBtn = $('setReminderFromResultBtn');
+      if (setReminderBtn) setReminderBtn.style.display = videoType === 'training' ? '' : 'none';
+
       show($('results'));
       $('analyzeStatus').textContent = 'Done ✅';
       $('analyzeStatus').className = 'ok';
@@ -2883,6 +3109,7 @@
       if (!res.ok) throw new Error(res.error || 'Failed to load analysis');
       
       const item = res;
+      lastViewedAnalysis = item;
       
       console.log('[Ball Knowledge] Loading analysis:', item.videoType, item.candidateName);
       
@@ -2909,6 +3136,7 @@
       
       // Set video type to show correct sections
       if (item.videoType === 'training') {
+        if ($('viewSetReminderBtn')) $('viewSetReminderBtn').style.display = '';
         $('viewTrainingResults').classList.remove('hide');
         $('viewGameResults').classList.add('hide');
         
@@ -3025,6 +3253,7 @@
         
       } else {
         // Game analysis
+        if ($('viewSetReminderBtn')) $('viewSetReminderBtn').style.display = 'none';
         $('viewGameResults').classList.remove('hide');
         $('viewTrainingResults').classList.add('hide');
         
@@ -3348,6 +3577,27 @@
   $('refreshProgressBtn')?.addEventListener('click', loadProgressPage);
   $('progressSkillFilter')?.addEventListener('change', loadProgressPage);
   $('progressRangeFilter')?.addEventListener('change', loadProgressPage);
+  $('progressSetReminderBtn')?.addEventListener('click', () => {
+    const selectedSkill = String($('progressSkillFilter')?.value || '').trim();
+    openReminderPrefill({ skillFocus: selectedSkill || 'Training Skill' });
+  });
+  $('setReminderFromResultBtn')?.addEventListener('click', () => {
+    if (!lastTrainingAnalysis) {
+      alert('Run a training analysis first so we can prefill the reminder.');
+      return;
+    }
+    openReminderPrefill(lastTrainingAnalysis);
+  });
+  $('viewSetReminderBtn')?.addEventListener('click', () => {
+    if (!lastViewedAnalysis || lastViewedAnalysis.videoType !== 'training') {
+      alert('This reminder shortcut is available for training reports.');
+      return;
+    }
+    openReminderPrefill(lastViewedAnalysis);
+  });
+  $('createReminderBtn')?.addEventListener('click', createReminder);
+  $('refreshRemindersBtn')?.addEventListener('click', loadReminders);
+  $('reminderStatusFilter')?.addEventListener('change', loadReminders);
   $('viewLibraryBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     setHash('library');
@@ -3364,6 +3614,7 @@
         else if (page === 'profile') { goTo('profile'); }
         else if (page === 'stats') { goTo('stats'); }
         else if (page === 'progress') { goTo('progress'); }
+        else if (page === 'reminders') { goTo('reminders'); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
         if (page === 'login') { goTo('login'); }
