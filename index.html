@@ -503,6 +503,50 @@
       margin:8px 0 0 0;
       letter-spacing:-1px;
     }
+
+    /* Hybrid report visual theme (matches approved preview) */
+    #results, #reportViewContent{
+      max-width:900px;
+      margin:0 auto;
+    }
+
+    #results > h3,
+    #reportViewPage > div > h3{
+      text-align:center;
+    }
+
+    #results .card,
+    #reportViewContent .card{
+      background:#111827;
+      border:1px solid #1f2937;
+      box-shadow:none;
+    }
+
+    #results .card:hover,
+    #reportViewContent .card:hover{
+      transform:none;
+      border-color:#1f2937;
+      box-shadow:none;
+    }
+
+    #results .metric-card,
+    #reportViewContent .metric-card{
+      background:#111827;
+      border:1px solid #1f2937;
+      border-left:3px solid var(--accent2);
+    }
+
+    #results .metric-card:hover,
+    #reportViewContent .metric-card:hover{
+      background:#111827;
+      border-left:3px solid var(--accent2);
+    }
+
+    #results table,
+    #reportViewContent table{
+      background:#111827;
+      border-color:#1f2937;
+    }
     
     @media (max-width:768px){
       .container{padding:0 16px}
@@ -524,7 +568,7 @@
     /* iOS Safari specific fixes */
     @supports (-webkit-touch-callout: none) {
       body{-webkit-text-size-adjust:100%}
-      input, select, textarea{-webkit-appearance:none;border-radius:8px}
+      input, select, textarea{-webkit-appearance:none;appearance:none;border-radius:8px}
       button{-webkit-tap-highlight-color:rgba(0,217,255,0.2)}
     }
     
