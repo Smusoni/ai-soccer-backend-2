@@ -1246,6 +1246,17 @@
           <p id="skillRecognition" style="color:var(--text);line-height:1.6">—</p>
         </div>
 
+        <!-- Hybrid Snapshot -->
+        <div class="card" style="margin:24px 0">
+          <h4>📌 Session Snapshot</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div class="metric-card"><div class="metric-label">Date</div><div id="snapshotDate" class="metric-value" style="font-size:18px">—</div></div>
+            <div class="metric-card"><div class="metric-label">Level Score</div><div id="snapshotLevelScore" class="metric-value" style="font-size:18px">—</div></div>
+            <div class="metric-card"><div class="metric-label">Confidence</div><div id="snapshotConfidence" class="metric-value" style="font-size:18px">—</div></div>
+          </div>
+          <div id="snapshotTiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px"></div>
+        </div>
+
         <!-- Technical Analysis -->
         <div class="card" style="margin:24px 0">
           <h4>🔬 Technical Analysis</h4>
@@ -1298,6 +1309,18 @@
         <div class="card" style="margin:24px 0">
           <h4>📈 Practice Progression</h4>
           <div id="progressionList" style="display:flex;flex-direction:column;gap:14px"></div>
+        </div>
+
+        <!-- Trends -->
+        <div class="card" style="margin:24px 0">
+          <h4>📊 Trend vs Last Sessions</h4>
+          <div id="trendList" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- Next Session Plan -->
+        <div class="card" style="margin:24px 0">
+          <h4>🗓️ Next Session Plan</h4>
+          <div id="nextSessionPlan" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
 
         <!-- YouTube Recommendations -->
@@ -1485,6 +1508,17 @@
           <p id="viewSkillRecognition" style="color:var(--text);line-height:1.6">—</p>
         </div>
 
+        <!-- Hybrid Snapshot -->
+        <div class="card" style="margin:24px 0">
+          <h4>📌 Session Snapshot</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div class="metric-card"><div class="metric-label">Date</div><div id="viewSnapshotDate" class="metric-value" style="font-size:18px">—</div></div>
+            <div class="metric-card"><div class="metric-label">Level Score</div><div id="viewSnapshotLevelScore" class="metric-value" style="font-size:18px">—</div></div>
+            <div class="metric-card"><div class="metric-label">Confidence</div><div id="viewSnapshotConfidence" class="metric-value" style="font-size:18px">—</div></div>
+          </div>
+          <div id="viewSnapshotTiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px"></div>
+        </div>
+
         <!-- Technical Analysis -->
         <div class="card" style="margin:24px 0">
           <h4>🔬 Technical Analysis</h4>
@@ -1542,6 +1576,18 @@
         <div class="card" style="margin:24px 0">
           <h4>📈 Practice Progression</h4>
           <div id="viewProgressionList" style="display:flex;flex-direction:column;gap:14px"></div>
+        </div>
+
+        <!-- Trends -->
+        <div class="card" style="margin:24px 0">
+          <h4>📊 Trend vs Last Sessions</h4>
+          <div id="viewTrendList" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- Next Session Plan -->
+        <div class="card" style="margin:24px 0">
+          <h4>🗓️ Next Session Plan</h4>
+          <div id="viewNextSessionPlan" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
 
         <!-- YouTube Recommendations -->
@@ -2355,6 +2401,24 @@
         $('skillGrade').textContent = out.currentLevel?.grade || '?';
         $('skillLevelDesc').textContent = out.currentLevel?.description || 'Keep practicing';
 
+        // Hybrid Snapshot
+        const nowDate = new Date(out.createdAt || Date.now()).toLocaleDateString();
+        const levelDesc = (out.currentLevel?.description || '').toLowerCase();
+        const fallbackScore = levelDesc.includes('advanced') ? '8.8/10' : (levelDesc.includes('beginner') ? '5.2/10' : '6.8/10');
+        const snap = out.sessionSnapshot || {};
+        $('snapshotDate').textContent = nowDate;
+        $('snapshotLevelScore').textContent = snap.levelScore ? `${snap.levelScore}/10` : fallbackScore;
+        $('snapshotConfidence').textContent = snap.confidence || 'High';
+        const tiles = Array.isArray(snap.quickTiles) ? snap.quickTiles : [];
+        $('snapshotTiles').innerHTML = tiles.length
+          ? tiles.map(t => `
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px">
+              <div class="field-label" style="margin-bottom:4px">${t.label || 'Metric'}</div>
+              <div style="font-weight:700;color:var(--text-bright)">${t.value || '—'}</div>
+              <div class="muted" style="margin-top:4px">${t.note || ''}</div>
+            </div>`).join('')
+          : `<div class="muted">Snapshot metrics will improve as more sessions are analyzed.</div>`;
+
         // Technical Analysis
         const tech = out.technicalAnalysis || {};
         $('techFootwork').textContent = tech.footwork || '—';
@@ -2391,6 +2455,38 @@
               <p style="margin:0;color:var(--text);font-size:14px;line-height:1.6">${p.drill}</p>
             </div>
           `).join('');
+        }
+
+        // Trend vs last sessions (hybrid block)
+        if (out.trendVsLastSessions && out.trendVsLastSessions.length){
+          $('trendList').innerHTML = out.trendVsLastSessions.map(t => {
+            const tr = String(t.trend || '').toLowerCase();
+            const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
+            const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
+            return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+              <div><strong>${t.metric || 'Metric'}</strong><div class="muted" style="font-size:12px">${t.note || ''}</div></div>
+              <div style="color:${color};font-weight:700">${icon} ${t.trend || 'flat'}</div>
+            </div>`;
+          }).join('');
+        } else {
+          $('trendList').innerHTML = '<div class="muted">Trend data appears after multiple sessions.</div>';
+        }
+
+        // Next session plan (hybrid block)
+        if (out.nextSessionPlan && out.nextSessionPlan.length){
+          $('nextSessionPlan').innerHTML = out.nextSessionPlan.map(s => `
+            <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+              <div><div style="font-weight:700">${s.block || 'Block'}</div><div class="muted" style="font-size:12px">${s.duration || ''}</div></div>
+              <div style="color:var(--text)">${s.focus || s.drill || 'Training focus'}</div>
+            </div>
+          `).join('');
+        } else {
+          $('nextSessionPlan').innerHTML = `
+            <div style="display:grid;gap:8px">
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Warm-up (5 min)</strong> - light touch prep and mobility</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Main Block (12 min)</strong> - repeat your top-priority correction drill</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Finisher (5 min)</strong> - quality reps under time pressure</div>
+            </div>`;
         }
 
         if (out.youtubeRecommendations && out.youtubeRecommendations.length){
@@ -2482,15 +2578,38 @@
       const items = res.items || [];
       goTo('library');
       $('libraryList').innerHTML = items.length
-        ? items.map(i => `
+        ? items.map(i => {
+            const trends = Array.isArray(i.trendVsLastSessions) ? i.trendVsLastSessions.slice(0, 3) : [];
+            const trendHtml = trends.length
+              ? trends.map(t => {
+                  const tr = String(t.trend || '').toLowerCase();
+                  const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
+                  const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
+                  return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.03);border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:11px;color:${color};margin-right:6px;margin-top:6px">${icon} ${t.metric || 'Metric'}</span>`;
+                }).join('')
+              : '<span class="muted" style="font-size:12px">Trend data appears after multiple sessions.</span>';
+            const youtube = Array.isArray(i.youtubeRecommendations) ? i.youtubeRecommendations.slice(0, 2) : [];
+            const youtubeHtml = youtube.length
+              ? youtube.map(y => `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title || '')}" target="_blank" style="display:inline-block;font-size:12px;color:var(--accent2);text-decoration:none;margin-right:10px;margin-top:6px">▶ ${y.title || 'Training video'}</a>`).join('')
+              : '<span class="muted" style="font-size:12px">No video recommendations yet.</span>';
+            return `
             <div class="card">
               <strong>${i.candidateName || 'Candidate'}</strong><br>
               <span class="muted">${new Date(i.createdAt).toLocaleString()}</span><br>
               <span>${i.sessionSummary ? i.sessionSummary.substring(0, 120) + '…' : 'Analysis saved'}</span><br>
+              <div style="margin-top:8px">
+                <div class="muted" style="font-size:11px;margin-bottom:2px">Progress scan</div>
+                <div>${trendHtml}</div>
+              </div>
+              <div style="margin-top:8px">
+                <div class="muted" style="font-size:11px;margin-bottom:2px">Recommended videos</div>
+                <div>${youtubeHtml}</div>
+              </div>
               <button style="margin-top:8px;padding:6px 12px;font-size:13px" onclick="viewAnalysis('${i.id}')">View</button>
               <button style="margin-top:8px;padding:6px 12px;font-size:13px;background:#ff6b6b;box-shadow:0 2px 8px rgba(255,107,107,0.2)" onclick="deleteAnalysis('${i.id}')">Delete</button>
             </div>
-          `).join('')
+          `;
+          }).join('')
         : '<p class="muted">No analyses saved yet</p>';
     }catch(e){
       alert(e.message);
@@ -2537,6 +2656,24 @@
         $('viewSkillRecognition').textContent = item.secondarySkills?.join(', ') || '—';
         $('viewSkillGrade').textContent = item.currentLevel?.grade || '—';
         $('viewSkillLevelDesc').textContent = item.currentLevel?.description || '—';
+
+        // Hybrid Snapshot
+        const viewDate = new Date(item.createdAt || Date.now()).toLocaleDateString();
+        const viewLevelDesc = (item.currentLevel?.description || '').toLowerCase();
+        const viewFallbackScore = viewLevelDesc.includes('advanced') ? '8.8/10' : (viewLevelDesc.includes('beginner') ? '5.2/10' : '6.8/10');
+        const viewSnap = item.sessionSnapshot || {};
+        $('viewSnapshotDate').textContent = viewDate;
+        $('viewSnapshotLevelScore').textContent = viewSnap.levelScore ? `${viewSnap.levelScore}/10` : viewFallbackScore;
+        $('viewSnapshotConfidence').textContent = viewSnap.confidence || 'High';
+        const viewTiles = Array.isArray(viewSnap.quickTiles) ? viewSnap.quickTiles : [];
+        $('viewSnapshotTiles').innerHTML = viewTiles.length
+          ? viewTiles.map(t => `
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px">
+              <div class="field-label" style="margin-bottom:4px">${t.label || 'Metric'}</div>
+              <div style="font-weight:700;color:var(--text-bright)">${t.value || '—'}</div>
+              <div class="muted" style="margin-top:4px">${t.note || ''}</div>
+            </div>`).join('')
+          : `<div class="muted">Snapshot metrics will improve as more sessions are analyzed.</div>`;
         
         // Technical Analysis
         const tech = item.technicalAnalysis || {};
@@ -2568,6 +2705,38 @@
             </div>
           `).join('')
           : '<p>No progression data</p>';
+
+        // Trend vs last sessions (hybrid block)
+        if (item.trendVsLastSessions && item.trendVsLastSessions.length){
+          $('viewTrendList').innerHTML = item.trendVsLastSessions.map(t => {
+            const tr = String(t.trend || '').toLowerCase();
+            const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
+            const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
+            return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+              <div><strong>${t.metric || 'Metric'}</strong><div class="muted" style="font-size:12px">${t.note || ''}</div></div>
+              <div style="color:${color};font-weight:700">${icon} ${t.trend || 'flat'}</div>
+            </div>`;
+          }).join('');
+        } else {
+          $('viewTrendList').innerHTML = '<div class="muted">Trend data appears after multiple sessions.</div>';
+        }
+
+        // Next session plan (hybrid block)
+        if (item.nextSessionPlan && item.nextSessionPlan.length){
+          $('viewNextSessionPlan').innerHTML = item.nextSessionPlan.map(s => `
+            <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+              <div><div style="font-weight:700">${s.block || 'Block'}</div><div class="muted" style="font-size:12px">${s.duration || ''}</div></div>
+              <div style="color:var(--text)">${s.focus || s.drill || 'Training focus'}</div>
+            </div>
+          `).join('');
+        } else {
+          $('viewNextSessionPlan').innerHTML = `
+            <div style="display:grid;gap:8px">
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Warm-up (5 min)</strong> - light touch prep and mobility</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Main Block (12 min)</strong> - repeat your top-priority correction drill</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Finisher (5 min)</strong> - quality reps under time pressure</div>
+            </div>`;
+        }
         
         // YouTube Recommendations
         const youtube = item.youtubeRecommendations || [];

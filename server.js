@@ -972,8 +972,11 @@ app.get('/api/analyses', auth, async (req, res) => {
     skillFocus: item.skillFocus,
     sessionSummary: item.sessionSummary,
     currentLevel: item.currentLevel,
+    sessionSnapshot: item.raw?.sessionSnapshot || {},
     technicalAnalysis: item.technicalAnalysis,
     improvementTips: item.improvementTips,
+    trendVsLastSessions: item.raw?.trendVsLastSessions || [],
+    nextSessionPlan: item.raw?.nextSessionPlan || [],
     practiceProgression: item.practiceProgression,
     youtubeRecommendations: item.youtubeRecommendations,
   }));
@@ -1006,10 +1009,13 @@ app.get('/api/analyses/:id', auth, async (req, res) => {
     skillFocus: item.skillFocus,
     sessionSummary: item.sessionSummary,
     currentLevel: currentLevelObj,
+    sessionSnapshot: item.raw?.sessionSnapshot || {},
     technicalAnalysis: item.technicalAnalysis,
     improvementTips: item.improvementTips,
     commonMistakesForPosition: item.commonMistakesForPosition,
     practiceProgression: item.practiceProgression,
+    trendVsLastSessions: item.raw?.trendVsLastSessions || [],
+    nextSessionPlan: item.raw?.nextSessionPlan || [],
     youtubeRecommendations: item.youtubeRecommendations,
   });
 });
@@ -1205,6 +1211,15 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
   "skillFocus": "Primary skill being trained (e.g., Freestyle Juggling, Shooting Technique, Close Dribbling, Passing Accuracy)",
   "secondarySkills": ["skill 1", "skill 2"],
   "currentLevel": "Beginner | Intermediate | Advanced",
+  "sessionSnapshot": {
+    "levelScore": "numeric score from 0-10",
+    "confidence": "High | Medium | Low",
+    "quickTiles": [
+      { "label": "First Touch", "value": "6.5/10", "note": "short reason" },
+      { "label": "Consistency", "value": "7.0/10", "note": "short reason" },
+      { "label": "Tempo", "value": "6.8/10", "note": "short reason" }
+    ]
+  },
   "technicalAnalysis": {
     "footwork": "Detailed analysis of foot technique — which foot is used, ankle lock, touch quality, surface of foot",
     "bodyPosition": "Posture, balance, center of gravity, knee bend, hip alignment during the skill",
@@ -1215,6 +1230,8 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
   "improvementTips": [{"priority": 1, "tip": "specific technique fix", "why": "biomechanical or tactical reason", "how": "exact drill or exercise with reps/sets/setup"}],
   "commonMistakesForPosition": [{"mistake": "specific technical error", "observed": true, "correction": "exactly how to fix it with a drill"}],
   "practiceProgression": [{"level": "current", "drill": "drill they should do now"}, {"level": "next", "drill": "drill to progress to once current is mastered"}],
+  "trendVsLastSessions": [{"metric": "Passing Accuracy", "trend": "improving | flat | declining", "note": "short explanation"}],
+  "nextSessionPlan": [{"block": "Warm-up", "duration": "5 min", "focus": "what to do"}, {"block": "Main Block", "duration": "10 min", "focus": "what to do"}],
   "youtubeRecommendations": [{"title": "specific video topic", "coach": "real YouTube channel name", "why": "how it addresses this player's specific needs"}]
 }`;
 
@@ -1266,10 +1283,13 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
     secondarySkills: Array.isArray(data.secondarySkills) ? data.secondarySkills : [],
     sessionSummary: data.sessionSummary || 'Training analysis complete.',
     currentLevel: data.currentLevel || 'Intermediate',
+    sessionSnapshot: data.sessionSnapshot || {},
     technicalAnalysis: data.technicalAnalysis || {},
     improvementTips: Array.isArray(data.improvementTips) ? data.improvementTips : [],
     commonMistakesForPosition: Array.isArray(data.commonMistakesForPosition) ? data.commonMistakesForPosition : [],
     practiceProgression: Array.isArray(data.practiceProgression) ? data.practiceProgression : [],
+    trendVsLastSessions: Array.isArray(data.trendVsLastSessions) ? data.trendVsLastSessions : [],
+    nextSessionPlan: Array.isArray(data.nextSessionPlan) ? data.nextSessionPlan : [],
     youtubeRecommendations: Array.isArray(data.youtubeRecommendations) ? data.youtubeRecommendations : [],
     raw: data,
   };
@@ -1548,10 +1568,13 @@ app.post('/api/analyze', auth, async (req, res) => {
       secondarySkills: result.secondarySkills,
       sessionSummary: result.sessionSummary,
       currentLevel: result.currentLevel,
+      sessionSnapshot: result.sessionSnapshot,
       technicalAnalysis: result.technicalAnalysis,
       improvementTips: result.improvementTips,
       commonMistakesForPosition: result.commonMistakesForPosition,
       practiceProgression: result.practiceProgression,
+      trendVsLastSessions: result.trendVsLastSessions,
+      nextSessionPlan: result.nextSessionPlan,
       youtubeRecommendations: result.youtubeRecommendations,
       video_url: videoUrl,
       public_id: publicId || null,
@@ -1585,10 +1608,13 @@ app.post('/api/analyze', auth, async (req, res) => {
       secondarySkills: item.secondarySkills,
       sessionSummary: item.sessionSummary,
       currentLevel: currentLevelObj,
+      sessionSnapshot: item.sessionSnapshot || {},
       technicalAnalysis: item.technicalAnalysis,
       improvementTips: item.improvementTips,
       commonMistakesForPosition: item.commonMistakesForPosition,
       practiceProgression: item.practiceProgression,
+      trendVsLastSessions: item.trendVsLastSessions || [],
+      nextSessionPlan: item.nextSessionPlan || [],
       youtubeRecommendations: item.youtubeRecommendations,
     });
   } catch (e) {
@@ -1667,7 +1693,7 @@ app.get('/api/player-report', auth, async (req, res) => {
     const stats = statsRows[0] || null;
 
     const { rows: analysisRows } = await pool.query(
-      `SELECT id, skill_focus, secondary_skills, current_level, session_summary, created_at
+      `SELECT id, skill_focus, secondary_skills, current_level, session_summary, created_at, raw
        FROM analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
       [userId]
     );
@@ -1775,7 +1801,7 @@ app.post('/api/player-report/email', auth, async (req, res) => {
     const stats = statsRows[0] || null;
 
     const { rows: analysisRows } = await pool.query(
-      `SELECT id, skill_focus, secondary_skills, current_level, session_summary, created_at
+      `SELECT id, skill_focus, secondary_skills, current_level, session_summary, created_at, raw
        FROM analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
       [userId]
     );
@@ -1817,6 +1843,64 @@ app.post('/api/player-report/email', auth, async (req, res) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([skill, count]) => ({ skill, count, level: skillLevels[skill] || 'N/A' }));
+
+    const latestAnalysis = analysisRows[0] || null;
+    const latestRaw = (latestAnalysis && latestAnalysis.raw && typeof latestAnalysis.raw === 'object') ? latestAnalysis.raw : {};
+    const latestSummary = latestAnalysis?.session_summary || 'Keep stacking quality reps - your consistency improves session by session.';
+
+    const priorityFixes = Array.isArray(latestRaw.improvementTips) ? latestRaw.improvementTips.slice(0, 3) : [];
+    const priorityRowsHtml = priorityFixes.length
+      ? priorityFixes.map((tip) => `
+          <tr style="border-bottom:1px solid #1e2a3a">
+            <td style="padding:10px 12px;color:#ffcc00;font-weight:700">${tip.priority || '-'}</td>
+            <td style="padding:10px 12px;color:#e6e6e6">${tip.tip || '-'}</td>
+            <td style="padding:10px 12px;color:#aaaaaa">${tip.why || '-'}</td>
+            <td style="padding:10px 12px;color:#88d8ff">${tip.how || '-'}</td>
+          </tr>`).join('')
+      : `<tr><td colspan="4" style="padding:14px;color:#666;text-align:center">No priority fixes yet. Upload your next session to unlock this.</td></tr>`;
+
+    const trendItems = Array.isArray(latestRaw.trendVsLastSessions) ? latestRaw.trendVsLastSessions.slice(0, 3) : [];
+    const trendRowsHtml = trendItems.length
+      ? trendItems.map((t) => {
+          const tr = String(t.trend || 'flat').toLowerCase();
+          const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
+          const color = tr.includes('improv') ? '#00ff95' : (tr.includes('declin') ? '#ff6b6b' : '#cccccc');
+          return `<div style="display:flex;justify-content:space-between;gap:10px;background:#111827;border:1px solid #1e2a3a;border-radius:10px;padding:10px 12px;margin-top:8px">
+            <div>
+              <div style="color:#ffffff;font-weight:600;font-size:14px">${t.metric || 'Metric'}</div>
+              <div style="color:#888;font-size:12px">${t.note || ''}</div>
+            </div>
+            <div style="color:${color};font-weight:700;font-size:13px">${icon} ${t.trend || 'flat'}</div>
+          </div>`;
+        }).join('')
+      : `<div style="color:#888;font-size:13px">Trend data appears after multiple analyzed sessions.</div>`;
+
+    const nextSessionPlan = Array.isArray(latestRaw.nextSessionPlan) ? latestRaw.nextSessionPlan.slice(0, 3) : [];
+    const nextPlanHtml = nextSessionPlan.length
+      ? nextSessionPlan.map((s) => `
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px;background:#111827;border:1px solid #1e2a3a;border-radius:10px;padding:10px 12px;margin-top:8px">
+            <div>
+              <div style="color:#00ff95;font-weight:700;font-size:13px">${s.block || 'Block'}</div>
+              <div style="color:#888;font-size:12px">${s.duration || ''}</div>
+            </div>
+            <div style="color:#e6e6e6;font-size:13px;line-height:1.5">${s.focus || s.drill || 'Training focus'}</div>
+          </div>`).join('')
+      : `
+        <div style="display:grid;gap:8px">
+          <div style="background:#111827;border:1px solid #1e2a3a;border-radius:10px;padding:10px 12px;color:#e6e6e6"><strong>Warm-up (5 min):</strong> ball mastery + mobility</div>
+          <div style="background:#111827;border:1px solid #1e2a3a;border-radius:10px;padding:10px 12px;color:#e6e6e6"><strong>Main block (12 min):</strong> repeat your top priority correction drill</div>
+          <div style="background:#111827;border:1px solid #1e2a3a;border-radius:10px;padding:10px 12px;color:#e6e6e6"><strong>Finisher (5 min):</strong> quality reps under pressure</div>
+        </div>`;
+
+    const recommendedVideos = Array.isArray(latestRaw.youtubeRecommendations) ? latestRaw.youtubeRecommendations.slice(0, 3) : [];
+    const videoRowsHtml = recommendedVideos.length
+      ? recommendedVideos.map((y) => `
+          <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title || 'soccer training')}" style="display:block;text-decoration:none;background:#111827;border:1px solid #1e2a3a;border-radius:10px;padding:10px 12px;margin-top:8px">
+            <div style="color:#19d3ff;font-weight:700;font-size:14px">▶ ${y.title || 'Soccer training video'}</div>
+            <div style="color:#888;font-size:12px;margin-top:4px">Channel: ${y.coach || 'Recommended Coach'}</div>
+            <div style="color:#d1d5db;font-size:12px;margin-top:4px;line-height:1.5">${y.why || 'Matches your current focus and should improve execution quality.'}</div>
+          </a>`).join('')
+      : `<div style="color:#888;font-size:13px">Upload your next session to unlock targeted video recommendations.</div>`;
 
     const skillRowsHtml = topSkills.length > 0
       ? topSkills.map((s, i) => `
@@ -1872,6 +1956,38 @@ app.post('/api/player-report/email', auth, async (req, res) => {
               <div style="color:#888;font-size:13px;margin-top:4px">Skills Practiced</div>
             </div>
           </div>
+        </div>
+        <div style="padding:0 32px 22px">
+          <h3 style="margin:0 0 12px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Coach's Summary</h3>
+          <div style="background:#111827;border:1px solid #1e2a3a;border-radius:12px;padding:14px 16px;color:#d7d7d7;line-height:1.7;font-size:14px">
+            ${latestSummary}
+          </div>
+        </div>
+        <div style="padding:0 32px 22px">
+          <h3 style="margin:0 0 12px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Priority Fixes</h3>
+          <table style="width:100%;border-collapse:collapse;background:#111827;border-radius:12px;overflow:hidden">
+            <thead>
+              <tr style="background:#0d1f2d">
+                <th style="padding:10px 12px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase">Priority</th>
+                <th style="padding:10px 12px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase">Fix</th>
+                <th style="padding:10px 12px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase">Why</th>
+                <th style="padding:10px 12px;text-align:left;color:#888;font-size:12px;font-weight:600;text-transform:uppercase">Drill</th>
+              </tr>
+            </thead>
+            <tbody>${priorityRowsHtml}</tbody>
+          </table>
+        </div>
+        <div style="padding:0 32px 22px">
+          <h3 style="margin:0 0 12px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Trend vs Last Sessions</h3>
+          ${trendRowsHtml}
+        </div>
+        <div style="padding:0 32px 22px">
+          <h3 style="margin:0 0 12px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Next Session Plan</h3>
+          ${nextPlanHtml}
+        </div>
+        <div style="padding:0 32px 22px">
+          <h3 style="margin:0 0 12px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Recommended Videos</h3>
+          ${videoRowsHtml}
         </div>
         <div style="padding:0 32px 24px">
           <h3 style="margin:0 0 16px;color:#ffffff;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Top Skills (All Time)</h3>
