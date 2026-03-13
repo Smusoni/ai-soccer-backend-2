@@ -26,7 +26,8 @@ const resend      = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 const STRIPE_SECRET    = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_PUB_KEY   = process.env.STRIPE_PUBLISHABLE_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
-const STRIPE_LOOKUP_KEY = 'Training_Video_Analysis_-293c440';
+const STRIPE_LOOKUP_KEY = process.env.STRIPE_PRICE_LOOKUP_KEY || 'Training_Video_Analysis_-293c440';
+const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || '';
 const FREE_ANALYSIS_LIMIT = 2;
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const stripe = STRIPE_SECRET ? new Stripe(STRIPE_SECRET) : null;
@@ -1685,15 +1686,30 @@ app.post('/api/create-checkout-session', auth, async (req, res) => {
     const currentUser = await findUserById(req.userId);
     const appUrl = `${req.protocol}://${req.get('host')}`;
 
-    const prices = await stripe.prices.list({ lookup_keys: [STRIPE_LOOKUP_KEY], limit: 1 });
-    if (!prices.data.length) {
-      return res.status(400).json({ ok: false, error: 'Price not found in Stripe' });
+    let priceId = STRIPE_PRICE_ID;
+
+    if (!priceId) {
+      const prices = await stripe.prices.list({ lookup_keys: [STRIPE_LOOKUP_KEY], limit: 1 });
+      if (prices.data.length) {
+        priceId = prices.data[0].id;
+      } else {
+        // Fallback: find first active recurring price
+        const allPrices = await stripe.prices.list({ active: true, type: 'recurring', limit: 10 });
+        if (allPrices.data.length) {
+          priceId = allPrices.data[0].id;
+          console.log(`[BK] Lookup key "${STRIPE_LOOKUP_KEY}" not found — using fallback price ${priceId}`);
+        }
+      }
+    }
+
+    if (!priceId) {
+      return res.status(400).json({ ok: false, error: 'No subscription price configured in Stripe. Set STRIPE_PRICE_ID env var.' });
     }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: prices.data[0].id, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       metadata: { userId: req.userId },
       customer_email: currentUser?.email,
       success_url: `${appUrl}?session_id={CHECKOUT_SESSION_ID}&upgrade=success#/analyze`,
