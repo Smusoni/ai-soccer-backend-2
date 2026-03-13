@@ -281,9 +281,9 @@ async function findUserById(id) {
 
 async function createUser({ id, name, email, passHash, age, dob }) {
   await pool.query(
-    `INSERT INTO users (id, name, email, pass_hash, password_hash, age, dob, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [id, name, email, passHash, passHash, age, dob, Date.now()]
+    `INSERT INTO users (id, name, email, pass_hash, password_hash, age, dob)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [id, name, email, passHash, passHash, age, dob]
   );
 }
 
@@ -380,18 +380,17 @@ async function getAnalysisById(userId, analysisId) {
 }
 
 async function insertAnalysis(userId, item) {
-  const createdAtMs = item.created_at || Date.now();
   const doInsert = () => pool.query(
     `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
        session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
-       practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
-     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+       practice_progression, youtube_recommendations, video_url, public_id, skill, raw)
+     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
     [item.id, userId, item.candidateName, item.videoType || 'training', item.skillFocus,
      JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
      JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
      JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
      JSON.stringify(item.youtubeRecommendations || []), item.video_url || null, item.public_id || null,
-     item.skill || null, JSON.stringify(item.raw || {}), createdAtMs]
+     item.skill || null, JSON.stringify(item.raw || {})]
   );
 
   try {
