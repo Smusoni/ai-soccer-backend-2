@@ -1616,34 +1616,91 @@ app.get('/api/admin/stats', auth, async (req, res) => {
          ORDER BY count DESC
          LIMIT 5`
       ),
-      pool.query('SELECT MAX(created_at)::bigint AS latest FROM analyses'),
-      pool.query('SELECT COUNT(*)::int AS count FROM analyses WHERE created_at >= $1', [weekAgo]),
-      pool.query('SELECT COUNT(*)::int AS count FROM analyses WHERE created_at >= $1', [monthAgo]),
+      pool.query(
+        `WITH analyses_norm AS (
+           SELECT CASE
+             WHEN created_at IS NULL THEN NULL
+             WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
+             WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
+             ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+           END AS created_ms
+           FROM analyses
+         )
+         SELECT MAX(created_ms)::bigint AS latest FROM analyses_norm`
+      ),
+      pool.query(
+        `WITH analyses_norm AS (
+           SELECT CASE
+             WHEN created_at IS NULL THEN NULL
+             WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
+             WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
+             ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+           END AS created_ms
+           FROM analyses
+         )
+         SELECT COUNT(*)::int AS count FROM analyses_norm WHERE created_ms >= $1`,
+        [weekAgo]
+      ),
+      pool.query(
+        `WITH analyses_norm AS (
+           SELECT CASE
+             WHEN created_at IS NULL THEN NULL
+             WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
+             WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
+             ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+           END AS created_ms
+           FROM analyses
+         )
+         SELECT COUNT(*)::int AS count FROM analyses_norm WHERE created_ms >= $1`,
+        [monthAgo]
+      ),
       pool.query(
         `WITH days AS (
            SELECT generate_series((CURRENT_DATE - INTERVAL '29 day')::date, CURRENT_DATE::date, INTERVAL '1 day')::date AS day
+         ),
+         analyses_norm AS (
+           SELECT
+             id,
+             CASE
+               WHEN created_at IS NULL THEN NULL
+               WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
+               WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
+               ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+             END AS created_ms
+           FROM analyses
          )
          SELECT
            to_char(days.day, 'MM/DD') AS label,
            COALESCE(COUNT(a.id), 0)::int AS value
          FROM days
-         LEFT JOIN analyses a
-           ON a.created_at >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
-          AND a.created_at < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
+         LEFT JOIN analyses_norm a
+           ON a.created_ms >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
+          AND a.created_ms < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
          GROUP BY days.day
          ORDER BY days.day`
       ),
       pool.query(
         `WITH days AS (
            SELECT generate_series((CURRENT_DATE - INTERVAL '29 day')::date, CURRENT_DATE::date, INTERVAL '1 day')::date AS day
+         ),
+         users_norm AS (
+           SELECT
+             id,
+             CASE
+               WHEN created_at IS NULL THEN NULL
+               WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
+               WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
+               ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+             END AS created_ms
+           FROM users
          )
          SELECT
            to_char(days.day, 'MM/DD') AS label,
            COALESCE(COUNT(u.id), 0)::int AS value
          FROM days
-         LEFT JOIN users u
-           ON u.created_at >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
-          AND u.created_at < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
+         LEFT JOIN users_norm u
+           ON u.created_ms >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
+          AND u.created_ms < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
          GROUP BY days.day
          ORDER BY days.day`
       ),
