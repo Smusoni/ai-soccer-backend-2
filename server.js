@@ -1422,9 +1422,16 @@ BALL CONTROL / FIRST TOUCH:
 - Improvement tips should be prioritized: fix the biggest technical issue first.
 - YouTube recommendations should be REAL channels known for soccer coaching/training (e.g., Unisport, Progressive Soccer, 7MLC, Joner 1on1, Tom Byer, Tekkerz Kid, etc.) with specific video topics that address the player's weaknesses.
 
+===== COACH SUMMARY STYLE (CRITICAL) =====
+- The "sessionSummary" MUST focus only on the primary player's drill execution.
+- Describe what the player is actually doing in the drill (e.g., V-pulls, inside-out touches, wall passes, first touch, pass weight, body shape, rhythm, control distance).
+- Do NOT mention or speculate about age, age group, "young player", "teen", "kid", "adult", or any demographic assumptions.
+- Do NOT include filler context about non-primary players unless directly relevant to the drill outcome.
+- Keep it practical and drill-centered: action observed -> issue -> immediate coaching takeaway.
+
 Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact schema:
 {
-  "sessionSummary": "2-3 detailed paragraphs describing exactly what you saw in the video — the specific skills performed, the quality of execution, standout moments (good and bad), and overall assessment. Be vivid and specific as if you watched every second.",
+  "sessionSummary": "2-3 detailed paragraphs focused strictly on the player's drill actions and execution quality. Name the drill actions performed, where control breaks down, and what technical pattern is happening repeatedly. Do NOT mention age/demographics.",
   "skillFocus": "Primary skill being trained (e.g., Freestyle Juggling, Shooting Technique, Close Dribbling, Passing Accuracy)",
   "secondarySkills": ["skill 1", "skill 2"],
   "currentLevel": "Beginner | Intermediate | Advanced",
