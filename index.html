@@ -64,58 +64,6 @@
       --shadow-glow:0 0 20px rgba(45,164,78,0.2);
     }
     
-    [data-theme="light"]{
-      --bg:#FFFFFF;
-      --bg-elevated:#F6F8FA;
-      --card:#FFFFFF;
-      --card-hover:#F6F8FA;
-      --surface:#FAFBFC;
-      --muted:#57606A;
-      --text:#1F2328;
-      --text-bright:#000000;
-      --line:#D0D7DE;
-      --line-bright:#B0B8C0;
-      --accent:#2DA44E;
-      --accent-hover:#2C974B;
-      --accent2:#0969DA;
-      --accent-dark:#1A7F37;
-      --success:#2DA44E;
-      --warning:#BF8700;
-      --error:#CF222E;
-      --gradient-primary:linear-gradient(135deg, #2DA44E 0%, #0969DA 100%);
-      --gradient-card:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.95) 100%);
-      --shadow-sm:0 1px 3px rgba(0,0,0,0.1);
-      --shadow-md:0 4px 12px rgba(0,0,0,0.15);
-      --shadow-lg:0 8px 24px rgba(0,0,0,0.2);
-      --shadow-glow:0 0 20px rgba(45,164,78,0.2);
-    }
-    
-    [data-theme="light"]{
-      --bg:#FFFFFF;
-      --bg-elevated:#F6F8FA;
-      --card:#FFFFFF;
-      --card-hover:#F6F8FA;
-      --surface:#FAFBFC;
-      --muted:#57606A;
-      --text:#1F2328;
-      --text-bright:#000000;
-      --line:#D0D7DE;
-      --line-bright:#B0B8C0;
-      --accent:#2DA44E;
-      --accent-hover:#2C974B;
-      --accent2:#0969DA;
-      --accent-dark:#1A7F37;
-      --success:#2DA44E;
-      --warning:#BF8700;
-      --error:#CF222E;
-      --gradient-primary:linear-gradient(135deg, #2DA44E 0%, #0969DA 100%);
-      --gradient-card:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.95) 100%);
-      --shadow-sm:0 1px 3px rgba(0,0,0,0.1);
-      --shadow-md:0 4px 12px rgba(0,0,0,0.15);
-      --shadow-lg:0 8px 24px rgba(0,0,0,0.2);
-      --shadow-glow:0 0 20px rgba(45,164,78,0.2);
-    }
-    
     *{
       box-sizing:border-box;
       font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
@@ -2380,8 +2328,8 @@
     clearToken();
     try { menuPanel.classList.remove('active'); } catch {}
     document.querySelector('.menu-container').style.display='none';
-    setHash('account');
-    goTo('account');
+    setHash('home');
+    goTo('home');
   }
 
   /* Menu links */
@@ -2778,13 +2726,44 @@
     }
   }
 
-  // Check for upgrade success from Stripe redirect
+  // Check for upgrade success from Stripe redirect — verify directly then fall back to polling
   if (window.location.search.includes('upgrade=success')) {
-    setTimeout(() => {
-      alert('Welcome to Ball Knowledge Pro! You now have unlimited analyses.');
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
       window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+
+      let confirmed = false;
+
+      // Try direct verification first (doesn't depend on webhook)
+      if (sessionId) {
+        try {
+          const vr = await api('/api/verify-checkout', { method: 'POST', body: JSON.stringify({ sessionId }) });
+          if (vr.ok && vr.activated) confirmed = true;
+        } catch {}
+      }
+
+      // Fall back to polling if direct verification didn't confirm
+      if (!confirmed) {
+        for (let attempt = 0; attempt < 6; attempt++) {
+          await new Promise(r => setTimeout(r, 2500));
+          try {
+            const res = await api('/api/subscription-status');
+            if (res.ok && (res.plan === 'pro' || res.plan === 'admin')) {
+              confirmed = true;
+              break;
+            }
+          } catch {}
+        }
+      }
+
+      if (confirmed) {
+        alert('Welcome to Ball Knowledge Pro! You now have unlimited analyses.');
+      } else {
+        alert('Payment received! Your Pro access will activate within a minute — refresh if needed.');
+      }
       loadSubscriptionStatus();
-    }, 500);
+    })();
   }
 
   async function doAnalyze(){
@@ -3610,12 +3589,22 @@
   });
 
   /* Bootstrap */
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     try{
       const page = currentHash();
       if (page === 'terms') { goTo('terms'); return; }
       if (page === 'privacy') { goTo('privacy'); return; }
       if (getToken()) {
+        // Validate the stored token is still good
+        try {
+          const me = await api('/api/me');
+          if (!me.ok) throw new Error('invalid');
+        } catch {
+          clearToken();
+          goTo('login');
+          return;
+        }
+        loadSubscriptionStatus();
         if (page === 'library') { loadLibrary(); }
         else if (page === 'profile') { goTo('profile'); }
         else if (page === 'stats') { goTo('stats'); }
@@ -3636,7 +3625,7 @@
   </script>
 
   <!-- Paywall Modal -->
-  <div id="paywallModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:none;align-items:center;justify-content:center">
+  <div id="paywallModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center">
     <div style="background:var(--card);border:1.5px solid var(--line);border-radius:20px;max-width:440px;width:90%;padding:40px;text-align:center;position:relative">
       <button onclick="$('paywallModal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">&times;</button>
       <div style="font-size:48px;margin-bottom:16px">⚡</div>

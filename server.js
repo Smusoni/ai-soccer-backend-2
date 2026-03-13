@@ -281,8 +281,8 @@ async function findUserById(id) {
 async function createUser({ id, name, email, passHash, age, dob }) {
   await pool.query(
     `INSERT INTO users (id, name, email, pass_hash, password_hash, age, dob, created_at)
-     VALUES ($1::uuid, $2, $3, $4::text, $4::text, $5, $6, NOW())`,
-    [id, name, email, passHash, age, dob]
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [id, name, email, passHash, passHash, age, dob, Date.now()]
   );
 }
 
@@ -379,17 +379,18 @@ async function getAnalysisById(userId, analysisId) {
 }
 
 async function insertAnalysis(userId, item) {
+  const createdAtMs = item.created_at || Date.now();
   const doInsert = () => pool.query(
     `INSERT INTO analyses (id, user_id, candidate_name, video_type, skill_focus, secondary_skills,
        session_summary, current_level, technical_analysis, improvement_tips, common_mistakes,
        practice_progression, youtube_recommendations, video_url, public_id, skill, raw, created_at)
-     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())`,
+     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
     [item.id, userId, item.candidateName, item.videoType || 'training', item.skillFocus,
      JSON.stringify(item.secondarySkills || []), item.sessionSummary, item.currentLevel,
      JSON.stringify(item.technicalAnalysis || {}), JSON.stringify(item.improvementTips || []),
      JSON.stringify(item.commonMistakesForPosition || []), JSON.stringify(item.practiceProgression || []),
      JSON.stringify(item.youtubeRecommendations || []), item.video_url || null, item.public_id || null,
-     item.skill || null, JSON.stringify(item.raw || {})]
+     item.skill || null, JSON.stringify(item.raw || {}), createdAtMs]
   );
 
   try {
@@ -1724,6 +1725,37 @@ app.post('/api/manage-subscription', auth, async (req, res) => {
   } catch (e) {
     console.error('[BK] Stripe portal error:', e.message);
     res.status(500).json({ ok: false, error: 'Failed to open billing portal' });
+  }
+});
+
+app.post('/api/verify-checkout', auth, async (req, res) => {
+  if (!stripe) {
+    return res.status(400).json({ ok: false, error: 'Stripe not configured' });
+  }
+  try {
+    const { sessionId } = req.body || {};
+    if (!sessionId) return res.status(400).json({ ok: false, error: 'sessionId required' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session || session.payment_status !== 'paid') {
+      return res.json({ ok: true, activated: false, reason: 'Payment not completed' });
+    }
+
+    const metaUserId = session.metadata?.userId;
+    if (metaUserId !== req.userId) {
+      return res.status(403).json({ ok: false, error: 'Session does not belong to this user' });
+    }
+
+    const customerId = session.customer;
+    await pool.query(
+      'UPDATE users SET subscription_status = $1, stripe_customer_id = $2 WHERE id = $3',
+      ['active', customerId, req.userId]
+    );
+    console.log(`[BK] verify-checkout activated subscription for user ${req.userId}`);
+    res.json({ ok: true, activated: true });
+  } catch (e) {
+    console.error('[BK] verify-checkout error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to verify checkout session' });
   }
 });
 
