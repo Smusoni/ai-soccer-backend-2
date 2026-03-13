@@ -1732,22 +1732,53 @@ app.get('/api/admin/experience-feedback', auth, async (req, res) => {
       return res.status(403).json({ ok: false, error: 'Admin access required' });
     }
 
-    const { rows } = await pool.query(
-      `SELECT
-         ef.id,
-         ef.rating,
-         ef.flow_step,
-         ef.comment,
-         ef.metadata,
-         ef.created_at,
-         u.id AS user_id,
-         u.name AS user_name,
-         u.email AS user_email
-       FROM experience_feedback ef
-       LEFT JOIN users u ON u.id = ef.user_id
-       ORDER BY ef.created_at DESC
-       LIMIT 500`
-    );
+    // Defensive read path: if schema drift exists in production, return an empty list
+    // instead of failing the admin page. This does NOT modify or delete any user data.
+    const tableCheck = await pool.query(`SELECT to_regclass('public.experience_feedback') AS tbl`);
+    if (!tableCheck?.rows?.[0]?.tbl) {
+      return res.json({ ok: true, items: [] });
+    }
+
+    let rows = [];
+    try {
+      const out = await pool.query(
+        `SELECT
+           ef.id,
+           ef.rating,
+           ef.flow_step,
+           ef.comment,
+           ef.metadata,
+           ef.created_at,
+           u.id AS user_id,
+           u.name AS user_name,
+           u.email AS user_email
+         FROM experience_feedback ef
+         LEFT JOIN users u ON u.id = ef.user_id
+         ORDER BY ef.created_at DESC
+         LIMIT 500`
+      );
+      rows = out.rows || [];
+    } catch (joinErr) {
+      console.error('[BK] admin experience-feedback join fallback:', joinErr.message);
+      const out = await pool.query(
+        `SELECT
+           ef.id,
+           ef.rating,
+           ef.flow_step,
+           ef.comment,
+           ef.metadata,
+           ef.created_at,
+           ef.user_id
+         FROM experience_feedback ef
+         ORDER BY ef.created_at DESC
+         LIMIT 500`
+      );
+      rows = (out.rows || []).map((r) => ({
+        ...r,
+        user_name: 'Unknown',
+        user_email: 'Unknown',
+      }));
+    }
 
     return res.json({
       ok: true,
