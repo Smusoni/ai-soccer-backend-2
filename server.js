@@ -1588,101 +1588,74 @@ app.get('/api/admin/stats', auth, async (req, res) => {
       return res.status(403).json({ ok: false, error: 'Admin access required' });
     }
 
-    const safeCount = async (query, params = []) => {
-      try {
-        const { rows } = await pool.query(query, params);
-        return parseInt(rows?.[0]?.count || 0, 10);
-      } catch {
-        return 0;
-      }
-    };
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
 
-    const totalUsers = await safeCount('SELECT COUNT(*)::int AS count FROM users');
-    const totalAnalyses = await safeCount('SELECT COUNT(*)::int AS count FROM analyses');
-    const totalClips = await safeCount('SELECT COUNT(*)::int AS count FROM clips');
-    const activeSubscriptions = await safeCount(
-      "SELECT COUNT(*)::int AS count FROM users WHERE subscription_status = 'active'"
-    );
+    const [usersCountRes, analysesCountRes, clipsCountRes, activeSubsRes, activeAnalyzersRes] = await Promise.all([
+      pool.query('SELECT COUNT(*)::int AS count FROM users'),
+      pool.query('SELECT COUNT(*)::int AS count FROM analyses'),
+      pool.query('SELECT COUNT(*)::int AS count FROM clips'),
+      pool.query("SELECT COUNT(*)::int AS count FROM users WHERE subscription_status = 'active'"),
+      pool.query('SELECT COUNT(DISTINCT user_id)::int AS count FROM analyses WHERE user_id IS NOT NULL'),
+    ]);
+
+    const totalUsers = parseInt(usersCountRes.rows?.[0]?.count || 0, 10);
+    const totalAnalyses = parseInt(analysesCountRes.rows?.[0]?.count || 0, 10);
+    const totalClips = parseInt(clipsCountRes.rows?.[0]?.count || 0, 10);
+    const activeSubscriptions = parseInt(activeSubsRes.rows?.[0]?.count || 0, 10);
+    const activeAnalyzers = parseInt(activeAnalyzersRes.rows?.[0]?.count || 0, 10);
 
     let topSkillFocuses = [];
-    try {
-      const { rows } = await pool.query(
+    const [topSkillsRes, latestAnalysisRes, analysesLast7dRes, analysesLast30dRes, dailyAnalysesRes, dailySignupsRes] = await Promise.all([
+      pool.query(
         `SELECT skill_focus, COUNT(*)::int AS count
          FROM analyses
          WHERE skill_focus IS NOT NULL AND TRIM(skill_focus) <> ''
          GROUP BY skill_focus
          ORDER BY count DESC
          LIMIT 5`
-      );
-      topSkillFocuses = rows.map(r => ({ skill: r.skill_focus, count: r.count }));
-    } catch {
-      topSkillFocuses = [];
-    }
+      ),
+      pool.query('SELECT MAX(created_at)::bigint AS latest FROM analyses'),
+      pool.query('SELECT COUNT(*)::int AS count FROM analyses WHERE created_at >= $1', [weekAgo]),
+      pool.query('SELECT COUNT(*)::int AS count FROM analyses WHERE created_at >= $1', [monthAgo]),
+      pool.query(
+        `WITH days AS (
+           SELECT generate_series((CURRENT_DATE - INTERVAL '29 day')::date, CURRENT_DATE::date, INTERVAL '1 day')::date AS day
+         )
+         SELECT
+           to_char(days.day, 'MM/DD') AS label,
+           COALESCE(COUNT(a.id), 0)::int AS value
+         FROM days
+         LEFT JOIN analyses a
+           ON a.created_at >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
+          AND a.created_at < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
+         GROUP BY days.day
+         ORDER BY days.day`
+      ),
+      pool.query(
+        `WITH days AS (
+           SELECT generate_series((CURRENT_DATE - INTERVAL '29 day')::date, CURRENT_DATE::date, INTERVAL '1 day')::date AS day
+         )
+         SELECT
+           to_char(days.day, 'MM/DD') AS label,
+           COALESCE(COUNT(u.id), 0)::int AS value
+         FROM days
+         LEFT JOIN users u
+           ON u.created_at >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
+          AND u.created_at < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
+         GROUP BY days.day
+         ORDER BY days.day`
+      ),
+    ]);
 
-    let createdAtRows = [];
-    try {
-      const { rows } = await pool.query('SELECT created_at FROM analyses ORDER BY created_at DESC LIMIT 5000');
-      createdAtRows = rows || [];
-    } catch {
-      createdAtRows = [];
-    }
-    let userCreatedRows = [];
-    try {
-      const { rows } = await pool.query('SELECT created_at FROM users ORDER BY created_at DESC LIMIT 5000');
-      userCreatedRows = rows || [];
-    } catch {
-      userCreatedRows = [];
-    }
-    const activeAnalyzers = await safeCount(
-      'SELECT COUNT(DISTINCT user_id)::int AS count FROM analyses WHERE user_id IS NOT NULL'
-    );
+    topSkillFocuses = (topSkillsRes.rows || []).map(r => ({ skill: r.skill_focus, count: r.count }));
 
-    const now = Date.now();
-    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
-    let analysesLast7d = 0;
-    let analysesLast30d = 0;
-    let latestAnalysisAt = null;
-
-    for (const row of createdAtRows) {
-      const t = toMs(row.created_at);
-      if (!t) continue;
-      if (!latestAnalysisAt || t > latestAnalysisAt) latestAnalysisAt = t;
-      if (t >= monthAgo) analysesLast30d++;
-      if (t >= weekAgo) analysesLast7d++;
-    }
-
-    const dayLabel = (ts) => {
-      const d = new Date(ts);
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${mm}/${dd}`;
-    };
-    const dayKey = (ts) => new Date(ts).toISOString().slice(0, 10);
-    const countsByDay = new Map();
-    const signupsByDay = new Map();
-
-    for (const row of createdAtRows) {
-      const t = toMs(row.created_at);
-      if (!t || t < monthAgo) continue;
-      const key = dayKey(t);
-      countsByDay.set(key, (countsByDay.get(key) || 0) + 1);
-    }
-    for (const row of userCreatedRows) {
-      const t = toMs(row.created_at);
-      if (!t || t < monthAgo) continue;
-      const key = dayKey(t);
-      signupsByDay.set(key, (signupsByDay.get(key) || 0) + 1);
-    }
-
-    const dailyAnalyses = [];
-    const dailySignups = [];
-    for (let i = 29; i >= 0; i--) {
-      const t = now - i * 24 * 60 * 60 * 1000;
-      const key = dayKey(t);
-      dailyAnalyses.push({ label: dayLabel(t), value: countsByDay.get(key) || 0 });
-      dailySignups.push({ label: dayLabel(t), value: signupsByDay.get(key) || 0 });
-    }
+    const latestAnalysisAt = Number(latestAnalysisRes.rows?.[0]?.latest || 0) || null;
+    const analysesLast7d = parseInt(analysesLast7dRes.rows?.[0]?.count || 0, 10);
+    const analysesLast30d = parseInt(analysesLast30dRes.rows?.[0]?.count || 0, 10);
+    const dailyAnalyses = (dailyAnalysesRes.rows || []).map(r => ({ label: r.label, value: Number(r.value) || 0 }));
+    const dailySignups = (dailySignupsRes.rows || []).map(r => ({ label: r.label, value: Number(r.value) || 0 }));
     const weeklyBreakdown = dailyAnalyses.slice(-7);
 
     const freeUsers = Math.max(0, totalUsers - activeSubscriptions);
