@@ -531,6 +531,38 @@
       border-color:#1f2937;
     }
 
+    .rpt-card{
+      background:#111827;
+      border:1px solid #1f2937;
+      border-radius:14px;
+      padding:14px 18px;
+      margin-bottom:14px;
+    }
+
+    .rpt-tile{
+      background:#111827;
+      border:1px solid #1f2937;
+      border-radius:12px;
+      padding:12px;
+    }
+
+    .rpt-tile-label{
+      color:#9ca3af;
+      font-size:12px;
+      margin-bottom:4px;
+    }
+
+    .rpt-tile-value{
+      font-weight:700;
+      font-size:17px;
+    }
+
+    details[open] > summary span:first-child{
+      transform:rotate(90deg);
+    }
+
+    details summary::-webkit-details-marker{ display:none; }
+
     #results h4,
     #reportViewContent h4{
       margin:0 0 10px 0;
@@ -1554,72 +1586,38 @@
 
       <!-- TRAINING VIDEO RESULTS -->
       <div id="viewTrainingResults" class="hide">
-        <!-- Skill Focus -->
-        <div class="card" style="margin:24px 0">
-          <h4>🎯 Skill Focus</h4>
-          <p id="viewSkillFocus" style="font-size:18px;font-weight:600;color:var(--accent);margin:0 0 8px 0">—</p>
-          <p id="viewSkillRecognition" style="color:var(--text);line-height:1.6">—</p>
+
+        <!-- Skill badge -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+          <span id="viewSkillFocus" style="display:inline-block;background:rgba(0,255,149,0.12);border:1px solid rgba(0,255,149,0.3);color:#00ff95;font-weight:700;font-size:14px;padding:5px 14px;border-radius:999px">—</span>
+          <span id="viewSkillRecognition" style="color:#9ca3af;font-size:13px">—</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+            <span id="viewSkillGrade" style="font-weight:800;font-size:15px;color:var(--accent2)">—</span>
+            <span id="viewSkillLevelDesc" style="color:#9ca3af;font-size:13px">—</span>
+          </span>
         </div>
 
-        <!-- Hybrid Snapshot -->
-        <div class="card" style="margin:24px 0">
-          <h4>📌 Session Snapshot</h4>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
-            <div class="metric-card"><div class="metric-label">Date</div><div id="viewSnapshotDate" class="metric-value" style="font-size:18px">—</div></div>
-            <div class="metric-card"><div class="metric-label">Level Score</div><div id="viewSnapshotLevelScore" class="metric-value" style="font-size:18px">—</div></div>
-            <div class="metric-card"><div class="metric-label">Confidence</div><div id="viewSnapshotConfidence" class="metric-value" style="font-size:18px">—</div></div>
-          </div>
-          <div id="viewSnapshotTiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px"></div>
+        <!-- Snapshot: 3-col header tiles -->
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px">
+          <div class="rpt-tile"><div class="rpt-tile-label">Date</div><div id="viewSnapshotDate" class="rpt-tile-value">—</div></div>
+          <div class="rpt-tile"><div class="rpt-tile-label">Level Score</div><div id="viewSnapshotLevelScore" class="rpt-tile-value" style="color:#19d3ff">—</div></div>
+          <div class="rpt-tile"><div class="rpt-tile-label">Confidence</div><div id="viewSnapshotConfidence" class="rpt-tile-value" style="color:#00ff95">—</div></div>
         </div>
 
-        <!-- Technical Analysis -->
-        <div class="card" style="margin:24px 0">
-          <h4>🔬 Technical Analysis</h4>
-          <div style="display:grid;gap:16px;margin-top:12px">
-            <div>
-              <p class="field-label">Footwork</p>
-              <p id="viewTechFootwork" style="color:var(--text);line-height:1.6;margin:0">—</p>
-            </div>
-            <div>
-              <p class="field-label">Body Position</p>
-              <p id="viewTechBodyPosition" style="color:var(--text);line-height:1.6;margin:0">—</p>
-            </div>
-            <div>
-              <p class="field-label">Follow Through</p>
-              <p id="viewTechFollowThrough" style="color:var(--text);line-height:1.6;margin:0">—</p>
-            </div>
-            <div>
-              <p class="field-label">Consistency</p>
-              <p id="viewTechConsistency" style="color:var(--text);line-height:1.6;margin:0">—</p>
-            </div>
-            <div>
-              <p class="field-label">Session Progression</p>
-              <p id="viewTechProgression" style="color:var(--text);line-height:1.6;margin:0">—</p>
-            </div>
-          </div>
-        </div>
+        <!-- Snapshot: quick metric tiles -->
+        <div id="viewSnapshotTiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>
 
-        <!-- Current Level -->
-        <div class="card" style="margin:24px 0">
-          <h4>📊 Current Level</h4>
-          <div class="metric-card">
-            <div class="metric-label">Grade</div>
-            <div id="viewSkillGrade" class="metric-value">—</div>
-          </div>
-          <p id="viewSkillLevelDesc" style="line-height:1.8;margin-top:12px;color:var(--text)">—</p>
-        </div>
-
-        <!-- Improvement Tips -->
-        <div class="card" style="margin:24px 0">
-          <h4>🛠️ Priority Fixes</h4>
+        <!-- Priority Fixes -->
+        <div class="rpt-card">
+          <h4 style="margin:0 0 8px">🛠️ Priority Fixes</h4>
           <div style="overflow:auto">
-            <table style="width:100%;border-collapse:collapse;background:#111827;border-radius:12px;overflow:hidden">
+            <table style="width:100%;border-collapse:collapse">
               <thead>
-                <tr style="background:#0d1f2d">
-                  <th style="padding:8px 10px;text-align:left;color:#888;font-size:11px;text-transform:uppercase">Priority</th>
-                  <th style="padding:8px 10px;text-align:left;color:#888;font-size:11px;text-transform:uppercase">Fix</th>
-                  <th style="padding:8px 10px;text-align:left;color:#888;font-size:11px;text-transform:uppercase">Why</th>
-                  <th style="padding:8px 10px;text-align:left;color:#888;font-size:11px;text-transform:uppercase">Drill</th>
+                <tr style="color:#9ca3af;text-align:left">
+                  <th style="padding:8px;font-size:12px;font-weight:600">Priority</th>
+                  <th style="padding:8px;font-size:12px;font-weight:600">Fix</th>
+                  <th style="padding:8px;font-size:12px;font-weight:600">Why</th>
+                  <th style="padding:8px;font-size:12px;font-weight:600">Drill</th>
                 </tr>
               </thead>
               <tbody id="viewImprovementTipsRows">
@@ -1629,37 +1627,56 @@
           </div>
         </div>
 
-        <!-- Common Mistakes -->
-        <div class="card" style="margin:24px 0">
-          <h4>⚠️ Common Mistakes for Your Position</h4>
-          <ul id="viewCommonMistakes" style="padding-left:20px;color:var(--text);margin:0">
-            <li>No mistakes data</li>
-          </ul>
-        </div>
-
-        <!-- Practice Progression -->
-        <div class="card" style="margin:24px 0">
-          <h4>📈 Practice Progression</h4>
-          <div id="viewProgressionList" style="display:flex;flex-direction:column;gap:14px"></div>
-        </div>
-
-        <!-- Trends -->
-        <div class="card" style="margin:24px 0">
-          <h4>📊 Trend vs Last Sessions</h4>
-          <div id="viewTrendList" style="display:flex;flex-direction:column;gap:10px"></div>
+        <!-- Trend vs Last Sessions -->
+        <div class="rpt-card">
+          <h4 style="margin:0 0 8px">📊 Trend vs Last Sessions</h4>
+          <div id="viewTrendList"></div>
         </div>
 
         <!-- Next Session Plan -->
-        <div class="card" style="margin:24px 0">
-          <h4>🗓️ Next Session Plan</h4>
-          <div id="viewNextSessionPlan" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="rpt-card">
+          <h4 style="margin:0 0 8px">🗓️ Next Session Plan</h4>
+          <div id="viewNextSessionPlan"></div>
         </div>
 
         <!-- YouTube Recommendations -->
-        <div class="card" style="margin:24px 0">
-          <h4>🎬 YouTube Videos to Watch</h4>
-          <div id="viewYoutubeList" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div class="rpt-card">
+          <h4 style="margin:0 0 8px">🎬 Recommended Videos</h4>
+          <div id="viewYoutubeList"></div>
         </div>
+
+        <!-- Technical Breakdown (collapsible) -->
+        <details class="rpt-card" style="cursor:pointer">
+          <summary style="font-weight:700;font-size:15px;color:var(--text-bright);list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="transition:transform 0.2s">▶</span> 🔬 Full Technical Breakdown
+          </summary>
+          <div style="display:grid;gap:14px;margin-top:14px">
+            <div><p class="field-label">Footwork</p><p id="viewTechFootwork" style="color:var(--text);line-height:1.6;margin:0">—</p></div>
+            <div><p class="field-label">Body Position</p><p id="viewTechBodyPosition" style="color:var(--text);line-height:1.6;margin:0">—</p></div>
+            <div><p class="field-label">Follow Through</p><p id="viewTechFollowThrough" style="color:var(--text);line-height:1.6;margin:0">—</p></div>
+            <div><p class="field-label">Consistency</p><p id="viewTechConsistency" style="color:var(--text);line-height:1.6;margin:0">—</p></div>
+            <div><p class="field-label">Session Progression</p><p id="viewTechProgression" style="color:var(--text);line-height:1.6;margin:0">—</p></div>
+          </div>
+        </details>
+
+        <!-- Common Mistakes (collapsible) -->
+        <details class="rpt-card" style="cursor:pointer">
+          <summary style="font-weight:700;font-size:15px;color:var(--text-bright);list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="transition:transform 0.2s">▶</span> ⚠️ Common Mistakes
+          </summary>
+          <ul id="viewCommonMistakes" style="padding-left:20px;color:var(--text);margin:12px 0 0">
+            <li>No mistakes data</li>
+          </ul>
+        </details>
+
+        <!-- Practice Progression (collapsible) -->
+        <details class="rpt-card" style="cursor:pointer">
+          <summary style="font-weight:700;font-size:15px;color:var(--text-bright);list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="transition:transform 0.2s">▶</span> 📈 Practice Progression
+          </summary>
+          <div id="viewProgressionList" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+        </details>
+
       </div>
 
       <!-- GAME VIDEO RESULTS -->
@@ -3142,12 +3159,12 @@
         const viewTiles = Array.isArray(viewSnap.quickTiles) ? viewSnap.quickTiles : [];
         $('viewSnapshotTiles').innerHTML = viewTiles.length
           ? viewTiles.map(t => `
-            <div style="background:#111827;border:1px solid #1f2937;border-radius:12px;padding:12px">
-              <div class="field-label" style="margin-bottom:4px">${esc(t.label || 'Metric')}</div>
-              <div style="font-weight:700;color:var(--text-bright)">${esc(t.value || '—')}</div>
-              <div class="muted" style="margin-top:4px">${esc(t.note || '')}</div>
+            <div class="rpt-tile">
+              <div class="rpt-tile-label">${esc(t.label || 'Metric')}</div>
+              <div class="rpt-tile-value">${esc(t.value || '—')}</div>
+              <div style="color:#9ca3af;font-size:12px;margin-top:2px">${esc(t.note || '')}</div>
             </div>`).join('')
-          : `<div class="muted">Snapshot metrics will improve as more sessions are analyzed.</div>`;
+          : '';
         
         // Technical Analysis
         const tech = item.technicalAnalysis || {};
@@ -3161,11 +3178,11 @@
         const tips = item.improvementTips || [];
         $('viewImprovementTipsRows').innerHTML = tips.length
           ? tips.map(t => `
-            <tr style="border-bottom:1px solid #1e2a3a">
-              <td style="padding:9px 10px;color:#ffcc00;font-weight:700">${esc(t.priority || '-')}</td>
-              <td style="padding:9px 10px;color:#e6e6e6">${esc(t.tip || '-')}</td>
-              <td style="padding:9px 10px;color:#aaaaaa">${esc(t.why || '-')}</td>
-              <td style="padding:9px 10px;color:#88d8ff">${esc(t.how || '-')}</td>
+            <tr style="border-top:1px solid #1f2937">
+              <td style="padding:8px;color:#ffcc00;font-weight:700">${esc(t.priority || '-')}</td>
+              <td style="padding:8px;color:#e6e6e6">${esc(t.tip || '-')}</td>
+              <td style="padding:8px;color:#cbd5e1">${esc(t.why || '-')}</td>
+              <td style="padding:8px;color:#93c5fd">${esc(t.how || '-')}</td>
             </tr>
           `).join('')
           : '<tr><td colspan="4" class="muted" style="padding:10px">No tips available</td></tr>';
@@ -3192,10 +3209,10 @@
           $('viewTrendList').innerHTML = item.trendVsLastSessions.map(t => {
             const tr = String(t.trend || '').toLowerCase();
             const icon = tr.includes('improv') ? '▲' : (tr.includes('declin') ? '▼' : '►');
-            const color = tr.includes('improv') ? 'var(--success)' : (tr.includes('declin') ? 'var(--error)' : 'var(--muted)');
-            return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
-              <div><strong>${esc(t.metric || 'Metric')}</strong><div class="muted" style="font-size:12px">${esc(t.note || '')}</div></div>
-              <div style="color:${color};font-weight:700">${icon} ${esc(t.trend || 'flat')}</div>
+            const color = tr.includes('improv') ? '#00ff95' : (tr.includes('declin') ? '#ff6b6b' : '#d1d5db');
+            return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #1f2937">
+              <span>${esc(t.metric || 'Metric')}</span>
+              <strong style="color:${color}">${icon} ${esc(t.trend || 'flat')}</strong>
             </div>`;
           }).join('');
         } else {
@@ -3205,33 +3222,26 @@
         // Next session plan (hybrid block)
         if (item.nextSessionPlan && item.nextSessionPlan.length){
           $('viewNextSessionPlan').innerHTML = item.nextSessionPlan.map(s => `
-            <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
-              <div><div style="font-weight:700">${esc(s.block || 'Block')}</div><div class="muted" style="font-size:12px">${esc(s.duration || '')}</div></div>
-              <div style="color:var(--text)">${esc(s.focus || s.drill || 'Training focus')}</div>
+            <div style="padding:8px 0;border-top:1px solid #1f2937">
+              <strong>${esc(s.block || 'Block')} (${esc(s.duration || '')})</strong> - ${esc(s.focus || s.drill || 'Training focus')}
             </div>
           `).join('');
         } else {
           $('viewNextSessionPlan').innerHTML = `
-            <div style="display:grid;gap:8px">
-              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Warm-up (5 min)</strong> - light touch prep and mobility</div>
-              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Main Block (12 min)</strong> - repeat your top-priority correction drill</div>
-              <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>Finisher (5 min)</strong> - quality reps under time pressure</div>
-            </div>`;
+            <div style="padding:8px 0;border-top:1px solid #1f2937"><strong>Warm-up (5 min)</strong> - light touch prep and mobility</div>
+            <div style="padding:8px 0;border-top:1px solid #1f2937"><strong>Main Block (12 min)</strong> - repeat your top-priority correction drill</div>
+            <div style="padding:8px 0;border-top:1px solid #1f2937"><strong>Finisher (5 min)</strong> - quality reps under time pressure</div>`;
         }
         
         // YouTube Recommendations
         const youtube = item.youtubeRecommendations || [];
         $('viewYoutubeList').innerHTML = youtube.length
           ? youtube.map(y => `
-            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title)}" target="_blank" style="text-decoration:none">
-              <div style="background:#111827;border:1px solid #1f2937;padding:14px;border-radius:12px;transition:all 0.2s;cursor:pointer">
-                <div style="color:var(--accent2);font-weight:700;font-size:15px;margin-bottom:4px">▶ ${esc(y.title)}</div>
-                <p class="muted" style="margin:4px 0;font-size:13px">Channel: ${esc(y.coach)}</p>
-                <p style="margin:8px 0;color:var(--text);font-size:13px;line-height:1.5">${esc(y.why)}</p>
-              </div>
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(y.title + ' ' + (y.coach || ''))}" target="_blank" style="display:block;color:#7dd3fc;text-decoration:none;padding:8px 0;border-top:1px solid #1f2937">
+              ▶ ${esc(y.title)}${y.coach ? ` <span style="color:#9ca3af;font-size:13px">(${esc(y.coach)})</span>` : ''}
             </a>
           `).join('')
-          : '<p>No video recommendations</p>';
+          : '<p class="muted">No video recommendations</p>';
         
         // Session Summary
         $('viewSummary').textContent = item.sessionSummary || item.summary || '—';
