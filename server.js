@@ -27,7 +27,7 @@ const STRIPE_SECRET    = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_PUB_KEY   = process.env.STRIPE_PUBLISHABLE_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_LOOKUP_KEY = process.env.STRIPE_PRICE_LOOKUP_KEY || 'Training_Video_Analysis_-293c440';
-const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || '';
+const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || 'price_1T1qtKRxzNyC9x7cEhux3Agz';
 const FREE_ANALYSIS_LIMIT = 2;
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const stripe = STRIPE_SECRET ? new Stripe(STRIPE_SECRET) : null;
