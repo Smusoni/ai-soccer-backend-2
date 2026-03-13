@@ -427,6 +427,23 @@
       color:var(--error);
       border-color:var(--error);
     }
+
+    .exp-rate-btn{
+      padding:10px 14px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      color:var(--text);
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+      transition:all 0.2s ease;
+    }
+
+    .exp-rate-btn.active{
+      border-color:var(--accent);
+      box-shadow:0 0 0 2px rgba(0,217,255,0.18);
+      background:rgba(0,217,255,0.08);
+    }
     
     .metric-card{
       background:rgba(63,185,80,0.08);
@@ -1310,6 +1327,21 @@
         <p id="summary" style="line-height:1.8;color:var(--text)">—</p>
       </div>
 
+      <div class="card" id="experienceFeedbackCard" style="margin:24px 0">
+        <h4 style="margin-bottom:8px">How was your experience?</h4>
+        <p class="muted" style="margin:0 0 12px 0">Your feedback helps us improve report quality and app flow.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <button id="expGreatBtn" class="exp-rate-btn" type="button" data-rating="great">Great</button>
+          <button id="expOkayBtn" class="exp-rate-btn" type="button" data-rating="okay">Okay</button>
+          <button id="expBadBtn" class="exp-rate-btn" type="button" data-rating="not_good">Not good</button>
+        </div>
+        <textarea id="expFeedbackComment" placeholder="Optional: what worked or what felt off?" style="width:100%;min-height:96px"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+          <button id="expFeedbackSubmitBtn" type="button" style="padding:10px 14px">Send Feedback</button>
+          <span id="expFeedbackMsg" class="muted"></span>
+        </div>
+      </div>
+
       <!-- TRAINING VIDEO RESULTS -->
       <div id="trainingResults" class="hide">
         <!-- Skill Focus -->
@@ -2069,6 +2101,7 @@
   let isAdminUser = false;
   let lastTrainingAnalysis = null;
   let lastViewedAnalysis = null;
+  let selectedExperienceRating = '';
 
   function show(el){ if(!el) return; el.classList.remove('hide'); }
   function hide(el){ if(!el) return; el.classList.add('hide'); }
@@ -2787,8 +2820,64 @@
     })();
   }
 
+  function setExperienceRating(rating){
+    selectedExperienceRating = rating;
+    ['expGreatBtn', 'expOkayBtn', 'expBadBtn'].forEach((id) => {
+      const btn = $(id);
+      if (!btn) return;
+      btn.classList.toggle('active', btn.dataset.rating === rating);
+    });
+    const msg = $('expFeedbackMsg');
+    if (msg) msg.textContent = '';
+  }
+
+  function resetExperienceFeedback(){
+    selectedExperienceRating = '';
+    ['expGreatBtn', 'expOkayBtn', 'expBadBtn'].forEach((id) => {
+      const btn = $(id);
+      if (btn) btn.classList.remove('active');
+    });
+    if ($('expFeedbackComment')) $('expFeedbackComment').value = '';
+    if ($('expFeedbackMsg')) {
+      $('expFeedbackMsg').textContent = '';
+      $('expFeedbackMsg').className = 'muted';
+    }
+    if ($('expFeedbackSubmitBtn')) $('expFeedbackSubmitBtn').disabled = false;
+  }
+
+  async function submitExperienceFeedback(){
+    const msg = $('expFeedbackMsg');
+    if (!selectedExperienceRating) {
+      if (msg) { msg.textContent = 'Please pick a rating first.'; msg.className = 'err'; }
+      return;
+    }
+    const submitBtn = $('expFeedbackSubmitBtn');
+    if (submitBtn) submitBtn.disabled = true;
+    if (msg) { msg.textContent = 'Saving...'; msg.className = 'muted'; }
+
+    const payload = {
+      rating: selectedExperienceRating,
+      flowStep: 'analysis_result',
+      comment: String($('expFeedbackComment')?.value || '').trim(),
+      metadata: {
+        page: currentHash() || 'analysis',
+        hasTrainingReport: !($('trainingResults')?.classList.contains('hide')),
+      },
+    };
+
+    try {
+      const out = await api('/api/experience-feedback', { method: 'POST', body: JSON.stringify(payload) });
+      if (!out.ok) throw new Error(out.error || 'Could not save feedback');
+      if (msg) { msg.textContent = 'Thanks for the feedback!'; msg.className = 'ok'; }
+    } catch (e) {
+      if (msg) { msg.textContent = e.message || 'Failed to save feedback'; msg.className = 'err'; }
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
   async function doAnalyze(){
     hide($('results'));
+    resetExperienceFeedback();
     const uploadMethod = document.querySelector('input[name="uploadMethod"]:checked').value;
     let videoUrl = '';
     let videoDuration = 0;
@@ -3561,7 +3650,11 @@
   $('forgotBtn')?.addEventListener('click', doForgotPassword);
   $('resetBtn')?.addEventListener('click', doResetPassword);
   $('analyzeBtn')?.addEventListener('click', doAnalyze);
-  $('newAnalysisBtn')?.addEventListener('click', () => { hide($('results')); $('videoUrl').value=''; $('videoDuration').value=''; });
+  $('expGreatBtn')?.addEventListener('click', () => setExperienceRating('great'));
+  $('expOkayBtn')?.addEventListener('click', () => setExperienceRating('okay'));
+  $('expBadBtn')?.addEventListener('click', () => setExperienceRating('not_good'));
+  $('expFeedbackSubmitBtn')?.addEventListener('click', submitExperienceFeedback);
+  $('newAnalysisBtn')?.addEventListener('click', () => { hide($('results')); $('videoUrl').value=''; $('videoDuration').value=''; resetExperienceFeedback(); });
   $('saveAnalysisBtn')?.addEventListener('click', async () => {
     const res = await api('/api/analyses', { method:'POST', body: JSON.stringify({ summary: $('summary').textContent }) });
     if (res.ok) alert('Saved!');

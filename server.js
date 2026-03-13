@@ -191,6 +191,15 @@ async function initDB() {
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
         updated_at BIGINT
       )`,
+      `CREATE TABLE IF NOT EXISTS experience_feedback (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        rating TEXT NOT NULL,
+        flow_step TEXT,
+        comment TEXT,
+        metadata JSONB DEFAULT '{}',
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+      )`,
     ];
 
     for (const sql of tables) {
@@ -228,6 +237,10 @@ async function initDB() {
     await addCol('skill_reminders', 'note', 'TEXT');
     await addCol('skill_reminders', 'completed', "BOOLEAN DEFAULT FALSE");
     await addCol('skill_reminders', 'updated_at', 'BIGINT');
+    await addCol('experience_feedback', 'flow_step', 'TEXT');
+    await addCol('experience_feedback', 'comment', 'TEXT');
+    await addCol('experience_feedback', 'metadata', "JSONB DEFAULT '{}'");
+    await addCol('experience_feedback', 'created_at', 'BIGINT');
 
     // Drop NOT NULL constraints on legacy columns that our code doesn't populate
     const dropNotNull = async (table, col) => {
@@ -1231,6 +1244,33 @@ app.delete('/api/reminders/:id', auth, async (req, res) => {
   } catch (e) {
     console.error('[BK] delete reminder error:', e.message);
     res.status(500).json({ ok: false, error: 'Failed to delete reminder' });
+  }
+});
+
+app.post('/api/experience-feedback', auth, async (req, res) => {
+  try {
+    const { rating, flowStep, comment, metadata } = req.body || {};
+    const normalizedRating = String(rating || '').trim().toLowerCase();
+    const allowedRatings = new Set(['great', 'okay', 'not_good']);
+    if (!allowedRatings.has(normalizedRating)) {
+      return res.status(400).json({ ok: false, error: 'rating must be one of: great, okay, not_good' });
+    }
+
+    const feedbackId = uuidv4();
+    const trimFlowStep = String(flowStep || '').trim().slice(0, 80) || null;
+    const trimComment = String(comment || '').trim().slice(0, 1200) || null;
+    const safeMetadata = metadata && typeof metadata === 'object' ? metadata : {};
+
+    await pool.query(
+      `INSERT INTO experience_feedback (id, user_id, rating, flow_step, comment, metadata, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)`,
+      [feedbackId, req.userId, normalizedRating, trimFlowStep, trimComment, JSON.stringify(safeMetadata), Date.now()]
+    );
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[BK] experience-feedback error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to save feedback' });
   }
 });
 
