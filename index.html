@@ -1834,6 +1834,14 @@
       </div>
     </div>
 
+    <div class="card" style="margin-top:18px">
+      <h4 style="margin-top:0">Player Experience Responses</h4>
+      <p class="muted" style="margin:0 0 10px">Admin-only responses from "How was your experience?"</p>
+      <div id="statsExperienceFeedback" style="display:grid;gap:8px">
+        <span class="muted">No feedback yet.</span>
+      </div>
+    </div>
+
     <p id="statsUpdatedAt" class="muted" style="margin-top:12px"></p>
   </section>
 
@@ -2528,12 +2536,54 @@
       $('funnelActiveAnalyzersText').textContent = `${fmt(analyzers)} users (${pct(s.activeAnalyzerRate)})`;
       $('funnelProSubscribersText').textContent = `${fmt(pro)} users (${pct(s.proConversionRate)})`;
 
+      await loadAdminExperienceFeedback();
+
       $('statsUpdatedAt').textContent = `Last updated: ${new Date().toLocaleString()}`;
     } catch (e) {
       if (errBox) {
         errBox.textContent = e.message || 'Could not load stats';
         errBox.classList.remove('hide');
       }
+    }
+  }
+
+  async function loadAdminExperienceFeedback() {
+    const box = $('statsExperienceFeedback');
+    if (!box) return;
+
+    box.innerHTML = '<span class="muted">Loading feedback...</span>';
+
+    try {
+      const out = await api('/api/admin/experience-feedback');
+      if (!out.ok) throw new Error(out.error || 'Could not load feedback responses');
+      const items = Array.isArray(out.items) ? out.items : [];
+
+      if (!items.length) {
+        box.innerHTML = '<span class="muted">No feedback submitted yet.</span>';
+        return;
+      }
+
+      box.innerHTML = items.map(item => {
+        const createdAt = item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Unknown time';
+        const rating = String(item.rating || '').replace('_', ' ');
+        const flowStep = item.flowStep || 'unknown';
+        const comment = item.comment || '(no comment)';
+        const userName = item.user?.name || 'Unknown';
+        const userEmail = item.user?.email || 'Unknown';
+        return `
+          <div style="border:1px solid var(--line);border-radius:10px;padding:10px">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
+              <strong style="text-transform:capitalize">${esc(rating)}</strong>
+              <span class="muted" style="font-size:12px">${esc(createdAt)}</span>
+            </div>
+            <div class="muted" style="font-size:12px;margin-top:4px">Flow: ${esc(flowStep)}</div>
+            <div style="margin-top:8px;line-height:1.5">${esc(comment)}</div>
+            <div class="muted" style="font-size:12px;margin-top:8px">${esc(userName)} • ${esc(userEmail)}</div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      box.innerHTML = `<span class="err">${esc(e.message || 'Could not load feedback responses')}</span>`;
     }
   }
 

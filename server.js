@@ -1724,6 +1724,53 @@ app.get('/api/admin/stats', auth, async (req, res) => {
   }
 });
 
+app.get('/api/admin/experience-feedback', auth, async (req, res) => {
+  try {
+    const currentUser = await findUserById(req.userId);
+    const isAdmin = ADMIN_EMAILS.includes(currentUser?.email?.toLowerCase());
+    if (!isAdmin) {
+      return res.status(403).json({ ok: false, error: 'Admin access required' });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT
+         ef.id,
+         ef.rating,
+         ef.flow_step,
+         ef.comment,
+         ef.metadata,
+         ef.created_at,
+         u.id AS user_id,
+         u.name AS user_name,
+         u.email AS user_email
+       FROM experience_feedback ef
+       LEFT JOIN users u ON u.id = ef.user_id
+       ORDER BY ef.created_at DESC
+       LIMIT 500`
+    );
+
+    return res.json({
+      ok: true,
+      items: rows.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        flowStep: r.flow_step || null,
+        comment: r.comment || null,
+        metadata: (r.metadata && typeof r.metadata === 'object') ? r.metadata : {},
+        createdAt: Number(r.created_at) || 0,
+        user: {
+          id: r.user_id,
+          name: r.user_name || 'Unknown',
+          email: r.user_email || 'Unknown',
+        },
+      })),
+    });
+  } catch (e) {
+    console.error('[BK] admin experience-feedback error:', e.message);
+    return res.status(500).json({ ok: false, error: 'Failed to load experience feedback' });
+  }
+});
+
 app.post('/api/create-checkout-session', auth, async (req, res) => {
   if (!stripe) {
     return res.status(400).json({ ok: false, error: 'Stripe not configured' });
