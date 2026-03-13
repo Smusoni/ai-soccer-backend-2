@@ -585,7 +585,7 @@ function auth(req, res, next) {
 /* ---------- Gemini AI client ---------- */
 const genAI       = GEMINI_KEY ? new GoogleGenerativeAI(GEMINI_KEY) : null;
 const fileManager = GEMINI_KEY ? new GoogleAIFileManager(GEMINI_KEY) : null;
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
 
 function getGeminiErrorText(err) {
   return String(err?.message || err?.error || err || '');
@@ -1972,8 +1972,7 @@ Return VALID JSON ONLY with this structure:
   "twoWeekPlan": [{ "day": "", "focus": "", "drills": [] }]
 }`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
+    const { result } = await generateGeminiContent(prompt, 'feedback');
     const raw = result.response.text();
     let parsed;
     try {
