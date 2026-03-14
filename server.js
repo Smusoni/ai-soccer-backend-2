@@ -1620,9 +1620,9 @@ app.get('/api/admin/stats', auth, async (req, res) => {
         `WITH analyses_norm AS (
            SELECT CASE
              WHEN created_at IS NULL THEN NULL
-             WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
-             WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
-             ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+             WHEN created_at::text ~ '^[0-9]{13,}$' THEN (created_at::text)::bigint
+             WHEN created_at::text ~ '^[0-9]{10}$' THEN ((created_at::text)::bigint * 1000)
+             ELSE (EXTRACT(EPOCH FROM (created_at::text)::timestamptz) * 1000)::bigint
            END AS created_ms
            FROM analyses
          )
@@ -1632,9 +1632,9 @@ app.get('/api/admin/stats', auth, async (req, res) => {
         `WITH analyses_norm AS (
            SELECT CASE
              WHEN created_at IS NULL THEN NULL
-             WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
-             WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
-             ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+             WHEN created_at::text ~ '^[0-9]{13,}$' THEN (created_at::text)::bigint
+             WHEN created_at::text ~ '^[0-9]{10}$' THEN ((created_at::text)::bigint * 1000)
+             ELSE (EXTRACT(EPOCH FROM (created_at::text)::timestamptz) * 1000)::bigint
            END AS created_ms
            FROM analyses
          )
@@ -1645,9 +1645,9 @@ app.get('/api/admin/stats', auth, async (req, res) => {
         `WITH analyses_norm AS (
            SELECT CASE
              WHEN created_at IS NULL THEN NULL
-             WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
-             WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
-             ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+             WHEN created_at::text ~ '^[0-9]{13,}$' THEN (created_at::text)::bigint
+             WHEN created_at::text ~ '^[0-9]{10}$' THEN ((created_at::text)::bigint * 1000)
+             ELSE (EXTRACT(EPOCH FROM (created_at::text)::timestamptz) * 1000)::bigint
            END AS created_ms
            FROM analyses
          )
@@ -1663,9 +1663,9 @@ app.get('/api/admin/stats', auth, async (req, res) => {
              id,
              CASE
                WHEN created_at IS NULL THEN NULL
-               WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
-               WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
-               ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+               WHEN created_at::text ~ '^[0-9]{13,}$' THEN (created_at::text)::bigint
+               WHEN created_at::text ~ '^[0-9]{10}$' THEN ((created_at::text)::bigint * 1000)
+               ELSE (EXTRACT(EPOCH FROM (created_at::text)::timestamptz) * 1000)::bigint
              END AS created_ms
            FROM analyses
          )
@@ -1688,9 +1688,9 @@ app.get('/api/admin/stats', auth, async (req, res) => {
              id,
              CASE
                WHEN created_at IS NULL THEN NULL
-               WHEN created_at::text ~ '^[0-9]{13,}$' THEN created_at::bigint
-               WHEN created_at::text ~ '^[0-9]{10}$' THEN (created_at::bigint * 1000)
-               ELSE (EXTRACT(EPOCH FROM created_at::timestamptz) * 1000)::bigint
+               WHEN created_at::text ~ '^[0-9]{13,}$' THEN (created_at::text)::bigint
+               WHEN created_at::text ~ '^[0-9]{10}$' THEN ((created_at::text)::bigint * 1000)
+               ELSE (EXTRACT(EPOCH FROM (created_at::text)::timestamptz) * 1000)::bigint
              END AS created_ms
            FROM users
          )
