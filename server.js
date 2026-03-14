@@ -1607,7 +1607,7 @@ app.get('/api/admin/stats', auth, async (req, res) => {
     const activeAnalyzers = parseInt(activeAnalyzersRes.rows?.[0]?.count || 0, 10);
 
     let topSkillFocuses = [];
-    const [topSkillsRes, latestAnalysisRes, analysesLast7dRes, analysesLast30dRes, dailyAnalysesRes, dailySignupsRes] = await Promise.all([
+    const [topSkillsRes, latestAnalysisRes, analysesLast7dRes, analysesLast30dRes, dailyAnalysesRes] = await Promise.all([
       pool.query(
         `SELECT skill_focus, COUNT(*)::int AS count
          FROM analyses
@@ -1678,32 +1678,7 @@ app.get('/api/admin/stats', auth, async (req, res) => {
           AND a.created_ms < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
          GROUP BY days.day
          ORDER BY days.day`
-      ),
-      pool.query(
-        `WITH days AS (
-           SELECT generate_series((CURRENT_DATE - INTERVAL '29 day')::date, CURRENT_DATE::date, INTERVAL '1 day')::date AS day
-         ),
-         users_norm AS (
-           SELECT
-             id,
-             CASE
-               WHEN created_at IS NULL THEN NULL
-               WHEN created_at::text ~ '^[0-9]{13,}$' THEN (created_at::text)::bigint
-               WHEN created_at::text ~ '^[0-9]{10}$' THEN ((created_at::text)::bigint * 1000)
-               ELSE (EXTRACT(EPOCH FROM (created_at::text)::timestamptz) * 1000)::bigint
-             END AS created_ms
-           FROM users
-         )
-         SELECT
-           to_char(days.day, 'MM/DD') AS label,
-           COALESCE(COUNT(u.id), 0)::int AS value
-         FROM days
-         LEFT JOIN users_norm u
-           ON u.created_ms >= (EXTRACT(EPOCH FROM days.day) * 1000)::bigint
-          AND u.created_ms < (EXTRACT(EPOCH FROM (days.day + INTERVAL '1 day')) * 1000)::bigint
-         GROUP BY days.day
-         ORDER BY days.day`
-      ),
+      )
     ]);
 
     topSkillFocuses = (topSkillsRes.rows || []).map(r => ({ skill: r.skill_focus, count: r.count }));
@@ -1712,7 +1687,6 @@ app.get('/api/admin/stats', auth, async (req, res) => {
     const analysesLast7d = parseInt(analysesLast7dRes.rows?.[0]?.count || 0, 10);
     const analysesLast30d = parseInt(analysesLast30dRes.rows?.[0]?.count || 0, 10);
     const dailyAnalyses = (dailyAnalysesRes.rows || []).map(r => ({ label: r.label, value: Number(r.value) || 0 }));
-    const dailySignups = (dailySignupsRes.rows || []).map(r => ({ label: r.label, value: Number(r.value) || 0 }));
     const weeklyBreakdown = dailyAnalyses.slice(-7);
 
     const freeUsers = Math.max(0, totalUsers - activeSubscriptions);
@@ -1739,7 +1713,6 @@ app.get('/api/admin/stats', auth, async (req, res) => {
         topSkillFocuses,
         latestAnalysisAt,
         dailyAnalyses,
-        dailySignups,
         weeklyBreakdown,
         funnel: {
           signedUpUsers: totalUsers,
