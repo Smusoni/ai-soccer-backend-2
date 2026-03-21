@@ -1327,21 +1327,6 @@
         <p id="summary" style="line-height:1.8;color:var(--text)">—</p>
       </div>
 
-      <div class="card" id="experienceFeedbackCard" style="margin:24px 0">
-        <h4 style="margin-bottom:8px">How was your experience?</h4>
-        <p class="muted" style="margin:0 0 12px 0">Your feedback helps us improve report quality and app flow.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-          <button id="expGreatBtn" class="exp-rate-btn" type="button" data-rating="great">Great</button>
-          <button id="expOkayBtn" class="exp-rate-btn" type="button" data-rating="okay">Okay</button>
-          <button id="expBadBtn" class="exp-rate-btn" type="button" data-rating="not_good">Not good</button>
-        </div>
-        <textarea id="expFeedbackComment" placeholder="Optional: what worked or what felt off?" style="width:100%;min-height:96px"></textarea>
-        <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
-          <button id="expFeedbackSubmitBtn" type="button" style="padding:10px 14px">Send Feedback</button>
-          <span id="expFeedbackMsg" class="muted"></span>
-        </div>
-      </div>
-
       <!-- TRAINING VIDEO RESULTS -->
       <div id="trainingResults" class="hide">
         <!-- Skill Focus -->
@@ -1387,6 +1372,27 @@
               <p id="techProgression" style="color:var(--text);line-height:1.6;margin:0">—</p>
             </div>
           </div>
+        </div>
+
+        <!-- Biomechanical Checklist -->
+        <div class="card hide" id="biomechCard" style="margin:24px 0">
+          <h4>🦵 Biomechanical Checklist</h4>
+          <p class="muted" style="margin:0 0 12px 0;font-size:13px">Scored checkpoints specific to your skill focus — exactly what the AI evaluated frame by frame.</p>
+          <div id="biomechGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"></div>
+        </div>
+
+        <!-- Key Moments -->
+        <div class="card hide" id="keyMomentsCard" style="margin:24px 0">
+          <h4>🎯 Key Moments</h4>
+          <p class="muted" style="margin:0 0 12px 0;font-size:13px">Specific moments in your clip where the most important errors were visible.</p>
+          <div id="keyMomentsList" style="display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+
+        <!-- Coaching Cues -->
+        <div class="card hide" id="coachingCuesCard" style="margin:24px 0">
+          <h4>💬 Coaching Cues</h4>
+          <p class="muted" style="margin:0 0 10px 0;font-size:13px">Say these to yourself during your next session to self-correct in the moment.</p>
+          <div id="coachingCuesList" style="display:flex;flex-wrap:wrap;gap:10px"></div>
         </div>
 
         <!-- Current Level & Tips -->
@@ -1444,6 +1450,21 @@
         <div class="card" style="margin:24px 0">
           <h4>🎬 YouTube Videos to Watch</h4>
           <div id="youtubeList" style="display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+
+        <div class="card" id="experienceFeedbackCard" style="margin:24px 0">
+          <h4 style="margin-bottom:8px">How was your experience?</h4>
+          <p class="muted" style="margin:0 0 12px 0">Your feedback helps us improve report quality and app flow.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button id="expGreatBtn" class="exp-rate-btn" type="button" data-rating="great">Great</button>
+            <button id="expOkayBtn" class="exp-rate-btn" type="button" data-rating="okay">Okay</button>
+            <button id="expBadBtn" class="exp-rate-btn" type="button" data-rating="not_good">Not good</button>
+          </div>
+          <textarea id="expFeedbackComment" placeholder="Optional: what worked or what felt off?" style="width:100%;min-height:96px"></textarea>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+            <button id="expFeedbackSubmitBtn" type="button" style="padding:10px 14px">Send Feedback</button>
+            <span id="expFeedbackMsg" class="muted"></span>
+          </div>
         </div>
       </div>
 
@@ -3052,6 +3073,67 @@
         $('techFollowThrough').textContent = tech.followThrough || '—';
         $('techConsistency').textContent = tech.consistency || '—';
         $('techProgression').textContent = tech.sessionProgression || '—';
+
+        // Biomechanical Checklist
+        const checklist = out.biomechanicalChecklist || {};
+        const checklistKeys = Object.keys(checklist);
+        if (checklistKeys.length) {
+          const labelMap = {
+            plantFootPosition: 'Plant Foot', ankleLock: 'Ankle Lock', bodyLeanAtContact: 'Body Lean',
+            hipRotation: 'Hip Rotation', followThroughDirection: 'Follow Through', approachAngle: 'Approach Angle',
+            headPosition: 'Head Position', receivingSurface: 'Receiving Surface', cushionTechnique: 'Cushion',
+            bodyOrientationPreTouch: 'Body Orientation', touchDirection: 'Touch Direction', passWeight: 'Pass Weight',
+            bodyShapeAfterTouch: 'Body Shape', touchDistance: 'Touch Distance', changeOfPaceExecution: 'Change of Pace',
+            weakFootInvolvement: 'Weak Foot', bodyFeintQuality: 'Body Feint', touchHeightConsistency: 'Touch Height',
+            rhythmBetweenTricks: 'Trick Rhythm', weakFootUsage: 'Weak Foot', dropFrequency: 'Drop Frequency',
+            trickTransitionFluidity: 'Trick Transitions',
+          };
+          $('biomechGrid').innerHTML = checklistKeys.map(k => {
+            const item = checklist[k] || {};
+            const scoreStr = item.score || '';
+            const numMatch = scoreStr.match(/^(\d+(?:\.\d+)?)\//);
+            const num = numMatch ? parseFloat(numMatch[1]) : null;
+            const color = num === null ? '#666' : (num >= 7 ? '#00ff95' : (num >= 5 ? '#ffcc00' : '#ff4d4d'));
+            const displayScore = scoreStr && scoreStr !== 'null' ? scoreStr : '—';
+            return `<div style="background:#111827;border:1px solid #1f2937;border-radius:12px;padding:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span class="field-label" style="margin:0">${esc(labelMap[k] || k)}</span>
+                <span style="font-weight:700;font-size:16px;color:${color}">${esc(displayScore)}</span>
+              </div>
+              <div class="muted" style="font-size:12px;line-height:1.5">${esc(item.note || '')}</div>
+            </div>`;
+          }).join('');
+          show($('biomechCard'));
+        } else {
+          hide($('biomechCard'));
+        }
+
+        // Key Moments
+        if (out.keyMoments && out.keyMoments.length) {
+          $('keyMomentsList').innerHTML = out.keyMoments.map((m, i) => `
+            <div style="background:#0d1117;border:1px solid #1f2937;border-left:4px solid var(--accent2);border-radius:10px;padding:14px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <span style="background:#1f2937;color:var(--accent2);font-weight:700;font-size:12px;padding:3px 8px;border-radius:20px">${esc(m.timestamp || `Moment ${i + 1}`)}</span>
+              </div>
+              <p style="margin:0 0 6px 0;color:var(--text);line-height:1.5"><strong>What happened:</strong> ${esc(m.observation || '—')}</p>
+              <p style="margin:0 0 6px 0;color:#ff9966;line-height:1.5;font-size:13px"><strong>Impact:</strong> ${esc(m.impact || '—')}</p>
+              <p style="margin:0;color:#88d8ff;line-height:1.5;font-size:13px"><strong>Should be:</strong> ${esc(m.correction || '—')}</p>
+            </div>
+          `).join('');
+          show($('keyMomentsCard'));
+        } else {
+          hide($('keyMomentsCard'));
+        }
+
+        // Coaching Cues
+        if (out.coachingCues && out.coachingCues.length) {
+          $('coachingCuesList').innerHTML = out.coachingCues.map(cue => `
+            <div style="background:linear-gradient(135deg,rgba(0,255,149,0.12),rgba(25,211,255,0.12));border:1.5px solid var(--accent);border-radius:30px;padding:10px 20px;font-weight:700;font-size:15px;color:var(--text-bright);letter-spacing:0.3px">${esc(cue)}</div>
+          `).join('');
+          show($('coachingCuesCard'));
+        } else {
+          hide($('coachingCuesCard'));
+        }
 
         // Improvement Tips (with priority structure)
         if (out.improvementTips && out.improvementTips.length){

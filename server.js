@@ -1325,7 +1325,7 @@ PLAYER INFO:
 - Choose "skillFocus" from the MOST REPEATED, MOST CENTRAL action in the clip (what the player is actually drilling over and over).
 - Do NOT infer skills that are not clearly present. If there are no clear shot attempts, do NOT label shooting.
 - Only include a skill in "secondarySkills" if it is clearly observable multiple times (not a one-off touch).
-- If the player provided a requested focus, use it as a tie-breaker ONLY when the video evidence supports it.
+- If the player provided a requested focus, use it as a tie-breaker when the video evidence supports it AND when two similar-looking moves could explain what you see. For example, if the player says "pull-back" and you see a sole-drag move, call it a pull-back — not a V-pull or drag-back — unless the V or direction change is unmistakably clear.
 - If the player says "first touch + passing" and the clip shows repeated wall passing/receiving with control errors, skillFocus should be "First Touch / Ball Control" or "Passing & First Touch" — not shooting.
 - For shooting to be listed, there must be clear repeated shot attempts toward a target/goal with striking mechanics visible.
 
@@ -1426,8 +1426,40 @@ SHOOTING:
 - Assess power vs accuracy balance. Note where the shot goes (top corner, low, wide, saved, etc.).
 - Identify common shooting mistakes: leaning too far back, planting foot too far from ball, looking down at contact, no follow-through, ankle not locked.
 
-DRIBBLING:
-- Identify specific moves: stepovers, scissors, Cruyff turn, La Croqueta, elastico, ball roll, chop, drag-back, Ronaldo chop, Maradona spin, body feint, nutmeg attempt, etc.
+DRIBBLING / BALL MASTERY:
+- Identify specific moves by their CORRECT names. Reference list below — use the closest matching name. Do NOT substitute a different move name if the actual move is on this list.
+
+  SOLE / PULL MOVES (ball mastery):
+  * Pull-back: sole of foot drags ball straight backward
+  * V-pull (V-turn): sole pulls ball back then player redirects it diagonally forward — ball path makes a V. NOT the same as a pull-back.
+  * L-turn: sole rolls the ball backward (the vertical of the L), then the inside of the foot pushes it 90° to the side (the horizontal of the L) — ball path makes an L shape
+  * T-pull: toe or sole pulls the ball back between the feet
+  * Sole roll: sole of foot rolls the ball sideways across the body (not backward)
+  * Inside hook / outside hook: quick cut using inside or outside of foot to change direction
+  * Stop-and-go: player stops the ball dead with the sole then explodes forward
+  * Iniesta turn (inside cut): a sharp inside-foot cut/hook while shielding the ball, often done in tight space — associated with Andrés Iniesta. Usually follows a pull-back or L-turn in a combo pattern.
+  * "L into Iniesta" = L-turn immediately followed by an inside cut (Iniesta-style), a common combination drill
+
+  CLASSIC DRIBBLING MOVES:
+  * Stepovers / scissors (single or double)
+  * Cruyff turn: drag-back with the inside of the foot behind the standing leg
+  * La Croqueta: lateral push from one foot to the other while defender commits
+  * Elastico (flip-flap): outside foot fake then quick inside foot redirect
+  * Ronaldo chop: rapid inside-foot chop across the body
+  * Maradona spin (360 turn): one foot stops the ball, other drags it in a full rotation
+  * Body feint: shoulder drop/dip without touching the ball
+  * Drag-back: inside of foot drags ball back to reset or change direction
+  * Ball roll: foot rolls ball sideways using the sole
+  * Chop: sharp inside-foot cut going against the direction of travel
+  * Nutmeg attempt: deliberately pushing ball through defender's legs
+  * Step-over into acceleration: any stepover immediately followed by explosive burst
+
+- DISAMBIGUATION RULE: Many moves look similar on camera. Use the player's stated skill as the tiebreaker when two moves are visually similar.
+  * Pull-back vs V-pull: if the ball just goes straight back = pull-back. If it goes back THEN angles forward = V-pull.
+  * L-turn vs pull-back: L-turn has a 90° sideways push after the pull-back. If you only see the backward component = pull-back only.
+  * Cruyff turn vs drag-back: Cruyff passes the ball behind the standing leg. Drag-back stays in front.
+  * Do NOT label a move "V-pull" if what you see is a pull-back or L-turn. Use the player's stated skill to resolve ambiguity.
+
 - Evaluate first touch quality: Is it too heavy? Does the ball get away? Is it controlled into space?
 - Note close control vs speed: Is the ball glued to their feet? How many touches per distance?
 - Assess change of pace and direction. Is there an explosive burst after the move?
@@ -1456,10 +1488,32 @@ BALL CONTROL / FIRST TOUCH:
 - "Advanced": Executes complex freestyle tricks cleanly and consistently. Strong both feet. Powerful and accurate shooting with proper technique. Close dribbling control at speed. Smooth transitions between skills. High touch count juggling with trick combos.
 - A player performing freestyle tricks (ATW, crossovers, Akkas, etc.) is AT LEAST Intermediate. If done fluidly with combos, they are Advanced.
 
+===== SKILL-SPECIFIC BIOMECHANICS CHECKLIST (CRITICAL) =====
+Based on the primary skillFocus detected, you MUST evaluate the following biomechanical checkpoints and score each 1–10. Only include the checkpoints relevant to the skill observed — do NOT invent checkpoints that cannot be observed in the video. If a checkpoint is not visible due to camera angle, set score to null and note "camera angle limited".
+
+SHOOTING checkpoints: plantFootPosition, ankleLock, bodyLeanAtContact, hipRotation, followThroughDirection, approachAngle, headPosition
+PASSING / FIRST TOUCH checkpoints: receivingSurface, cushionTechnique, bodyOrientationPreTouch, touchDirection, passWeight, bodyShapeAfterTouch
+DRIBBLING checkpoints: touchDistance, headPosition, changeOfPaceExecution, weakFootInvolvement, bodyFeintQuality
+JUGGLING / FREESTYLE checkpoints: touchHeightConsistency, rhythmBetweenTricks, weakFootUsage, dropFrequency, trickTransitionFluidity
+
+For each checkpoint provide: { "score": "X/10", "note": "one-line explanation of what you saw" }
+If score is null, still provide a "note" explaining the visibility limitation.
+
+===== KEY MOMENTS =====
+Identify 2–4 specific moments in the video where the most important technical errors are clearly visible. Be specific about WHEN in the video (e.g., "around 0:08 on the second shot attempt", "during the third wall pass sequence"). For each moment describe:
+- What the body position / ball contact looked like at that exact moment
+- What direct impact it had on the outcome (ball went high, touch was heavy, lost possession, etc.)
+- What the correct action should have looked like instead
+These must be grounded in what you actually saw — do NOT fabricate moments.
+
+===== COACHING CUES =====
+Provide 2–3 short, memorable cue phrases this player can say to themselves during their next session to self-correct the top errors. These should be simple, physical, and instant — the kind of thing a coach shouts from the sideline. Examples: "lock the ankle", "plant beside the ball", "lean over it", "soft touch, stay close", "eyes up after the pass".
+
 ===== COACHING FEEDBACK RULES =====
 - For every weakness you identify, provide a SPECIFIC drill or exercise to fix it. Not generic advice — real drills a coach would assign.
 - Reference real coaching terminology and biomechanics.
 - Improvement tips should be prioritized: fix the biggest technical issue first.
+- For "improvementTips": the "tip" field = the observed error (exactly what you saw happen), the "why" field = the biomechanical root cause (which body position or movement caused it), the "how" field = a specific corrective drill with reps, sets, and setup instructions.
 - YouTube recommendations should be REAL channels known for soccer coaching/training (e.g., Unisport, Progressive Soccer, 7MLC, Joner 1on1, Tom Byer, Tekkerz Kid, etc.) with specific video topics that address the player's weaknesses.
 
 ===== COACH SUMMARY STYLE (CRITICAL) =====
@@ -1491,7 +1545,20 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
     "consistency": "How repeatable is the technique? Success rate, drop frequency, accuracy across attempts",
     "sessionProgression": "Did the player improve during the video? Did they attempt harder variations? Did fatigue affect quality?"
   },
-  "improvementTips": [{"priority": 1, "tip": "specific technique fix", "why": "biomechanical or tactical reason", "how": "exact drill or exercise with reps/sets/setup"}],
+  "biomechanicalChecklist": {
+    "plantFootPosition": { "score": "X/10 or null", "note": "what you saw" },
+    "ankleLock": { "score": "X/10 or null", "note": "what you saw" }
+  },
+  "keyMoments": [
+    {
+      "timestamp": "~0:08 (second shot attempt)",
+      "observation": "exact description of body position or contact at that moment",
+      "impact": "what happened as a result",
+      "correction": "what should have happened instead"
+    }
+  ],
+  "coachingCues": ["lock the ankle", "plant beside the ball", "lean over it"],
+  "improvementTips": [{"priority": 1, "tip": "the observed error — what you saw happen", "why": "biomechanical root cause — which body position caused it", "how": "corrective drill with reps/sets/setup"}],
   "commonMistakesForPosition": [{"mistake": "specific technical error", "observed": true, "correction": "exactly how to fix it with a drill"}],
   "practiceProgression": [{"level": "current", "drill": "drill they should do now"}, {"level": "next", "drill": "drill to progress to once current is mastered"}],
   "trendVsLastSessions": [{"metric": "Passing Accuracy", "trend": "improving | flat | declining", "note": "short explanation"}],
@@ -1549,6 +1616,9 @@ Respond with ONLY valid JSON (no markdown fences, no backticks). Use this exact 
     currentLevel: data.currentLevel || 'Intermediate',
     sessionSnapshot: data.sessionSnapshot || {},
     technicalAnalysis: data.technicalAnalysis || {},
+    biomechanicalChecklist: data.biomechanicalChecklist && typeof data.biomechanicalChecklist === 'object' ? data.biomechanicalChecklist : {},
+    keyMoments: Array.isArray(data.keyMoments) ? data.keyMoments : [],
+    coachingCues: Array.isArray(data.coachingCues) ? data.coachingCues : [],
     improvementTips: Array.isArray(data.improvementTips) ? data.improvementTips : [],
     commonMistakesForPosition: Array.isArray(data.commonMistakesForPosition) ? data.commonMistakesForPosition : [],
     practiceProgression: Array.isArray(data.practiceProgression) ? data.practiceProgression : [],
