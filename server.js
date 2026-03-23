@@ -786,7 +786,7 @@ async function sendWelcomeEmail(userName, userEmail) {
               Upload a training video and our Gemini AI will watch the full clip, break down your technique, and give you personalized tips to improve your game.
             </p>
             <div style="text-align:center;margin:32px 0">
-              <a href="https://ai-soccer-backend-2-production.up.railway.app" style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;text-decoration:none;padding:14px 40px;border-radius:12px;font-weight:700;font-size:16px;display:inline-block">
+              <a href="https://ballknowledge.up.railway.app" style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;text-decoration:none;padding:14px 40px;border-radius:12px;font-weight:700;font-size:16px;display:inline-block">
                 Start Analyzing
               </a>
             </div>
@@ -2576,7 +2576,7 @@ app.post('/api/player-report/email', auth, async (req, res) => {
           </table>
         </div>` : ''}
         <div style="padding:0 32px 32px;text-align:center">
-          <a href="https://smusoni.github.io/ai-soccer-backend-2" style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;text-decoration:none;padding:14px 40px;border-radius:12px;font-weight:700;font-size:16px;display:inline-block;margin-top:8px">
+          <a href="https://ballknowledge.up.railway.app" style="background:linear-gradient(135deg,#00ff95,#19d3ff);color:#0a0a0a;text-decoration:none;padding:14px 40px;border-radius:12px;font-weight:700;font-size:16px;display:inline-block;margin-top:8px">
             Analyze Your Next Session
           </a>
         </div>
